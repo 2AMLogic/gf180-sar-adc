@@ -17,6 +17,8 @@
 # stubbed via $LOOM_DAEMON_SELF_BIN -- so this
 # suite pins create-pr.sh's OWN logic (parsing, exit code, message, fail-open
 # posture) without depending on a real daemon build or live network calls.
+# Quoted evidence (#15404) -- a body citing another PR's closing line in
+# inline code or double quotes -- supplies no reference for this guard.
 #
 # Usage:
 #   ./.loom/scripts/tests/test-create-pr-review-gate.sh
@@ -239,6 +241,247 @@ assert_eq "0" "$EXIT_CODE" "Own branch already has an open PR -> adopts, exits 0
 assert_contains "$OUTPUT" "9000" "Adopts the existing PR for our own branch"
 assert_eq "0" "$(created_count)" "Adoption -> no new PR created"
 assert_eq "" "$(cat "$STUB_DIR/daemon-forge-calls.log" 2>/dev/null || true)" "Adoption short-circuits before the review-gate daemon call"
+
+# T9 (#13939): past-tense narration before a `Part of` reference must not
+# capture the guard either -- TARGET_ISSUE resolves to the partial reference,
+# never to the narrated `#597` (`PR #605 fixed #597` is history prose).
+reset_fixtures
+echo "0" > "$STUB_DIR/opr-207-rc.txt"
+echo "558" > "$STUB_DIR/opr-207-stdout.txt"
+echo "feature/issue-207-alt" > "$STUB_DIR/pr-558-head.txt"
+run_create_pr --title "feat: slice" --body "PR #605 fixed #597, which unblocked this slice.
+
+Part of #207" --head "feature/issue-207"
+assert_eq "6" "$EXIT_CODE" "Narration + Part of #207 with rival PR -> exit 6 on #207"
+assert_contains "$OUTPUT" "#207" "Refusal names the partial-reference issue, not the narrated one"
+assert_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "check-open-pr 207" "Guard consulted #207"
+assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "597" "Guard never consulted the narrated #597"
+
+# T10 (#14157): a `Part of` reference indented by exactly ONE space must
+# still drive the guard. The #13939 alternation's `^` branch required
+# column 0 and its prose branch needed a non-whitespace guard char, so a
+# one-space prefix satisfied no branch -- TARGET_ISSUE came back empty and
+# this pre-check was silently skipped (fail-open, #14157).
+reset_fixtures
+echo "0" > "$STUB_DIR/opr-208-rc.txt"
+echo "559" > "$STUB_DIR/opr-208-stdout.txt"
+echo "feature/issue-208-alt" > "$STUB_DIR/pr-559-head.txt"
+run_create_pr --title "feat: slice" --body " Scope context.
+
+ Part of #208" --head "feature/issue-208"
+assert_eq "6" "$EXIT_CODE" "One-space-indented 'Part of #208' with rival open PR -> exit 6"
+assert_contains "$OUTPUT" "#208" "Refusal names the indented partial-reference issue"
+assert_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "check-open-pr 208" "Guard consulted the indented reference"
+
+# T11 (#14157): same false-negative class for exactly one TAB of indent,
+# with a closing keyword.
+reset_fixtures
+echo "0" > "$STUB_DIR/opr-209-rc.txt"
+echo "560" > "$STUB_DIR/opr-209-stdout.txt"
+echo "feature/issue-209-alt" > "$STUB_DIR/pr-560-head.txt"
+run_create_pr --title "fix: something" --body $'\tCloses #209' --head "feature/issue-209"
+assert_eq "6" "$EXIT_CODE" "One-tab-indented 'Closes #209' with rival open PR -> exit 6"
+assert_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "check-open-pr 209" "Guard consulted the tab-indented closing reference"
+
+# T12 (#14157): a whitespace-delimited token ending in a digit before the
+# keyword (`Phase 3`) -- the #13939 prose guard rejected ANY digit before
+# the whitespace run, over-rejecting `Phase 3 fixes #N` (no `#` in the
+# token), and the guard was skipped entirely.
+reset_fixtures
+echo "0" > "$STUB_DIR/opr-210-rc.txt"
+echo "561" > "$STUB_DIR/opr-210-stdout.txt"
+echo "feature/issue-210-alt" > "$STUB_DIR/pr-561-head.txt"
+run_create_pr --title "feat: slice" --body "Phase 3 fixes #210" --head "feature/issue-210"
+assert_eq "6" "$EXIT_CODE" "'Phase 3 fixes #210' with rival open PR -> exit 6 on #210"
+assert_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "check-open-pr 210" "Guard consulted #210"
+assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "check-open-pr 605" "Guard never consulted a narrated reference token"
+
+# T13 (#14255): a parenthesised narration (`PR #14082 (which fixes #300)`)
+# earlier in the body must not outrank the declared trailing `Closes #208` --
+# last-match: the guard consults #208, never the narrated #300.
+reset_fixtures
+echo "0" > "$STUB_DIR/opr-208-rc.txt"
+echo "559" > "$STUB_DIR/opr-208-stdout.txt"
+echo "feature/issue-208-alt" > "$STUB_DIR/pr-559-head.txt"
+run_create_pr --title "fix: something" --body "Follow-up to PR #14082 (which fixes #300).
+
+Closes #208" --head "feature/issue-208"
+assert_eq "6" "$EXIT_CODE" "Parenthesised narration + Closes #208 with rival PR -> exit 6 on #208"
+assert_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "check-open-pr 208" "Guard consulted the declared #208"
+assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "300" "Guard never consulted the narrated #300"
+
+# T14 (#14255): `Closes #A` ... `Part of #B` -> the closing reference is the
+# PR's target regardless of order; the guard must not consult the family
+# issue #B (which routinely has open sibling PRs).
+reset_fixtures
+echo "0" > "$STUB_DIR/opr-209-rc.txt"
+echo "560" > "$STUB_DIR/opr-209-stdout.txt"
+echo "feature/issue-209-alt" > "$STUB_DIR/pr-560-head.txt"
+run_create_pr --title "fix: something" --body "Closes #209
+
+Part of #400" --head "feature/issue-209"
+assert_eq "6" "$EXIT_CODE" "Closes #209 then Part of #400 -> exit 6 on #209"
+assert_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "check-open-pr 209" "Guard consulted the closing target #209"
+assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "400" "Guard never consulted the partial #400"
+
+# T15 (#14255): reverse order (`Part of #B` then `Closes #A`) -> same answer.
+reset_fixtures
+echo "0" > "$STUB_DIR/opr-210-rc.txt"
+echo "561" > "$STUB_DIR/opr-210-stdout.txt"
+echo "feature/issue-210-alt" > "$STUB_DIR/pr-561-head.txt"
+run_create_pr --title "fix: something" --body "Part of #401
+
+Closes #210" --head "feature/issue-210"
+assert_eq "6" "$EXIT_CODE" "Part of #401 then Closes #210 -> exit 6 on #210"
+assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "401" "Guard never consulted the partial #401"
+
+# T16 (#14255): two partial references -> the last one is the target.
+reset_fixtures
+echo "0" > "$STUB_DIR/opr-212-rc.txt"
+echo "562" > "$STUB_DIR/opr-212-stdout.txt"
+echo "feature/issue-212-alt" > "$STUB_DIR/pr-562-head.txt"
+run_create_pr --title "feat: slice" --body "Part of #402
+
+Part of #212" --head "feature/issue-212"
+assert_eq "6" "$EXIT_CODE" "Two Part of references -> last (#212) is the target"
+assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "402" "Guard never consulted the earlier #402"
+
+# T17 (#14351): two closing references, the branch names the FIRST one ->
+# the branch-declared issue wins over last-match; the guard consults #14059
+# and never #14052.
+reset_fixtures
+echo "0" > "$STUB_DIR/opr-14059-rc.txt"
+echo "563" > "$STUB_DIR/opr-14059-stdout.txt"
+echo "feature/issue-14059-alt" > "$STUB_DIR/pr-563-head.txt"
+run_create_pr --title "fix: something" --body "Closes #14059
+Closes #14052" --head "feature/issue-14059"
+assert_eq "6" "$EXIT_CODE" "Two Closes, branch names the first -> exit 6 on #14059"
+assert_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "check-open-pr 14059" "Guard consulted the branch-declared #14059"
+assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "14052" "Guard never consulted the other closing reference #14052"
+
+# T18 (#14351): two closing references, the branch names NEITHER -> existing
+# last-match behaviour is unchanged (#14052).
+reset_fixtures
+echo "0" > "$STUB_DIR/opr-14052-rc.txt"
+echo "564" > "$STUB_DIR/opr-14052-stdout.txt"
+echo "feature/issue-9999-alt" > "$STUB_DIR/pr-564-head.txt"
+run_create_pr --title "fix: something" --body "Closes #14059
+Closes #14052" --head "feature/issue-9999"
+assert_eq "6" "$EXIT_CODE" "Two Closes, branch matches neither -> last-match #14052"
+assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "14059" "Guard never consulted the earlier #14059"
+
+# T19 (#14351): a branch that is not `feature/issue-N` shaped -> last-match.
+reset_fixtures
+echo "0" > "$STUB_DIR/opr-14052-rc.txt"
+echo "565" > "$STUB_DIR/opr-14052-stdout.txt"
+echo "docs/other-branch-alt" > "$STUB_DIR/pr-565-head.txt"
+run_create_pr --title "fix: something" --body "Closes #14059
+Closes #14052" --head "docs/other-branch"
+assert_eq "6" "$EXIT_CODE" "Two Closes, non-issue branch -> last-match #14052"
+assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "14059" "Guard never consulted the earlier #14059 on a non-issue branch"
+
+# T20 (#15404): an evidence-table cell citing another PR's closing line in
+# inline code is quoted evidence, not a declaration. With the real closing
+# footer `Closes #1378` the guard consults the declared #1378, never the
+# cited #396.
+reset_fixtures
+run_create_pr --title "fix: something" --body '| Evidence | PR #414 body says `Closes #396`. |
+| --- | --- |
+
+Closes #1378' --head "feature/issue-1378"
+assert_eq "0" "$EXIT_CODE" "Quoted citation + Closes #1378 -> exits 0"
+assert_eq "1" "$(created_count)" "Quoted citation + closing footer -> PR is created"
+assert_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "check-open-pr 1378" "Guard consulted the declared #1378"
+assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "396" "Guard never consulted the cited #396"
+
+# T21 (#15404): partial footer -- the citation supplies no closing candidate,
+# so TARGET_ISSUE is the partial #1378 (pre-fix the quoted #396 won and the
+# guard consulted the closed issue instead of the declared target).
+reset_fixtures
+run_create_pr --title "feat: slice" --body '| Evidence | PR #414 body says `Closes #396`. |
+| --- | --- |
+
+Part of #1378' --head "feature/issue-1378"
+assert_eq "0" "$EXIT_CODE" "Quoted citation + Part of #1378 -> exits 0"
+assert_eq "1" "$(created_count)" "Quoted citation + partial footer -> PR is created"
+assert_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "check-open-pr 1378" "Guard consulted the partial #1378"
+assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "396" "Guard never consulted the cited #396 (partial footer)"
+
+# T22 (#15404): the citation alone supplies no reference at all -- the guard
+# never runs (no daemon call).
+reset_fixtures
+run_create_pr --title "fix: something" --body '| Evidence | PR #414 body says `Closes #396`. |
+| --- | --- |' --head "feature/issue-1378"
+assert_eq "0" "$EXIT_CODE" "Quoted citation alone -> no reference, exits 0"
+assert_eq "1" "$(created_count)" "Quoted citation alone -> PR is created"
+assert_eq "" "$(cat "$STUB_DIR/daemon-forge-calls.log" 2>/dev/null || true)" "Quoted citation alone -> guard never consulted"
+
+# T23 (#15404): past-tense quoted spelling (`closed #396`) with a partial
+# footer -- same class, same answer.
+reset_fixtures
+run_create_pr --title "feat: slice" --body '| Evidence | PR #414 body says `closed #396`. |
+| --- | --- |
+
+Part of #1378' --head "feature/issue-1378"
+assert_eq "0" "$EXIT_CODE" "Quoted past-tense citation + Part of #1378 -> exits 0"
+assert_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "check-open-pr 1378" "Guard consulted the partial #1378 (past-tense citation)"
+assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "396" "Guard never consulted the cited #396 (past-tense)"
+
+# T24 (#15404): a double-quoted citation ("Closes #396") -- the other quoted
+# shape from the original report -- supplies no candidate either.
+reset_fixtures
+run_create_pr --title "fix: something" --body '| Evidence | PR #414 body says "Closes #396". |
+| --- | --- |' --head "feature/issue-1378"
+assert_eq "0" "$EXIT_CODE" "Double-quoted citation alone -> exits 0"
+assert_eq "" "$(cat "$STUB_DIR/daemon-forge-calls.log" 2>/dev/null || true)" "Double-quoted citation alone -> guard never consulted"
+
+# T25 (#15404, judge round 1): a double-backtick span is one span (matching
+# run lengths), so the cited #396 never reaches the guard.
+reset_fixtures
+run_create_pr --title "feat: slice" --body '| Evidence | PR #414 says ``Closes #396``. |
+
+Part of #1378' --head "feature/issue-1378"
+assert_eq "0" "$EXIT_CODE" "Double-backtick citation + Part of #1378 -> exits 0"
+assert_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "check-open-pr 1378" "Guard consulted the partial #1378 (double-backtick)"
+assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "396" "Guard never consulted the cited #396 (double-backtick)"
+
+# T26 (#15404, judge round 1): a removed span must not splice a keyword onto a
+# number across the gap, for backtick and double-quote spans.
+for shape in 'The worker closes `socket` #396 after each request.' 'The worker closes "socket" #396 after each request.'; do
+  reset_fixtures
+  run_create_pr --title "feat: slice" --body "$shape
+
+Part of #1378" --head "feature/issue-1378"
+  assert_eq "0" "$EXIT_CODE" "Span between keyword and number ($shape) -> exits 0"
+  assert_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "check-open-pr 1378" "Guard consulted the partial #1378 (span gap)"
+  assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "396" "Guard never consulted #396 across a span gap"
+done
+
+# Fences and bounded single quotes can cite a closing line (#15415).
+check_review_target() {
+  local description="$1" body="$2" expected="${3:+forge check-open-pr $3}"
+  reset_fixtures
+  run_create_pr --title "fix: something" --body "$body" --head "feature/issue-1378"
+  assert_eq "$expected" "$(cat "$STUB_DIR/daemon-forge-calls.log")" "$description: review lookup"
+  assert_eq "0" "$EXIT_CODE" "$description: exit status"
+  assert_eq "1" "$(created_count)" "$description: created PR"
+}
+
+for citation in $'Reproduction:\n```\nCloses #396\n```' "| Evidence | PR #414 says 'Closes #396'. |"; do
+  check_review_target "$citation alone" "$citation" ""
+  check_review_target "$citation with partial footer" "$citation"$'\nPart of #1378' 1378
+  check_review_target "$citation with closing footer" "$citation"$'\nCloses #1378' 1378
+done
+
+for example in $'````md\n```\n~~~~\nCloses #396\n````' $'~~~~md\n~~~\n````\nCloses #396\n~~~~'; do
+  check_review_target "shorter runs and opposite markers in $example" "$example"$'\nPart of #1378' 1378
+done
+
+check_review_target "word-internal apostrophes" "The worker's patch closes #1378 in today's build." 1378
+check_review_target "unmatched quote" "The log says 'pending. This closes #1378." 1378
+check_review_target "apostrophe inside citation" "The log says 'the worker's patch closes #396'." ""
+check_review_target "single-quoted span between keyword and number" "Worker closes 'socket' #396." ""
+check_review_target "inline code at line start" $'```Closes #396```\nPart of #1378' 1378
 
 # --- Summary ---
 echo ""

@@ -281,6 +281,13 @@ for phrase in "${OUT_OF_BAND_PHRASES[@]}"; do
     esac
 done
 assert_eq "0" "$BARE_WORD_FOUND" "no bare single-word phrase is in the vocabulary"
+ERE_METACHAR_FOUND=0
+for phrase in "${OUT_OF_BAND_PHRASES[@]}"; do
+    case "$phrase" in
+        *[\.\[\]\(\)\*\+\?\{\}\|^\$\\]*) ERE_METACHAR_FOUND=1 ;;
+    esac
+done
+assert_eq "0" "$ERE_METACHAR_FOUND" "no vocabulary phrase contains an ERE metacharacter (-qE depends on it)"
 
 # -------- Test 21: forge evidence counts only via the trust filter (#9548) --------
 echo "Test 21: --issue evidence is read through forge trusted-comments, never raw"
@@ -309,6 +316,41 @@ assert_eq "12" "$(run21 '[]')" "no trusted marker -> 12, whatever raw comments s
 assert_eq "12" "$(run21 '')" "filter unavailable -> 12 (held open, fail safe)"
 assert_eq "11" "$(run21 "[{\"body\":\"ran it <!-- loom:ac-verified sha=$SHA21 -->\"}]")" "a trusted marker for the head -> 11"
 echo ""
+
+# -------- Test 22: phrase matching is boundary-anchored (#13900) --------
+echo "Test 22: a vocabulary phrase inside a longer word does not match"
+run_classify "## Acceptance Criteria
+
+- [ ] a reproduction run of the bug is added to the regression suite
+- [ ] the preproduction run artifacts are built by CI"
+assert_eq "0" "$CAP_RC" "'reproduction run' / 'preproduction run' contain 'production run' only mid-word -> CI-checkable"
+assert_eq "" "$CAP_OUT" "no mid-word phrase match is reported"
+run_classify "## Acceptance Criteria
+
+- [ ] production run of the nightly job confirms the export lands"
+assert_eq "12" "$CAP_RC" "'production run' at item start still matches"
+run_classify "## Acceptance Criteria
+
+- [ ] check the export on the next Production run:"
+assert_eq "12" "$CAP_RC" "'Production run:' mid-item, upper-cased, still matches"
+run_classify "## Acceptance Criteria
+
+- [ ] verify the (production run) metrics are archived"
+assert_eq "12" "$CAP_RC" "'(production run)' after punctuation still matches"
+run_classify "## Acceptance Criteria
+
+- [ ] confirm the export lands on the _next run_ of the nightly job"
+assert_eq "12" "$CAP_RC" "_next run_ underscore emphasis is a boundary (#14004)"
+
+# -------- Test 23 retired (#14905) --------
+# It lifted Champion's `hold_issue_on_unverified_ac` block out of
+# champion-pr-merge.md and proved the rendered notice carried no live
+# `loom:ac-verified` marker (#13900). That block moved to the daemon's
+# merge-observation pass; the same assertion now runs against the notice it
+# actually posts: `the_hold_notice_never_embeds_a_live_ac_verified_marker` in
+# loom-daemon/src/claim_reconciliation/pass_loop/merge_observation_tests.rs.
+# The classifier-side anchoring of the marker (hex SHA only, full comment form)
+# stays covered by this file's marker tests above.
 
 # -------- Summary --------
 echo ""

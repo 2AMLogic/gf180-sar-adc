@@ -29,6 +29,8 @@
 #
 # A missing/malformed file at ANY tier soft-fails to `{}` for that tier (it
 # contributes nothing to the merge) — this never aborts the calling script.
+# So does a file holding anything but exactly one JSON object, such as two
+# concatenated objects (#15452).
 # See docs/design/config-resolution-tiers.md for the full design and the
 # `.loom-project/project.json` schema.
 #
@@ -47,6 +49,15 @@ LOOM_CONFIG_PROJECT_REL=".loom-project/project.json"
 LOOM_CONFIG_LOCAL_REL=".loom-local/local.json"
 _LOOM_CONFIG_DEFAULTS_DEFAULT_REL=".local/share/loom/config/defaults.json"
 
+# jq filter that accepts one tier, always run as `jq -c -s`: the slurped input
+# is the tier's top-level values, so a tier contributes its content only when
+# it is exactly one JSON object. Empty input, a non-object top level, and
+# several top-level values (#15452) all give {}. Without the slurp, jq runs a
+# filter once per value, and a file holding two objects yielded two objects
+# for one tier -- both of which the merge then took. Malformed JSON still
+# exits non-zero; the readers map that to {} as well.
+_LOOM_CONFIG_TIER_FILTER='if length == 1 and (.[0] | type) == "object" then .[0] else {} end'
+
 # _loom_config_private_defaults_path -> echoes the resolved private-defaults
 # path honoring $LOOM_CONFIG_DEFAULTS_FILE. Echoes nothing when the env var
 # is explicitly set to empty (tier disabled) or when $HOME is unset. The
@@ -62,10 +73,10 @@ _loom_config_private_defaults_path() {
     fi
 }
 
-# _loom_config_soft_read <path> -> echoes the file's JSON when it parses as
-# a single JSON object; echoes '{}' for a missing path, an unreadable file,
-# malformed JSON, a non-object top level, or multiple top-level values
-# (a tier is exactly one object; #1048). Never fails the caller.
+# _loom_config_soft_read <path> -> echoes the file's JSON when it holds
+# exactly one JSON object; echoes '{}' for a missing path, an unreadable
+# file, malformed JSON, a non-object top level, or several top-level values.
+# Never fails the caller.
 _loom_config_soft_read() {
     local path="$1"
     if [[ -z "$path" ]] || [[ ! -f "$path" ]] || ! command -v jq >/dev/null 2>&1; then
@@ -73,7 +84,7 @@ _loom_config_soft_read() {
         return 0
     fi
     local parsed
-    if ! parsed=$(jq -c -s 'if length == 1 and (.[0] | type) == "object" then .[0] else {} end' "$path" 2>/dev/null); then
+    if ! parsed=$(jq -c -s "$_LOOM_CONFIG_TIER_FILTER" "$path" 2>/dev/null); then
         echo '{}'
         return 0
     fi
@@ -102,7 +113,7 @@ _loom_config_tracked_read() {
         && git -C "$root" diff --quiet HEAD -- "$rel" 2>/dev/null \
         && { [[ ! -e "$root/$rel" ]] || git -C "$root" cat-file -e "HEAD:$rel" 2>/dev/null; }; then
         text=$(git -C "$root" show "origin/HEAD:$rel" 2>/dev/null || true)
-        if [[ -n "$text" ]] && parsed=$(printf '%s' "$text" | jq -c -s 'if length == 1 and (.[0] | type) == "object" then .[0] else {} end' 2>/dev/null); then
+        if [[ -n "$text" ]] && parsed=$(printf '%s' "$text" | jq -c -s "$_LOOM_CONFIG_TIER_FILTER" 2>/dev/null); then
             echo "$parsed"
         else
             echo '{}'
@@ -147,6 +158,11 @@ loom_resolve_config() {
 # Resolve a single value from the effective merged config by dotted key
 # path (e.g. "autonomous.workFinder.enabled"). Echoes `default` (empty
 # string if omitted) when the path is absent, non-scalar, or jq is missing.
+#
+# Failure contract (#15321): when `loom_resolve_config` itself fails (nonzero),
+# the getter returns that same status with empty stdout and lets the resolver's
+# diagnostic reach stderr -- it does NOT fall back to `default`. The fallback
+# applies only to a successful resolution that lacks the key.
 loom_config_get() {
     local repo_root="$1"
     local dotted="$2"
@@ -157,8 +173,16 @@ loom_config_get() {
         return 0
     fi
 
-    local effective
-    effective=$(loom_resolve_config "$repo_root")
+    # Fail closed (#15321): a resolver failure is not "key absent". Return the
+    # resolver's status with nothing on stdout (its diagnostic already went to
+    # stderr) instead of falling through to `default_val` with status 0. The
+    # explicit `|| rc=$?` keeps this correct under `set -e` and when the caller
+    # tests the getter in an `if` condition (where `set -e` is suspended).
+    local effective resolve_rc=0
+    effective=$(loom_resolve_config "$repo_root") || resolve_rc=$?
+    if [[ $resolve_rc -ne 0 ]]; then
+        return "$resolve_rc"
+    fi
 
     # `try ... catch empty` guards against `dotted` indexing through a
     # non-object at some segment (e.g. "a.b" where "a" is a scalar) --
