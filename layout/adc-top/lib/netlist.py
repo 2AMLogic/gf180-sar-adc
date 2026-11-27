@@ -368,10 +368,10 @@ def flatten(
 # the LVS reference netlist
 # --------------------------------------------------------------------------- #
 
-#: Net name `klt extract`'s gf180mcu deck synthesizes for every NMOS body in
-#: a stream that draws **no recognised substrate tap** -- the deck's
-#: `substrate_net` global, invented by `connect_global` rather than read off
-#: any drawn label.
+#: Net name `klt extract`'s gf180mcu deck gives the substrate of a stream
+#: in which no substrate tie reaches a labelled net -- the deck's
+#: `substrate_net` global, invented by `connect_global` rather than read
+#: off any drawn label. Every NMOS body in such a stream reports it.
 #:
 #: WHAT ISSUE #356 CHANGED. The curated gf180mcu deck declares no dedicated
 #: tap layer (`ExtractionDeck.tap is None`) -- which is what this repo used
@@ -386,11 +386,22 @@ def flatten(
 #: `vsubs` and an anonymous per-island well net. Measured directly against
 #: the pinned build, not inferred from the deck source.
 #:
-#: This constant therefore names the *untapped* case, which is still real:
-#: the stand-alone `comparator.gds` cell draws no
-#: substrate ring (only `gen_adc_top.py` does), so its NMOS bodies still
-#: land here. Callers pass the net they actually drew -- see
-#: `write_reference`'s `substrate_net` argument.
+#: This constant therefore names the *unlabelled* case, which is still
+#: real. What decides the extracted name is whether the net the substrate
+#: tie lands on carries a label, not whether a ring is drawn: a
+#: `Pplus`-marked tie that reaches a labelled net has this global merged
+#: into it, and one that does not leaves the global's name standing. A ring
+#: is only one way to provide the tie. The stand-alone `comparator.gds`
+#: draws no ring (only `gen_adc_top.py` does) and still reports `vss`:
+#: since DR-0049 every placed row with NMOS columns gets its own `Pplus`
+#: substrate-tie strip, and the comparator's is routed to the cell's
+#: labelled `vss` trunk, so `gen_comparator` passes `"vss"` on both its
+#: paths -- `build()` and the copy `gen_adc_top` embeds. `vsubs` survives
+#: where there is no label to merge into: `adc_tgate` and `adc_tgate_dum`
+#: have no `vss` port, their strips land on an unlabelled track, and
+#: `cells/gen_adc_cells.py` passes this constant for them. Callers pass the
+#: net they actually drew -- see `write_reference`'s `substrate_net`
+#: argument.
 SUBSTRATE_NET = "vsubs"
 
 
@@ -455,18 +466,25 @@ def write_reference(
     layout netlist against.
 
     `body_net_of` maps each MOSFET's device path to the net its body
-    terminal lands on in the *layout*. Since issue #356 drew and routed the
-    taps, that is the schematic's own answer -- `vss` for every NMOS and
-    `vdd` for every PMOS -- in any stream that draws a `Pplus`-marked
-    substrate ring; a stream that does not (the stand-alone comparator
-    cells) still reports `SUBSTRATE_NET` for its NMOS bodies. `place.
-    draw_devices` fills this in from the nets it actually routed the taps
-    to, so the reference cannot drift from the geometry.
+    terminal lands on in the *layout*, and it is what sets the fourth node
+    of every `M` card written here (the schematic's own body terminal is
+    not used). Since issue #356 drew and routed the taps, that is the
+    schematic's own answer -- `vss` for every NMOS and `vdd` for every PMOS
+    -- wherever the substrate tie reaches a labelled `vss`: through the
+    `Pplus`-marked ring `gen_adc_top.py` draws, or with no ring at all
+    through the DR-0049 tie strip routed to a labelled trunk, as the
+    stand-alone comparator does. An NMOS body reports `SUBSTRATE_NET` only
+    where no labelled tie claims the substrate (`cells/gen_adc_cells.py`'s
+    two `adc_tgate` leaves). `place.draw_devices` fills this in from the
+    nets it actually routed the taps to, so the reference cannot drift from
+    the geometry.
 
-    `substrate_net` is the same choice for the terminals this function
-    writes itself (the poly load resistors' bulk): pass the net the caller's
-    own substrate tie is strapped to, or leave it at `SUBSTRATE_NET` for an
-    untapped stream.
+    `substrate_net` is a separate argument for the one terminal this
+    function writes itself: the poly load resistors' bulk. It sets no `M`
+    card. Pass the net the caller's substrate tie is strapped to -- the same
+    net its NMOS bodies report -- or leave it at `SUBSTRATE_NET` for a
+    stream whose tie is unlabelled. Callers add the same net to `pins`,
+    which is why such a stream's `.SUBCKT` carries a `vsubs` pin.
 
     `include_caps` decides whether the MiM capacitors are written. It is a
     property of the LAYOUT, not of the schematic, and the two states are not
