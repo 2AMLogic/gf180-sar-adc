@@ -125,6 +125,27 @@ pin check uses:
   with no log) contributes nothing; a missing note is **never** read as "no
   compatibility mode". The init file (`spinit` / `~/.spiceinit`) that supplied
   the mode is not identified.
+- **Who placed the PDK tree** (issue #599), read from the tree and never
+  inferred. The `~/.ciel` path is a *layout* name: the fleet's PDK store
+  fills it on the evidence hosts, and `ciel enable` fills it on a developer
+  box and in CI. The record's `PDK installer:` line is one of:
+  - `PDK store (via …), bundle sha256 …, synced …` — the store's
+    `.pdk-store.json` marker sits in the tree or in the directory holding it
+    and names this tree's family and the revision in the tree's own
+    `SOURCES`. The bundle sha256 identifies every byte of the install, and
+    the record says that no installer-tool version applies to such a tree.
+  - `**unrecorded**` — anything else. `ciel enable`, volare and a hand copy
+    leave no per-install record, so there is no installer version to report.
+    A marker that names another family or revision is not adopted; the
+    record quotes it and says why.
+
+  Beside it, one line for the installer tools on the PATH of the process
+  that ran the harness (`ciel` today): the first line of `--version`, or
+  `not found`, `unavailable` (on PATH, no version printed) or `not
+  collected`. It is what is installed *now*. The record says it is not
+  proof that it placed the tree: an install recipe, or a tool's presence,
+  cannot establish what installed a PDK — only the tree's own marker can.
+  `--check-env` prints the installer line under the PDK.
 
 Records written before this change lack these keys and render
 "not recorded"; no existing record is edited.
@@ -605,7 +626,7 @@ writes, under `sim/<experiment-slug>/`:
 
 | Path | Contents |
 |---|---|
-| `records/<record-id>.md` | the append-only summary record (the fields from `sim/README.md`, the per-axis sensitivity table, and an Environment section with PDK / MIM stack / ngspice / platform / hostname / full ngspice banner / observed front-end mode / harness / git provenance) |
+| `records/<record-id>.md` | the append-only summary record (the fields from `sim/README.md`, the per-axis sensitivity table, and an Environment section with PDK / PDK installer / MIM stack / ngspice / platform / hostname / full ngspice banner / observed front-end mode / harness / git provenance) |
 | `netlist-snapshots/<record-id>.spice` | verbatim frozen copy of the testbench fragment, with its sha256 |
 | `corners/<record-id>/<corner-id>.log` | raw ngspice output, one file per PVT point |
 

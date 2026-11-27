@@ -2050,6 +2050,7 @@ class CliBatchTests(unittest.TestCase):
         patches = [
             mock.patch.object(cli, "find_pdk", return_value=self.pdk),
             mock.patch.object(cli.runner, "ngspice_version", return_value="ngspice-46"),
+            mock.patch.object(cli, "installer_tools", return_value={}),
             mock.patch.object(cli.toolchain_mod, "load_pins", return_value=PINS),
             mock.patch.object(cli.batch_mod, "klt_available", return_value=["klt"]),
             mock.patch.object(cli.batch_mod, "submit_set", side_effect=submit_effect),
@@ -2203,6 +2204,7 @@ class CliDeckTests(unittest.TestCase):
         patches = [
             mock.patch.object(cli, "find_pdk", return_value=self.pdk),
             mock.patch.object(cli.runner, "ngspice_version", return_value="ngspice-46"),
+            mock.patch.object(cli, "installer_tools", return_value={}),
             mock.patch.object(cli.toolchain_mod, "load_pins", return_value=PINS),
             mock.patch.object(cli.batch_mod, "klt_available", return_value=["klt"]),
             mock.patch.object(cli.batch_mod, "submit_decks", side_effect=submit_effect),
@@ -2315,6 +2317,63 @@ class CliDeckTests(unittest.TestCase):
         self.assertEqual(label, "ngspice-46 (run by aws-batch-fleet, job klt-sim-deckjob01)")
         self.assertEqual(drifts, [])
 
+    def test_switch_before_staging_keeps_the_selected_bundle_at_the_same_revision(self):
+        self._check_pdk_switch(before_staging=True, replacement_revision=PINNED_PDK)
+
+    def test_switch_after_submit_keeps_the_staged_bundles_revision(self):
+        self._check_pdk_switch(before_staging=False, replacement_revision="1" * 40)
+
+    def _check_pdk_switch(self, *, before_staging, replacement_revision):
+        store = self.root / "store"
+        for key, revision in (("a", PINNED_PDK), ("b", replacement_revision)):
+            tree = make_pdk(store / key / "gf180mcuD")
+            tree.model_lib.write_bytes(f"* bundle {key}\n".encode())
+            (tree.path / "SOURCES").write_text(f"open_pdks {revision}\n")
+            (tree.path.parent / ".pdk-store.json").write_text(json.dumps({
+                "name": "gf180mcu", "sha256": key * 64, "version": revision,
+            }))
+        link = self.root / "linked" / "gf180mcuD"
+        link.parent.mkdir()
+        link.symlink_to(store / "a" / "gf180mcuD")
+        self.pdk = Pdk(path=link, variant="gf180mcuD", source="test")
+
+        def switch_install():
+            link.unlink()
+            link.symlink_to(store / "b" / "gf180mcuD")
+
+        build_decks = batch.build_deck_request
+        fleet = self._fleet()
+        build_record = report.build_record
+
+        def stage(*args, **kwargs):
+            if before_staging:
+                switch_install()
+            return build_decks(*args, **kwargs)
+
+        def submit(request_path, outdir, requested, klt_cmd="klt"):
+            inputs = json.loads(request_path.read_text())["decks"][0]["inputs"]
+            model = next(i["name"] for i in inputs if i["name"].endswith("sm141064.ngspice"))
+            self.assertEqual((request_path.parent / model).read_bytes(), b"* bundle a\n")
+            result = fleet(request_path, outdir, requested, klt_cmd)
+            if not before_staging:
+                switch_install()
+            return result
+
+        def check_record(**kwargs):
+            record = build_record(**kwargs)
+            pdk = record["environment"]["pdk"]
+            self.assertEqual(link.resolve(), (store / "b" / "gf180mcuD").resolve())
+            self.assertEqual(Path(pdk["path"]), (store / "a" / "gf180mcuD").resolve())
+            self.assertEqual(pdk["installer"]["bundle_sha256"], "a" * 64)
+            self.assertEqual(pdk["open_pdks_version"], PINNED_PDK)
+            self.assertEqual(pdk["pin_status"], "match")
+            return record
+
+        with mock.patch.object(batch, "build_deck_request", side_effect=stage), \
+                mock.patch.object(report, "build_record", side_effect=check_record) as record:
+            self.assertEqual(self._run([], submit), cli.EXIT_OK)
+            record.assert_called_once()
+
     def test_the_split_knobs_ride_in_the_requests_batch_block(self):
         seen = {}
 
@@ -2409,6 +2468,7 @@ class SpotInterruptedMemberCliTests(unittest.TestCase):
         patches = [
             mock.patch.object(cli, "find_pdk", return_value=self.pdk),
             mock.patch.object(cli.runner, "ngspice_version", return_value="ngspice-46"),
+            mock.patch.object(cli, "installer_tools", return_value={}),
             mock.patch.object(cli.toolchain_mod, "load_pins", return_value=PINS),
             mock.patch.object(cli.batch_mod, "klt_available", return_value=["klt"]),
             mock.patch.object(cli.batch_mod, "submit_set", side_effect=fake_submit),

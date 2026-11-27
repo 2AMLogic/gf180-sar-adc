@@ -346,6 +346,7 @@ def environment(
     git: dict | None = None,
     toolchain: dict | None = None,
     ngspice_banner: str = "",
+    installer_tools: dict | None = None,
 ) -> dict:
     """Reproducibility provenance for the record.
 
@@ -357,6 +358,10 @@ def environment(
     that produced this record satisfied the repo's pins. Recording only what
     was *found* would leave a reader unable to tell a pinned run from a
     deliberately-drifted one.
+
+    ``installer_tools`` is :func:`harness.pdk.installer_tools`, collected by
+    the caller on the host that composed the decks; ``None`` when it was not
+    collected, which is not the same as "nothing is on PATH".
     """
     try:
         user = getpass.getuser()
@@ -374,6 +379,7 @@ def environment(
         "host": socket.gethostname(),
         "user": user,
         "pdk": pdk.provenance(),
+        "installer_tools": installer_tools,
         "git": git if git is not None else git_provenance(repo_root),
         "toolchain": toolchain or {},
     }
@@ -451,6 +457,44 @@ def _launcher_lines(env: dict) -> list[str]:
     return lines
 
 
+def _installer_lines(pdk: dict, env: dict) -> list[str]:
+    installer = pdk.get("installer")
+    if not installer:
+        return ["- PDK installer: not recorded (record predates this field)"]
+    lines: list[str] = []
+    if installer.get("kind") == "pdk-store":
+        lines.append(
+            "- PDK installer: PDK store "
+            f"(via `{installer.get('via')}`), bundle sha256 `{installer.get('bundle_sha256')}`, "
+            f"synced `{installer.get('synced')}`; store marker `{installer.get('marker')}`"
+        )
+        lines.append(
+            "  - the tree at the path above was placed by the store's sync, "
+            "so no installer-tool version applies to it"
+        )
+    else:
+        lines.append(f"- PDK installer: **unrecorded** — {installer.get('reason')}")
+    who = "launcher" if env.get("execution") else "host"
+    tools = env.get("installer_tools")
+    if tools is None:
+        lines.append(f"- `ciel` on the {who} PATH: not collected")
+        return lines
+    version = tools.get("ciel")
+    if version is None:
+        lines.append(f"- `ciel` on the {who} PATH: not found")
+    elif version == "unavailable":
+        lines.append(
+            f"- `ciel` on the {who} PATH: on PATH, but `ciel --version` gave no version"
+        )
+    else:
+        shown = str(version).replace("`", "'")
+        lines.append(
+            f"- `ciel` on the {who} PATH: `{shown}` (present now; "
+            "it is not proof that it placed the tree)"
+        )
+    return lines
+
+
 def matrix_conformance(tb: Testbench, points: list[PvtPoint]) -> dict:
     """Is this run the full PVT matrix CLAUDE.md mandates, or a subset?
 
@@ -511,6 +555,7 @@ def build_record(
     toolchain: dict | None = None,
     execution: dict | None = None,
     ngspice_banner: str = "",
+    installer_tools: dict | None = None,
 ) -> dict:
     measure_names = list(tb.measure)
     summary = summarize(results, measure_names)
@@ -550,7 +595,9 @@ def build_record(
                 }
             )
 
-    environ = environment(pdk, ngspice, repo_root, git, toolchain, ngspice_banner)
+    environ = environment(
+        pdk, ngspice, repo_root, git, toolchain, ngspice_banner, installer_tools
+    )
     environ["front_end_mode"] = front_end_mode(results)
     if execution:
         # Only present for a grid that ran through `klt sim` (sim/README.md
@@ -1024,6 +1071,7 @@ def render_record(record: dict, experiment: str, manifest_rel: str | None = None
         "",
         f"- PDK: {pdk.get('variant')} @ open_pdks `{pdk.get('open_pdks_version')}`"
         f" ({pdk.get('path')}, found via {pdk.get('discovered_via')})",
+        *_installer_lines(pdk, env),
         f"- MIM metal stack for this variant: `{pdk.get('mim_stack')}` "
         "(binds the `mim_cap_*` CDAC unit-cap aliases)",
         f"- ngspice: {env['ngspice']}",

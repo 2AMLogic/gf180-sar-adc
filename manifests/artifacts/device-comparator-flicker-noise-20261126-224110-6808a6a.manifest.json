@@ -1,0 +1,1216 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "sha256": "caa44d3e25768ddb0a301fc84d6930925e1f35e10f9246661fefc4aca2938885",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/ca/caa44d3e25768ddb0a301fc84d6930925e1f35e10f9246661fefc4aca2938885",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ff_-40c_2.97v.log"
+    },
+    {
+      "sha256": "468f014c1fe14f97ba8c0d4e3bd5cbd4b2a015a855410909f580b9a1f78ca780",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/46/468f014c1fe14f97ba8c0d4e3bd5cbd4b2a015a855410909f580b9a1f78ca780",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ff_-40c_3.30v.log"
+    },
+    {
+      "sha256": "9418d83217f3b53e086d96223a75cbc0dd6b18b281e3e19fcfd5cc19e9382169",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/94/9418d83217f3b53e086d96223a75cbc0dd6b18b281e3e19fcfd5cc19e9382169",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ff_-40c_3.63v.log"
+    },
+    {
+      "sha256": "c1993e9a41fa67dc80e8c2a5bc33489cffe575afa914a6d96e315f74758f1c5e",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/c1/c1993e9a41fa67dc80e8c2a5bc33489cffe575afa914a6d96e315f74758f1c5e",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ff_125c_2.97v.log"
+    },
+    {
+      "sha256": "8b0a878e4263ea841e30b50ad295c29c3ebb92d25e39ee4d0859d503d34d52c4",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/8b/8b0a878e4263ea841e30b50ad295c29c3ebb92d25e39ee4d0859d503d34d52c4",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ff_125c_3.30v.log"
+    },
+    {
+      "sha256": "dcb099143f73a4ed39fc29639674a8d9b91fe181c679a5ce24c001e070bb0f3e",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/dc/dcb099143f73a4ed39fc29639674a8d9b91fe181c679a5ce24c001e070bb0f3e",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ff_125c_3.63v.log"
+    },
+    {
+      "sha256": "a3130b6273b9fbc0d18a74bb6ebf07060c4a6b9e8aeb4ff3329a2551ef8ce0a3",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/a3/a3130b6273b9fbc0d18a74bb6ebf07060c4a6b9e8aeb4ff3329a2551ef8ce0a3",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ff_27c_2.97v.log"
+    },
+    {
+      "sha256": "fd0f0b7dda58d2a61ace52927d65708394fb1bc4b5791af1d1560321285246a7",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/fd/fd0f0b7dda58d2a61ace52927d65708394fb1bc4b5791af1d1560321285246a7",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ff_27c_3.30v.log"
+    },
+    {
+      "sha256": "c6f3c14c14670bff191062f2dfe864d95ba95e5930e20607bd84b8b326444902",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/c6/c6f3c14c14670bff191062f2dfe864d95ba95e5930e20607bd84b8b326444902",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ff_27c_3.63v.log"
+    },
+    {
+      "sha256": "24db583ae7c9c04f76562ee274081e433e94bea4a59cd4a2801b6c9b9ac45b35",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/24/24db583ae7c9c04f76562ee274081e433e94bea4a59cd4a2801b6c9b9ac45b35",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/fs_-40c_2.97v.log"
+    },
+    {
+      "sha256": "869eb379ed29be871ccdce8658a41740170221359256bb06ae609eb73d3811f5",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/86/869eb379ed29be871ccdce8658a41740170221359256bb06ae609eb73d3811f5",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/fs_-40c_3.30v.log"
+    },
+    {
+      "sha256": "03375824889f24677c292d8462c65ca2a179837b6b448feb634086f8551a3d23",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/03/03375824889f24677c292d8462c65ca2a179837b6b448feb634086f8551a3d23",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/fs_-40c_3.63v.log"
+    },
+    {
+      "sha256": "435cd19ba559f34026907418eb85ee7d329664dd9ef5b36f58925628dbf2aeeb",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/43/435cd19ba559f34026907418eb85ee7d329664dd9ef5b36f58925628dbf2aeeb",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/fs_125c_2.97v.log"
+    },
+    {
+      "sha256": "e12bc051eda860258a9a12c66b7816774f5200cb9873192a23d8ddf8fbe49312",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/e1/e12bc051eda860258a9a12c66b7816774f5200cb9873192a23d8ddf8fbe49312",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/fs_125c_3.30v.log"
+    },
+    {
+      "sha256": "514189513dfef5a4a02d57795f0b2a2438d48ccc8975051ac0fee5d594d7cf12",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/51/514189513dfef5a4a02d57795f0b2a2438d48ccc8975051ac0fee5d594d7cf12",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/fs_125c_3.63v.log"
+    },
+    {
+      "sha256": "52db123fb7e52c76e4a7e388ce99b3a807f0dde839288965bbf9887aea3c7856",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/52/52db123fb7e52c76e4a7e388ce99b3a807f0dde839288965bbf9887aea3c7856",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/fs_27c_2.97v.log"
+    },
+    {
+      "sha256": "f58908c72064e8735520b966b86aa39b88e72434e4939c3256469eabd3537c09",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/f5/f58908c72064e8735520b966b86aa39b88e72434e4939c3256469eabd3537c09",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/fs_27c_3.30v.log"
+    },
+    {
+      "sha256": "18de646d082c4f0fe50d5d63420bd0c9b5a8132eff4d38d85fd974180b68f958",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/18/18de646d082c4f0fe50d5d63420bd0c9b5a8132eff4d38d85fd974180b68f958",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/fs_27c_3.63v.log"
+    },
+    {
+      "sha256": "a4413400be348512dc0716caf489128215e552bf272116e1d6647937fbbc9628",
+      "size": 24794,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/a4/a4413400be348512dc0716caf489128215e552bf272116e1d6647937fbbc9628",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/klt-report.json",
+      "media_type": "application/json"
+    },
+    {
+      "sha256": "968ebd722c5f7687854a46c525591603fbab0259f57365b938d3487ad13a62ec",
+      "size": 27996,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/96/968ebd722c5f7687854a46c525591603fbab0259f57365b938d3487ad13a62ec",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/klt-request.json",
+      "media_type": "application/json"
+    },
+    {
+      "sha256": "d73b0b8f82c0d16af9a292b2b47eadccfa3b5dc106727a677bb917df77ebbd81",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/d7/d73b0b8f82c0d16af9a292b2b47eadccfa3b5dc106727a677bb917df77ebbd81",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/sf_-40c_2.97v.log"
+    },
+    {
+      "sha256": "fd60b76c6c397ba27b9618f7129342250a2b34f68aa26696b7c772789db442c1",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/fd/fd60b76c6c397ba27b9618f7129342250a2b34f68aa26696b7c772789db442c1",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/sf_-40c_3.30v.log"
+    },
+    {
+      "sha256": "8d1600ee29e9ab33c031b188871aa2915fa7bf93e658707a74be7936eb6bc03b",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/8d/8d1600ee29e9ab33c031b188871aa2915fa7bf93e658707a74be7936eb6bc03b",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/sf_-40c_3.63v.log"
+    },
+    {
+      "sha256": "8acdc9fda904a63c2c62d4ffb4384a38e886c94d687545b088016ce12b5276f0",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/8a/8acdc9fda904a63c2c62d4ffb4384a38e886c94d687545b088016ce12b5276f0",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/sf_125c_2.97v.log"
+    },
+    {
+      "sha256": "3e794ba0daeb40e6d7f89528f6e38de0e86a5d06d2c6c04a27e04eb5b331ac43",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/3e/3e794ba0daeb40e6d7f89528f6e38de0e86a5d06d2c6c04a27e04eb5b331ac43",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/sf_125c_3.30v.log"
+    },
+    {
+      "sha256": "aa46491f94955b0bb24303cfc12d0d9b51a621df9334f95034794b235a163a91",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/aa/aa46491f94955b0bb24303cfc12d0d9b51a621df9334f95034794b235a163a91",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/sf_125c_3.63v.log"
+    },
+    {
+      "sha256": "ec7ee9495954ab03b7bda7f603696f3eb7b6ea3808739b038000bc2df2f064ff",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/ec/ec7ee9495954ab03b7bda7f603696f3eb7b6ea3808739b038000bc2df2f064ff",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/sf_27c_2.97v.log"
+    },
+    {
+      "sha256": "16993e3bc9fbb83c3e845fd9a0c06c412a5ae3879a1fa2144a47e849ca1dda1d",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/16/16993e3bc9fbb83c3e845fd9a0c06c412a5ae3879a1fa2144a47e849ca1dda1d",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/sf_27c_3.30v.log"
+    },
+    {
+      "sha256": "bbc56f30762a95f3517fcd48053cb36b137db2e998bb380b240fe3a6bcd69d82",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/bb/bbc56f30762a95f3517fcd48053cb36b137db2e998bb380b240fe3a6bcd69d82",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/sf_27c_3.63v.log"
+    },
+    {
+      "sha256": "23bc1c8475104f04ac9d79805ba11fccac964ddca646c8561ff0982d7766a110",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/23/23bc1c8475104f04ac9d79805ba11fccac964ddca646c8561ff0982d7766a110",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ss_-40c_2.97v.log"
+    },
+    {
+      "sha256": "1f962b58f802d71f4bf1906f0db4fc034ff49807c32a277a48c640e5e9f8c924",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/1f/1f962b58f802d71f4bf1906f0db4fc034ff49807c32a277a48c640e5e9f8c924",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ss_-40c_3.30v.log"
+    },
+    {
+      "sha256": "862d2f42142a5dc98450ec984108c9f98054db89fa65f6ce438fd012880b6ac0",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/86/862d2f42142a5dc98450ec984108c9f98054db89fa65f6ce438fd012880b6ac0",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ss_-40c_3.63v.log"
+    },
+    {
+      "sha256": "3e1b27320c499f2e27ef0589b583c64803293607489df84af894cbeeab13ac79",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/3e/3e1b27320c499f2e27ef0589b583c64803293607489df84af894cbeeab13ac79",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ss_125c_2.97v.log"
+    },
+    {
+      "sha256": "dab168a4bf6a5edb6614d1daeeddca34f5414b79003a63fa40f6b2671827bb11",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/da/dab168a4bf6a5edb6614d1daeeddca34f5414b79003a63fa40f6b2671827bb11",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ss_125c_3.30v.log"
+    },
+    {
+      "sha256": "c72a13d9980f4e721b8ee09649157cca562ab8bddf87618ac4a087218cbe8b9c",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/c7/c72a13d9980f4e721b8ee09649157cca562ab8bddf87618ac4a087218cbe8b9c",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ss_125c_3.63v.log"
+    },
+    {
+      "sha256": "d7506ec944d2f3f835a2bb53dadf65232717943fce4587957df9daf1a7f0010e",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/d7/d7506ec944d2f3f835a2bb53dadf65232717943fce4587957df9daf1a7f0010e",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ss_27c_2.97v.log"
+    },
+    {
+      "sha256": "ea516c0cbd22bf18613ae3c5b45634909c0ce51335e57007d7ac63294b2c81a0",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/ea/ea516c0cbd22bf18613ae3c5b45634909c0ce51335e57007d7ac63294b2c81a0",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ss_27c_3.30v.log"
+    },
+    {
+      "sha256": "d0338f965a3793c851fdb73f229cb10ca0c909532dd80079098311780965bf4b",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/d0/d0338f965a3793c851fdb73f229cb10ca0c909532dd80079098311780965bf4b",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/ss_27c_3.63v.log"
+    },
+    {
+      "sha256": "e13a55c6d621b616562cbefe6b0a284ee8ed7f8968926c2007e43ad4f69a8b0d",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/e1/e13a55c6d621b616562cbefe6b0a284ee8ed7f8968926c2007e43ad4f69a8b0d",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/tt_-40c_2.97v.log"
+    },
+    {
+      "sha256": "408f83e256c72621c9738909e54c42a69ff5f3557d379a68e1cac003d68cfcba",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/40/408f83e256c72621c9738909e54c42a69ff5f3557d379a68e1cac003d68cfcba",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/tt_-40c_3.30v.log"
+    },
+    {
+      "sha256": "a5a6d84a8e71cd6b32fb1bcc8bea509402ed4674f25abd95e647e39a856e1841",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/a5/a5a6d84a8e71cd6b32fb1bcc8bea509402ed4674f25abd95e647e39a856e1841",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/tt_-40c_3.63v.log"
+    },
+    {
+      "sha256": "8bb0d900dcb999258f6e6d83197e7f1957afb0c7b178cd7887a84c374cc70bb9",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/8b/8bb0d900dcb999258f6e6d83197e7f1957afb0c7b178cd7887a84c374cc70bb9",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/tt_125c_2.97v.log"
+    },
+    {
+      "sha256": "34c05a61fc163310fe61f836bc279f7d4926cb4374d2c644d36f298fb0cef059",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/34/34c05a61fc163310fe61f836bc279f7d4926cb4374d2c644d36f298fb0cef059",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/tt_125c_3.30v.log"
+    },
+    {
+      "sha256": "925bda47856615c702245d6f14e9de1d09c7a160b03a7c80ae95feff49140976",
+      "size": 2674,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/92/925bda47856615c702245d6f14e9de1d09c7a160b03a7c80ae95feff49140976",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/tt_125c_3.63v.log"
+    },
+    {
+      "sha256": "8f37873a75c2d8f4bbfc898581f44744e54cacd92bb554dc9c346a7808282bb8",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/8f/8f37873a75c2d8f4bbfc898581f44744e54cacd92bb554dc9c346a7808282bb8",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/tt_27c_2.97v.log"
+    },
+    {
+      "sha256": "a5455970831e57b7e210a14c6cafb7ff705f08fa05a8a983e2fe80c577a146fd",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/a5/a5455970831e57b7e210a14c6cafb7ff705f08fa05a8a983e2fe80c577a146fd",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/tt_27c_3.30v.log"
+    },
+    {
+      "sha256": "3ad0c4b6c38bdbf156a7fe09c6a706d93536ffd06e2737b37442a1d94e3ea1af",
+      "size": 2660,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/3a/3ad0c4b6c38bdbf156a7fe09c6a706d93536ffd06e2737b37442a1d94e3ea1af",
+      "name": "sim/device-comparator-flicker-noise/corners/20261126-224110-6808a6a/tt_27c_3.63v.log"
+    },
+    {
+      "sha256": "95c885570f1baa1dc3809013a98542d7cc8230b8a8f054508bfceabc01a38597",
+      "size": 3525,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/95/95c885570f1baa1dc3809013a98542d7cc8230b8a8f054508bfceabc01a38597",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ff_-40c_2.97v.spice"
+    },
+    {
+      "sha256": "02cac272139d2e214ff3d016921ad853cb8d8f8f8090a63964c12bd5a2ee78b3",
+      "size": 3523,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/02/02cac272139d2e214ff3d016921ad853cb8d8f8f8090a63964c12bd5a2ee78b3",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ff_-40c_3.30v.spice"
+    },
+    {
+      "sha256": "db5c4143a9f004b4d65ef0ecf6c3af2deb3b6fd34d17d9bf68fab50d8591f248",
+      "size": 3525,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/db/db5c4143a9f004b4d65ef0ecf6c3af2deb3b6fd34d17d9bf68fab50d8591f248",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ff_-40c_3.63v.spice"
+    },
+    {
+      "sha256": "39a5baf62a5c5a55b3b38c655f21462070d1262389052eeb63c09072b6923420",
+      "size": 3525,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/39/39a5baf62a5c5a55b3b38c655f21462070d1262389052eeb63c09072b6923420",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ff_125c_2.97v.spice"
+    },
+    {
+      "sha256": "8b99a804c3fcb71289b4dfecdc68426e5f81db8abea987228e38b020461b7834",
+      "size": 3523,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/8b/8b99a804c3fcb71289b4dfecdc68426e5f81db8abea987228e38b020461b7834",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ff_125c_3.30v.spice"
+    },
+    {
+      "sha256": "2c77b55e8f54051bcf73ffd4e8f3c34581adfc76b4b3faec8d66c2fb8d1eb825",
+      "size": 3525,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/2c/2c77b55e8f54051bcf73ffd4e8f3c34581adfc76b4b3faec8d66c2fb8d1eb825",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ff_125c_3.63v.spice"
+    },
+    {
+      "sha256": "2a4c7bb81b43726101f44e6c0a6945e645908a8438c4fe591f0be0a99befa6dd",
+      "size": 3521,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/2a/2a4c7bb81b43726101f44e6c0a6945e645908a8438c4fe591f0be0a99befa6dd",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ff_27c_2.97v.spice"
+    },
+    {
+      "sha256": "237377653f915a58afe7e21db2d2f90a877a568ddf4fbd6a9eede137df57752a",
+      "size": 3519,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/23/237377653f915a58afe7e21db2d2f90a877a568ddf4fbd6a9eede137df57752a",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ff_27c_3.30v.spice"
+    },
+    {
+      "sha256": "edb4e9ddc6d447660ee9d1d03bb57f06773dd8bee6a7e5746660037c53101434",
+      "size": 3521,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/ed/edb4e9ddc6d447660ee9d1d03bb57f06773dd8bee6a7e5746660037c53101434",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ff_27c_3.63v.spice"
+    },
+    {
+      "sha256": "b239039557facaf9a6f19e351ee418a3ee99f48b2982bc0bb46def0cc497358a",
+      "size": 3565,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/b2/b239039557facaf9a6f19e351ee418a3ee99f48b2982bc0bb46def0cc497358a",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.fs_-40c_2.97v.spice"
+    },
+    {
+      "sha256": "a26e1e539e1350dea4107127c52244e234b555cf8c03a8e9b4a561aded4c7b34",
+      "size": 3563,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/a2/a26e1e539e1350dea4107127c52244e234b555cf8c03a8e9b4a561aded4c7b34",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.fs_-40c_3.30v.spice"
+    },
+    {
+      "sha256": "b747ff63ae537203fce25128f698469be63ccfeef1862f386007c7b589b3cc8f",
+      "size": 3565,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/b7/b747ff63ae537203fce25128f698469be63ccfeef1862f386007c7b589b3cc8f",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.fs_-40c_3.63v.spice"
+    },
+    {
+      "sha256": "467991be27b7e5b51935f287d9b7c3c918b7188f04e3a618df4d323243e80ecb",
+      "size": 3565,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/46/467991be27b7e5b51935f287d9b7c3c918b7188f04e3a618df4d323243e80ecb",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.fs_125c_2.97v.spice"
+    },
+    {
+      "sha256": "2c469aa81f89430cc7ea9796fa167124f6d77cb9f6828a99f08f4f17b66e0464",
+      "size": 3563,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/2c/2c469aa81f89430cc7ea9796fa167124f6d77cb9f6828a99f08f4f17b66e0464",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.fs_125c_3.30v.spice"
+    },
+    {
+      "sha256": "f3357a8495ae489014de2770bf82d6ea3f52e4b3bf8c922236695eee194e0b29",
+      "size": 3565,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/f3/f3357a8495ae489014de2770bf82d6ea3f52e4b3bf8c922236695eee194e0b29",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.fs_125c_3.63v.spice"
+    },
+    {
+      "sha256": "d050457880ee197575619ce746ded06e451f9ac97fc7fcb1c96c7e17bb6de2dc",
+      "size": 3561,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/d0/d050457880ee197575619ce746ded06e451f9ac97fc7fcb1c96c7e17bb6de2dc",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.fs_27c_2.97v.spice"
+    },
+    {
+      "sha256": "d0f74a9c411314d64a2d56233704b93bebfc50dc935e0b228d4b3acf41091795",
+      "size": 3559,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/d0/d0f74a9c411314d64a2d56233704b93bebfc50dc935e0b228d4b3acf41091795",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.fs_27c_3.30v.spice"
+    },
+    {
+      "sha256": "55a5c0c364a09a3ccc74ac983a3a392356b8e800221a27148ca05c846b0a03f1",
+      "size": 3561,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/55/55a5c0c364a09a3ccc74ac983a3a392356b8e800221a27148ca05c846b0a03f1",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.fs_27c_3.63v.spice"
+    },
+    {
+      "sha256": "5ed40820bda239ebaeea13a6e816d5c6b7e26f04948f9fca27cde580db18343e",
+      "size": 3565,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/5e/5ed40820bda239ebaeea13a6e816d5c6b7e26f04948f9fca27cde580db18343e",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.sf_-40c_2.97v.spice"
+    },
+    {
+      "sha256": "f900c47c2723b232e04b863a789b4d3b13c353917fef9384a42655b34f4f6d75",
+      "size": 3563,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/f9/f900c47c2723b232e04b863a789b4d3b13c353917fef9384a42655b34f4f6d75",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.sf_-40c_3.30v.spice"
+    },
+    {
+      "sha256": "4a9f9b6d917d2e636b348105b9837a51e406d20e5681e23626143ea3a40b5bfb",
+      "size": 3565,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/4a/4a9f9b6d917d2e636b348105b9837a51e406d20e5681e23626143ea3a40b5bfb",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.sf_-40c_3.63v.spice"
+    },
+    {
+      "sha256": "6b62d0e02a15fcdfe9272731f70be34d2282a70e589149ce452ce168615dadf1",
+      "size": 3565,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/6b/6b62d0e02a15fcdfe9272731f70be34d2282a70e589149ce452ce168615dadf1",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.sf_125c_2.97v.spice"
+    },
+    {
+      "sha256": "93632ef662ebdc8fb9e92574c628bf2eff0a3b5632bd89ac9012fac5df6effe2",
+      "size": 3563,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/93/93632ef662ebdc8fb9e92574c628bf2eff0a3b5632bd89ac9012fac5df6effe2",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.sf_125c_3.30v.spice"
+    },
+    {
+      "sha256": "5402a21b521b8ebc52dcd53fb8aeffa70756d8e854fd80eaffad65c2fc9715e2",
+      "size": 3565,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/54/5402a21b521b8ebc52dcd53fb8aeffa70756d8e854fd80eaffad65c2fc9715e2",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.sf_125c_3.63v.spice"
+    },
+    {
+      "sha256": "437245e28ce22fe6adbeabb81a4d56bdb40b0b9dd718c6486fff505f8c7741e1",
+      "size": 3561,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/43/437245e28ce22fe6adbeabb81a4d56bdb40b0b9dd718c6486fff505f8c7741e1",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.sf_27c_2.97v.spice"
+    },
+    {
+      "sha256": "b596aba09eceef72fef3e2c16b542a9b642196234aca655579922e18338df924",
+      "size": 3559,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/b5/b596aba09eceef72fef3e2c16b542a9b642196234aca655579922e18338df924",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.sf_27c_3.30v.spice"
+    },
+    {
+      "sha256": "a779a229f38d154bc368c91700d88f2b4f32812423a96e06b3be882aacf62077",
+      "size": 3561,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/a7/a779a229f38d154bc368c91700d88f2b4f32812423a96e06b3be882aacf62077",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.sf_27c_3.63v.spice"
+    },
+    {
+      "sha256": "ea0185a08a650510bbff92cf7e26196397e31d17e97e6b994062e5d2e74e2e95",
+      "size": 3525,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/ea/ea0185a08a650510bbff92cf7e26196397e31d17e97e6b994062e5d2e74e2e95",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ss_-40c_2.97v.spice"
+    },
+    {
+      "sha256": "2f5726a042429f4343552164edb789c67c921ad1d790d17ffc08fcb92dbe2f5d",
+      "size": 3523,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/2f/2f5726a042429f4343552164edb789c67c921ad1d790d17ffc08fcb92dbe2f5d",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ss_-40c_3.30v.spice"
+    },
+    {
+      "sha256": "5e89286e5ee9a5b8c43d3e7bfbb32ab76f024e8492b9f7ec054089d5f187affa",
+      "size": 3525,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/5e/5e89286e5ee9a5b8c43d3e7bfbb32ab76f024e8492b9f7ec054089d5f187affa",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ss_-40c_3.63v.spice"
+    },
+    {
+      "sha256": "0e7549bbe97d48734cfb0d39887274844a9c51a49befce0d553f0e80327af66d",
+      "size": 3525,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/0e/0e7549bbe97d48734cfb0d39887274844a9c51a49befce0d553f0e80327af66d",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ss_125c_2.97v.spice"
+    },
+    {
+      "sha256": "acf1d061dcb8ded14b54a64f9366d3ee6151a02999ea6558b2a5aa89d75c0212",
+      "size": 3523,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/ac/acf1d061dcb8ded14b54a64f9366d3ee6151a02999ea6558b2a5aa89d75c0212",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ss_125c_3.30v.spice"
+    },
+    {
+      "sha256": "ccc3232cf36654338c22f1d8cbd536b54b3a32ca7268bca1a4064414311b936e",
+      "size": 3525,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/cc/ccc3232cf36654338c22f1d8cbd536b54b3a32ca7268bca1a4064414311b936e",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ss_125c_3.63v.spice"
+    },
+    {
+      "sha256": "bc17bfb7b30e47b29322fba07f1eaaf09c5d64eee26c778e6daa70bb53a4884c",
+      "size": 3521,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/bc/bc17bfb7b30e47b29322fba07f1eaaf09c5d64eee26c778e6daa70bb53a4884c",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ss_27c_2.97v.spice"
+    },
+    {
+      "sha256": "c37c9cd854f9ec1e465e6eabf5846440e0e34a13087bb574c0e81cf14ee427d9",
+      "size": 3519,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/c3/c37c9cd854f9ec1e465e6eabf5846440e0e34a13087bb574c0e81cf14ee427d9",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ss_27c_3.30v.spice"
+    },
+    {
+      "sha256": "d87ab726575d22a63a22ce63140b11e4137d15f8a48a5aa837275f28575dd077",
+      "size": 3521,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/d8/d87ab726575d22a63a22ce63140b11e4137d15f8a48a5aa837275f28575dd077",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.ss_27c_3.63v.spice"
+    },
+    {
+      "sha256": "b3f36b98433f169c32bdaf5ad68c3578ce83ce4091505394baf403e64b505299",
+      "size": 3558,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/b3/b3f36b98433f169c32bdaf5ad68c3578ce83ce4091505394baf403e64b505299",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.tt_-40c_2.97v.spice"
+    },
+    {
+      "sha256": "de65b1fa34bb0dacd35a85b1ce2eb6c25621175b953a7a96d0d12465c76113f8",
+      "size": 3556,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/de/de65b1fa34bb0dacd35a85b1ce2eb6c25621175b953a7a96d0d12465c76113f8",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.tt_-40c_3.30v.spice"
+    },
+    {
+      "sha256": "974e5005b39a9cbee041d64394329922af1ff904fdcb83005545793a4b690c0e",
+      "size": 3558,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/97/974e5005b39a9cbee041d64394329922af1ff904fdcb83005545793a4b690c0e",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.tt_-40c_3.63v.spice"
+    },
+    {
+      "sha256": "bfc14900da9b77dfcd7ea3336f3c8ad2c2c170c2b261462561a7be2ba7ca3a7c",
+      "size": 3558,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/bf/bfc14900da9b77dfcd7ea3336f3c8ad2c2c170c2b261462561a7be2ba7ca3a7c",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.tt_125c_2.97v.spice"
+    },
+    {
+      "sha256": "50c677a1eb483388ece0de7633c38bd2643ec54ad9d6dc138cc7a5a86d2ce94f",
+      "size": 3556,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/50/50c677a1eb483388ece0de7633c38bd2643ec54ad9d6dc138cc7a5a86d2ce94f",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.tt_125c_3.30v.spice"
+    },
+    {
+      "sha256": "854959722911b50efa2d9a170a95639d6c879472f185755e18cbf0ae7568a16d",
+      "size": 3558,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/85/854959722911b50efa2d9a170a95639d6c879472f185755e18cbf0ae7568a16d",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.tt_125c_3.63v.spice"
+    },
+    {
+      "sha256": "00872964fd2dc83ddb269501596271de2f8aaf760ae7769613a232255cb10564",
+      "size": 3554,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/00/00872964fd2dc83ddb269501596271de2f8aaf760ae7769613a232255cb10564",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.tt_27c_2.97v.spice"
+    },
+    {
+      "sha256": "ec0191350a653d12ead917a3c76462ea79cb3c0d2b7c091f0e6b371d88e7af55",
+      "size": 3552,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/ec/ec0191350a653d12ead917a3c76462ea79cb3c0d2b7c091f0e6b371d88e7af55",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.tt_27c_3.30v.spice"
+    },
+    {
+      "sha256": "b7dfa2a0f6351f4fea548a8d0848123c99433283552c76ca74b83f6f606250fa",
+      "size": 3554,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/b7/b7dfa2a0f6351f4fea548a8d0848123c99433283552c76ca74b83f6f606250fa",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.deck.tt_27c_3.63v.spice"
+    },
+    {
+      "sha256": "ff92740cce279683d14cfc5b98782b837da0525c50a78ea061889d9c09dcbf70",
+      "size": 3206,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev5725+ge81bdd90a993",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "6808a6a8f060863c5d1ec87e0468540efb255fc6"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/ff/ff92740cce279683d14cfc5b98782b837da0525c50a78ea061889d9c09dcbf70",
+      "name": "sim/device-comparator-flicker-noise/netlist-snapshots/20261126-224110-6808a6a.spice"
+    }
+  ]
+}
