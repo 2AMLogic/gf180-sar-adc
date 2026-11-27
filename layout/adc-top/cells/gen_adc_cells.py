@@ -234,23 +234,23 @@ def write_reference(path: str, spec: dict, info: dict) -> list[str]:
         {*spec["pins"], *spec.get("metal5_pins", ()), block.substrate_net},
         key=str.lower,
     )
-    # The body-net bullet states what THIS cell's tie actually produces:
+    # The substrate bullet states what THIS cell's tie actually produces:
     # cells with no `vss` port of their own keep the deck's synthesized
     # `vsubs` global (see `build` above); the rest merge it into their own
-    # labelled rail via the DR-0049 strip.
+    # labelled rail via the DR-0049 strip. It is the header's only account
+    # of the circuit: the cards below are the reference, and a second
+    # description of them drifts from it (issue #1114).
     if block.substrate_net == nl.SUBSTRATE_NET:
-        body_bullet = [
-            "*   - every NMOS body is on the deck's `vsubs` global, not on the",
-            "*     schematic's `0`/`vss`: the curated deck has no tap layer, so a",
-            "*     drawn substrate tie cannot name that net;",
+        substrate_bullet = [
+            "*   - the substrate: this cell has no `vss` port, so its `Pplus`",
+            "*     substrate-tie strip lands on the deck's `vsubs` global, which",
+            "*     is why `vsubs` is a pin below;",
         ]
     else:
-        body_bullet = [
-            "*   - every NMOS body is on this cell's own drawn `vss` rail, not",
-            "*     on the schematic's `0`: DR-0049's substrate-tie strip is",
-            "*     `Pplus`-marked and routed to the labelled `vss` trunk, so the",
-            "*     deck's `tap_pplus` derivation claims it and `connect_global`",
-            "*     merges its synthesized `vsubs` global into that net;",
+        substrate_bullet = [
+            "*   - the substrate: DR-0049's `Pplus`-marked substrate-tie strip is",
+            "*     routed to the labelled `vss` trunk, so the deck's `vsubs` global",
+            "*     merges into `vss` and no `vsubs` pin appears;",
         ]
     header = [
         f"* Flat LVS reference for {spec['cell']}.",
@@ -261,12 +261,10 @@ def write_reference(path: str, spec: dict, info: dict) -> list[str]:
         "* reference are derived from the same parsed design netlist, and what",
         "* that does and does not let LVS prove.",
         "*",
-        "* Deliberate, documented differences from the schematic, each forced by",
-        "* `klt extract`'s gf180mcu ExtractionDeck and restated in",
-        "* layout/adc-top/README.md:",
-        *body_bullet,
-        "*   - every PMOS body is on the Nwell island's own (unnamed) net, not",
-        "*     on `vdd`: the deck never connects `nwell` to `contact`;",
+        "* Deliberate, documented choices behind the statements below -- made by",
+        "* the generator (`build`) and `klt extract`'s gf180mcu ExtractionDeck,",
+        "* and explained in layout/adc-top/README.md:",
+        *substrate_bullet,
     ]
     if include_caps:
         deck_ff = nl.mim_reference_farads(UNIT_CAP_NM, UNIT_CAP_NM) * 1e15
@@ -278,12 +276,6 @@ def write_reference(path: str, spec: dict, info: dict) -> list[str]:
             "*     DECK_MIM_AREA_CAP_F_UM2 / DECK_MIM_PERIM_CAP_F_UM and the LVS",
             "*     record: whatever delta the two models carry is reported there,",
             "*     not tuned away by resizing the ratified plate.",
-        ]
-    else:
-        header += [
-            "*   - the MiM capacitors are absent: they are drawn without the",
-            "*     CAP_MK/MIM_L_MK marker layers the deck recognises a device",
-            "*     by, so `klt extract` reports none (layout/adc-top/README.md).",
         ]
     request_rel = os.path.relpath(
         os.path.join(os.path.dirname(path), f"{spec['cell'].lower()}.lvs.json"),

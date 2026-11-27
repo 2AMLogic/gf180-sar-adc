@@ -6,19 +6,12 @@
 * reference are derived from the same parsed design netlist, and what
 * that does and does not let LVS prove.
 *
-* Deliberate, documented differences from the schematic, each forced by
-* `klt extract`'s gf180mcu ExtractionDeck and restated in
-* layout/adc-top/README.md:
-*   - every NMOS body is on this cell's own drawn `vss` rail, not
-*     on the schematic's `0`: DR-0049's substrate-tie strip is
-*     `Pplus`-marked and routed to the labelled `vss` trunk, so the
-*     deck's `tap_pplus` derivation claims it and `connect_global`
-*     merges its synthesized `vsubs` global into that net;
-*   - every PMOS body is on the Nwell island's own (unnamed) net, not
-*     on `vdd`: the deck never connects `nwell` to `contact`;
-*   - the MiM capacitors are absent: they are drawn without the
-*     CAP_MK/MIM_L_MK marker layers the deck recognises a device
-*     by, so `klt extract` reports none (layout/adc-top/README.md).
+* Deliberate, documented choices behind the statements below -- made by
+* the generator (`build`) and `klt extract`'s gf180mcu ExtractionDeck,
+* and explained in layout/adc-top/README.md:
+*   - the substrate: DR-0049's `Pplus`-marked substrate-tie strip is
+*     routed to the labelled `vss` trunk, so the deck's `vsubs` global
+*     merges into `vss` and no `vsubs` pin appears;
 *
 * Runnable by hand:  klt lvs layout/adc-top/cells/adc_tp_sw.lvs.json --format json
 .SUBCKT ADC_TP_SW gn top vcm vdd vss
