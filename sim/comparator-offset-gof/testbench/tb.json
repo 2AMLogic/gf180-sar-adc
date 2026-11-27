@@ -2,6 +2,7 @@
   "name": "comparator-offset-gof",
   "description": "Goodness-of-fit companion to sim/comparator-offset-mc/ (issue #9): re-measures the preamplifier's input-referred offset at a single PVT point (nominal) and a single common mode (V_cm = 1.65 V), printing every Monte Carlo draw's V_os so an external normality check (issue #14) can run against the raw sample rather than against the aggregate sigma alone.",
   "claim": "README.md#target-specification -- Offset error <= 2 LSB untrimmed (3-sigma mismatch). This record does not re-derive sim/comparator-offset-mc/'s per-corner sigma (reused as-is); it supplies the goodness-of-fit check issue #14's acceptance criteria require before that sigma is used to extrapolate a 3-sigma yield claim.",
+  "klt_decks": true,
   "netlist": "tb_offset_gof.spice",
   "nominal_supply_v": 3.3,
   "supply_tolerance": 0.1,
