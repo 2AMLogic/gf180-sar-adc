@@ -81,9 +81,10 @@ import json
 import math
 import os
 import platform
-import shutil
 import sys
+import tempfile
 import time
+from contextlib import nullcontext
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CASES = os.path.join(HERE, "cases.json")
@@ -1022,19 +1023,22 @@ def main() -> int:
 
         # The composed specs have to live somewhere `klt power` can read and
         # the record can keep. Write them straight into the record slot when
-        # minting; --check uses a scratch dir it removes.
+        # minting. Each --check owns its scratch directory.
         if args.check:
-            spec_dir = os.path.join(HERE, ".check-specs")
-            os.makedirs(spec_dir, exist_ok=True)
             rec_id = None
+            spec_directory = tempfile.TemporaryDirectory(
+                prefix=".check-specs-", dir=HERE
+            )
         else:
             rec_id = record_id(REPO_ROOT)
-            spec_dir = reserve_record_slot(rec_id, REPORTS_DIR, RECORDS_DIR)
+            spec_directory = nullcontext(
+                reserve_record_slot(rec_id, REPORTS_DIR, RECORDS_DIR)
+            )
 
         results = []
         previous: dict = {}
         overall_ok = True
-        try:
+        with spec_directory as spec_dir:
             for case in manifest["cases"]:
                 spec = compose_spec(base, manifest, case)
                 spec_path = os.path.join(spec_dir, f"{case['name']}.power-spec.json")
@@ -1075,9 +1079,6 @@ def main() -> int:
                 )
                 for failure in failures:
                     print(f"      - {failure}")
-        finally:
-            if args.check:
-                shutil.rmtree(os.path.join(HERE, ".check-specs"), ignore_errors=True)
 
         if args.check:
             print("--check: no record written")
