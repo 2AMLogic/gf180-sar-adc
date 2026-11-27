@@ -34,7 +34,7 @@ Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a h
 
 Human-approved issues (`loom:issue`) ready for implementation — excluding held (`loom:blocked`/`loom:operator`/`loom:frozen`), `loom:building`, and issues closed by an open `loom:pr` PR (listed under Approved).
 
-_None._
+- **#1108**: Drop stale synth_sar_ctrl imports from the SAR-logic STA drivers
 
 ## In Progress
 
@@ -44,6 +44,7 @@ Issues currently being built (`loom:building`).
 - **#1028**: sar_ctrl SPEF timing: reconcile AC 2's 11 drivers, bounded README/signoff claim, fix renderer contradiction (part of #486)
 - **#1036**: mc_extracted_core: a one-draw null control is vacuous but passes
 - **#1102**: Test rectangular guard-ring geometry and both zero-contact errors in nightly layout CI
+- **#1106**: Replace shared power-check scratch directory with a per-run temporary directory
 
 ## PRs Awaiting Review
 
@@ -61,6 +62,7 @@ PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 - **#1030**: fix: derive SPEF timing record exit status; reconcile aliased nets *(held)*
 - **#1039**: fix: require two parsed draws for the Monte Carlo null control
 - **#1104**: test: verify guard-ring geometry and contact errors in nightly CI *(held)*
+- **#1107**: fix: isolate temporary specs for overlapping power checks
 
 ## Proposed
 
@@ -111,10 +113,10 @@ _None._
 | Operator merge-risk holds | 5 |
 | Very important | 1 |
 | Important | 5 |
-| Ready (`loom:issue`, net of holds/building/merge-pending) | 0 |
-| In Progress (`loom:building`) | 4 |
+| Ready (`loom:issue`, net of holds/building/merge-pending) | 1 |
+| In Progress (`loom:building`) | 5 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 6 |
+| Approved PRs awaiting merge | 7 |
 | Curated | 26 |
 | Architect / Hermit proposals | 4 |
 | Active epics | 0 |
