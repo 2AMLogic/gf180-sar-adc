@@ -99,7 +99,7 @@ class FakeBroker:
                                             "size": len(fake.objects[sha])})
                 key = (key_override or {}).get(sha, key_for(sha))
                 return self._send(200, {"key": key, "exists": True, "method": "GET",
-                                        "url": f"{fake.base}/obj/{sha}?X-Sig=secret"})
+                                        "url": f"{fake.store_base}/obj/{sha}?X-Sig=secret"})
 
             def do_GET(self):
                 sha = self.path.split("/obj/")[1].split("?")[0]
@@ -111,6 +111,7 @@ class FakeBroker:
 
         self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), H)
         self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+        self.store_base = self.base
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
 
     def close(self):
@@ -151,12 +152,12 @@ class Verify(unittest.TestCase):
         if broker is not None:
             self.addCleanup(broker.close)
         env = env if env is not None else {chk.ENV_BROKER: broker.base, PACE_ENV: "0"}
-        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            try:
-                rc = chk.verify(list(paths), env=env)
-            except chk.ToolError as exc:
-                print(f"ERROR: {exc}", file=err)
-                rc = chk.EXIT_ERROR
+        with (
+            mock.patch.dict(os.environ, env, clear=True),
+            contextlib.redirect_stdout(out),
+            contextlib.redirect_stderr(err),
+        ):
+            rc = chk.main(["verify", *paths])
         return rc, out.getvalue(), err.getvalue()
 
     def test_match(self):
@@ -344,6 +345,107 @@ class Verify(unittest.TestCase):
         rc, _, err = self.run_verify(broker, self.manifest(bad))
         self.assertEqual(rc, 1)
         self.assertIn("unknown field", err)
+
+    def store_connection(self, data=b"", *, status=200, length=None):
+        size = len(data) if length is None else length
+        headers = f"HTTP/1.1 {status} Test\r\nContent-Length: {size}\r\n\r\n"
+        sock = mock.Mock()
+        sock.makefile.return_value = io.BytesIO(headers.encode() + data)
+        resp = chk.http.client.HTTPResponse(sock)
+        resp.begin()
+        conn = mock.Mock()
+        conn.getresponse.return_value = resp
+        return conn
+
+    def run_store_attempts(self, broker, path, gets):
+        # Keep the broker on its real HTTP socket. Only the signed HTTPS GET is scripted.
+        broker.store_base = "https://store.invalid"
+        with mock.patch.object(
+            chk.http.client, "HTTPSConnection", side_effect=[conn for _, conn in gets]
+        ) as connect:
+            result = self.run_verify(broker, path)
+        self.assertEqual(
+            connect.call_args_list, [mock.call("store.invalid", timeout=30)] * len(gets)
+        )
+        for sha, conn in gets:
+            conn.request.assert_called_once_with("GET", f"/obj/{sha}?X-Sig=secret")
+            conn.close.assert_called_once_with()
+        return result
+
+    def test_interrupted_get_restarts_current_object(self):
+        path = self.manifest(
+            entry(self.a), entry(self.b, name="sim/b/corners/r1/tt.log")
+        )
+        for phase in ("headers", "partial read", "premature EOF"):
+            with self.subTest(phase=phase):
+                broker = FakeBroker({self.sha_a: self.a, self.sha_b: self.b})
+                failure = TimeoutError("X-Sig=secret")
+                interrupted = self.store_connection(self.a[:2], length=len(self.a))
+                if phase == "headers":
+                    interrupted.getresponse.side_effect = failure
+                elif phase == "partial read":
+                    interrupted.getresponse.return_value.read = mock.Mock(
+                        side_effect=[self.a[:2], failure]
+                    )
+                rc, out, err = self.run_store_attempts(
+                    broker,
+                    path,
+                    [
+                        (self.sha_a, interrupted),
+                        (self.sha_a, self.store_connection(self.a)),
+                        (self.sha_b, self.store_connection(self.b)),
+                    ],
+                )
+                self.assertEqual(rc, 0, err)
+                verified = [
+                    line.split()[1]
+                    for line in out.splitlines()
+                    if line.startswith("ok ")
+                ]
+                self.assertEqual(verified, [self.sha_a, self.sha_b])
+                self.assertEqual(
+                    broker.throttled,
+                    {
+                        ("stat", self.sha_a): 1,
+                        ("get", self.sha_a): 1,
+                        ("stat", self.sha_b): 1,
+                        ("get", self.sha_b): 1,
+                    },
+                )
+
+    def test_persistent_get_timeout_is_bounded_and_redacted(self):
+        broker = FakeBroker({self.sha_a: self.a})
+        attempts = [self.store_connection() for _ in range(3)]
+        for conn in attempts:
+            conn.getresponse.side_effect = TimeoutError(
+                "https://store.invalid/obj?X-Sig=secret"
+            )
+        rc, out, err = self.run_store_attempts(
+            broker,
+            self.manifest(entry(self.a)),
+            [(self.sha_a, conn) for conn in attempts],
+        )
+        self.assertEqual(rc, 2)
+        self.assertIn("3 attempts", err)
+        self.assertIn("TimeoutError", err)
+        self.assertNotIn("store.invalid", out + err)
+        self.assertNotIn("X-Sig", out + err)
+        self.assertNotIn("secret", out + err)
+
+    def test_store_refusal_and_completed_mismatch_are_terminal(self):
+        path = self.manifest(entry(self.a))
+        refused = self.store_connection(status=403)
+        refused.getresponse.return_value.read = mock.Mock(side_effect=TimeoutError())
+        for conn, code, diagnostic in [
+            (refused, 2, "HTTP 403"),
+            (self.store_connection(b"corrupt"), 3, "hash_mismatch"),
+        ]:
+            with self.subTest(diagnostic=diagnostic):
+                rc, out, err = self.run_store_attempts(
+                    FakeBroker({self.sha_a: self.a}), path, [(self.sha_a, conn)]
+                )
+                self.assertEqual(rc, code)
+                self.assertIn(diagnostic, out + err)
 
 
 class Schema(unittest.TestCase):
