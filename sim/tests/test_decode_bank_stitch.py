@@ -153,12 +153,10 @@ class DecodeBankStitch(unittest.TestCase):
                 f"moved {net} trunks (expected exactly one)",
             )
             columns.append(hits[0])
-        # `far_x` in the generator is derived from this: one pitch past the
-        # last cross-bank riser, with the nets dealt left to right.
-        pitches = {b - a for a, b in zip(columns, columns[1:])}
-        self.assertEqual(
-            len(pitches), 1, f"stitch columns {columns} are not one pitch apart"
-        )
+        expected_columns = [
+            handles["p"].row_x1 + 1500 + i * 1000 for i in range(len(SHARED))
+        ]
+        self.assertEqual(columns, expected_columns)
 
     def test_trunk_short_of_its_column_fails_at_that_nets_tie(self):
         for net in SHARED:
