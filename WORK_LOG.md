@@ -8,6 +8,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-27
 
+- **PR #1125**: docs: drop stale stand-alone comparator claim from klayout-tools#555 known-limitations row
+- **Issue #1123** (closed): README known-limitations row still says the stand-alone comparator's body is unnamed
 - **PR #1118**: fix(layout): drop stale device narrative from leaf-cell LVS reference headers
 - **PR #1115**: refactor(adc-top): share one emit_deliverables loop across generators
 - **PR #1112**: refactor(sar-logic): STA drivers import datetime directly, not via synth_sar_ctrl
