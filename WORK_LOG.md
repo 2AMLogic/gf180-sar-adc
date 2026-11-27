@@ -8,6 +8,16 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-27
 
+- **PR #1086**: fix(layout): fail fast on acq-leg candidate scales the DR-0050 fold cannot pair
+- **PR #1084**: fix: retry interrupted artifact downloads from byte zero
+- **PR #1085**: feat(sim): enable batch deck transport for comparator offset sampling
+- **PR #1083**: refactor(layout): share corridor checks and drawing for Poly2 and Metal2 stitches
+- **PR #1075**: fix: retry artifact-broker 429s and report verify progress
+- **PR #1081**: refactor: tie the decode banks' shared nets through geo.stitch
+- **Issue #1080** (closed): acq-leg layout candidates at the six sweep scales no longer build since the DR-0050 fold
+- **Issue #1074** (closed): check_artifact_manifests.py verify ends the whole sweep on one stalled presigned GET (600 s), with no transfer retry
+- **Issue #1076** (closed): Share the corridor check and strap drawing core between geometry.stitch and geometry.stitch_metal2
+- **Issue #1071** (closed): Use the checked Poly2 stitch for the five decode-bank connections
 - **PR #1078**: refactor(sim): share one klt sim invocation between corner and deck submits
 - **Issue #1070** (closed): Share the single-request klt sim invocation between corner and deck submissions
 
