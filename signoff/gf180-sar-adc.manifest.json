@@ -137,11 +137,11 @@
     },
     "8.analog": {
       "file": "signoff/evidence/characterization-summary.analog.json",
-      "content_hash": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018"
+      "content_hash": "sha256:9730f97ad7966c0e0a5d491c5e1a1e17d47446c6322e80d0b830f5d1e3ec2fe8"
     },
     "8.digital": {
       "file": "signoff/evidence/characterization-summary.digital.json",
-      "content_hash": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018"
+      "content_hash": "sha256:9730f97ad7966c0e0a5d491c5e1a1e17d47446c6322e80d0b830f5d1e3ec2fe8"
     },
     "9.analog": {
       "file": "signoff/testbench-inventory.analog.envelope.json",
