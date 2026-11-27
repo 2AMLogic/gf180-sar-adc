@@ -81,6 +81,7 @@ Usage::
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import sys
 
@@ -198,7 +199,6 @@ def main(argv: list[str] | None = None) -> int:
 
     g = _load_layout_generator()
     nl = g.nl
-    geo = g.geo
 
     os.makedirs(outdir, exist_ok=True)
     text, source = candidate_netlist_text(nl)
@@ -214,50 +214,23 @@ def main(argv: list[str] | None = None) -> int:
             "*\n" + text
         )
 
-    subckts = nl.parse(candidate_path)
-    g.block_subckt(subckts)
-    comparator_subckts = nl.parse(
-        os.path.join(nl.design_dir(ADC_TOP_DIR), "comparator", "comparator.spice")
-    )
-
-    for key, cell_name, cmp_subckts in (
-        ("adc_top", g.CELL_NAME, None),
-        ("adc_block", g.BLOCK_CELL_NAME, comparator_subckts),
-    ):
-        # No fold flag post-DR-0050: the layout generator draws the fold
-        # unconditionally (the unfolded stream no longer has a netlist).
-        layout, info = g.build(subckts, cmp_subckts, cell_name=cell_name)
-        assert layout.dbu == geo.DBU_UM, f"dbu drifted to {layout.dbu}"
-        geo.assert_on_grid(layout)
-        geo.assert_contacts_exact(layout)
-        layout.write(os.path.join(outdir, f"{key}.gds"), geo.save_options())
-        g.write_reference(
-            os.path.join(outdir, f"{key}.ref.spice"), info, cell_name, key
-        )
-        g.write_request(os.path.join(outdir, f"{key}.lvs.json"), cell_name, key)
-        box = layout.cell(cell_name).bbox()
-        print(
-            f"wrote {key}.gds  transistors={info['transistor_count']}  "
-            f"caps={info['cap_count']}  "
-            f"{box.width() * geo.DBU_UM:.1f} x {box.height() * geo.DBU_UM:.1f} um "
-            f"= {geo.area_um2(box) / 1e6:.5f} mm^2"
-        )
-        tally = {
-            "_comment": [
-                "As-drawn area tally for the bank-fold candidate layout,",
-                "written by gen_bank_fold_candidate.py (same schema as",
-                "layout/adc-top/area.json, which this does not replace).",
-            ],
-            "areas_um2": info["areas"],
-            "dimensions_um": info["dimensions_um"],
-            "transistor_count": info["transistor_count"],
-            "unit_cap_device_count": info["cap_count"],
-        }
-        with open(os.path.join(outdir, "area.json"), "w", encoding="utf-8") as fh:
-            import json
-
-            json.dump(tally, fh, indent=2, sort_keys=True)
-            fh.write("\n")
+    # No fold flag post-DR-0050: the layout generator draws the fold
+    # unconditionally (the unfolded stream no longer has a netlist).
+    info = g.emit_deliverables(candidate_path, outdir)
+    tally = {
+        "_comment": [
+            "As-drawn area tally for the bank-fold candidate layout,",
+            "written by gen_bank_fold_candidate.py (same schema as",
+            "layout/adc-top/area.json, which this does not replace).",
+        ],
+        "areas_um2": info["areas"],
+        "dimensions_um": info["dimensions_um"],
+        "transistor_count": info["transistor_count"],
+        "unit_cap_device_count": info["cap_count"],
+    }
+    with open(os.path.join(outdir, "area.json"), "w", encoding="utf-8") as fh:
+        json.dump(tally, fh, indent=2, sort_keys=True)
+        fh.write("\n")
     return 0
 
 

@@ -1854,16 +1854,32 @@ def write_request(path: str, cell_name: str, key: str) -> None:
     )
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--outdir", default=HERE)
-    args = parser.parse_args()
+def emit_deliverables(
+    netlist_path: str, outdir: str, *, expected_mos: int = 368
+) -> dict:
+    """Build and write the two-stream deliverable set from `netlist_path`.
 
-    design = nl.design_dir(HERE)
-    subckts = nl.parse(os.path.join(design, "adc-top", "adc_top.spice"))
+    For each of `adc_top` (the stream whose LVS target is exactly
+    `netlist_path`) and `adc_block` (the same block with the comparator from
+    `design/comparator/comparator.spice` assembled in), this draws the
+    layout, asserts its dbu, on-grid geometry and exact contacts, and writes
+    `{key}.gds`, `{key}.ref.spice` and `{key}.lvs.json` into `outdir`.
+
+    ONE loop for this module's `main()` and both `candidates/` generators
+    (issue #1111): three copies had drifted -- the acquisition-leg candidate
+    shipped without the two geometry assertions, and the bank-fold candidate
+    wrote `area.json` once per stream.
+
+    `expected_mos` is the transistor count `build` asserts: the ratified 368,
+    or a candidate netlist's own count.
+
+    Returns the `adc_block` `info` dict (`build`'s tally), so the caller
+    writes its `area.json` from the stream that has the comparator.
+    """
+    subckts = nl.parse(netlist_path)
     block_subckt(subckts)
     comparator_subckts = nl.parse(
-        os.path.join(design, "comparator", "comparator.spice")
+        os.path.join(nl.design_dir(HERE), "comparator", "comparator.spice")
     )
 
     tally_info = None
@@ -1871,15 +1887,17 @@ def main() -> None:
         ("adc_top", CELL_NAME, None),
         ("adc_block", BLOCK_CELL_NAME, comparator_subckts),
     ):
-        layout, info = build(subckts, cmp_subckts, cell_name=cell_name)
+        layout, info = build(
+            subckts, cmp_subckts, cell_name=cell_name, expected_mos=expected_mos
+        )
         assert layout.dbu == geo.DBU_UM, f"dbu drifted to {layout.dbu}"
         geo.assert_on_grid(layout)
         geo.assert_contacts_exact(layout)
-        layout.write(os.path.join(args.outdir, f"{key}.gds"), geo.save_options())
+        layout.write(os.path.join(outdir, f"{key}.gds"), geo.save_options())
         write_reference(
-            os.path.join(args.outdir, f"{key}.ref.spice"), info, cell_name, key
+            os.path.join(outdir, f"{key}.ref.spice"), info, cell_name, key
         )
-        write_request(os.path.join(args.outdir, f"{key}.lvs.json"), cell_name, key)
+        write_request(os.path.join(outdir, f"{key}.lvs.json"), cell_name, key)
         box = layout.cell(cell_name).bbox()
         print(
             f"wrote {key}.gds  transistors={info['transistor_count']}  "
@@ -1888,6 +1906,18 @@ def main() -> None:
             f"= {geo.area_um2(box) / 1e6:.5f} mm^2"
         )
         tally_info = info
+    return tally_info
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--outdir", default=HERE)
+    args = parser.parse_args()
+
+    design = nl.design_dir(HERE)
+    tally_info = emit_deliverables(
+        os.path.join(design, "adc-top", "adc_top.spice"), args.outdir
+    )
 
     # Per-weight unit-position census, so the tiling is auditable without
     # re-running the generator.
