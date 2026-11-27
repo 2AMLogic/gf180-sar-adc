@@ -1058,11 +1058,11 @@ def build(
         if len(ordered) != len(side):
             raise RuntimeError(f"weight ordering dropped devices on side {tag}")
         cell = layout.create_cell(f"ADC_DECODE_BANK_{tag.upper()}")
-        # One placement group -- and therefore one Nwell island -- per
-        # weighted CDAC cell, so each cell's seven internal nets stay local
-        # in X and the channel packs. The island is a physical well, not a
-        # net: its n+ tap is routed to the `vdd` trunk, so every PMOS body
-        # in the bank reports `vdd`. See lib/place.draw_devices.
+        # One placement group per weighted CDAC cell keeps its seven
+        # internal nets local in X so the channel packs. Each cell's PMOS
+        # devices share one Nwell island. Its n+ tap routes to the `vdd`
+        # trunk, so every PMOS body in the bank extracts on `vdd`.
+        # See lib/place.draw_devices.
         cell_groups = [
             (
                 f"nw_{tag}{weight}",

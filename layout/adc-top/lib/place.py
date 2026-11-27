@@ -16,7 +16,7 @@ implementation".
 ROW STRUCTURE
 -------------
     +-------------------------------------------------+
-    |  NMOS columns            |  PMOS columns (Nwell)|   device row
+    |  NMOS columns            |  PMOS columns (Nwell)|   one group in the row
     |  gate heads point DOWN   |                      |
     +-------------------------------------------------+
     |  riser zone: Metal1 drop stubs -> Poly2 risers   |
@@ -26,11 +26,10 @@ ROW STRUCTURE
     |  ...                                             |
     +-------------------------------------------------+
 
-NMOS columns come first so that ONE Nwell island covers every PMOS in the
-row (`nwell.space.1` then never applies inside a block at all, rather than
-being satisfied per device), and so an NMOS active never sits under Nwell --
-which would silently turn it into a PMOS, since `klt extract` splits the
-two with `active - nwell` / `active & nwell`.
+Within each placement group, NMOS columns come first. Any PMOS columns
+share one Nwell island, so `nwell.space.1` applies between islands in
+different groups. NMOS actives stay outside Nwell because `klt extract`
+identifies NMOS by `active - nwell` and PMOS by `active & nwell`.
 """
 
 from __future__ import annotations
@@ -293,15 +292,13 @@ def draw_devices(
     """Draw every MOSFET in `groups` in one row and route every terminal into
     a left-edge-packed channel below the row.
 
-    A **group** is a set of devices that shares one Nwell island and is
-    placed contiguously: its NMOS columns first, then its PMOS columns. The
-    group's name labels that island at the call site; it is not a net. The
-    island is a physical well, and the curated gf180mcu deck never
-    connects `nwell` to `contact` by itself -- what ties the island
-    electrically is the n+ tap this function draws in it, which
-    :func:`finish_block` routes to `tap_net`. Every PMOS body in every
-    group therefore lands on `tap_net` in the extracted netlist, not on an
-    unnamed per-island well net (see `lib/netlist.write_reference`).
+    A **group** places its devices in contiguous columns, NMOS first and
+    PMOS second. Its name identifies the placement group at the call site.
+    If the group contains PMOS devices, they share one Nwell island.
+    An all-NMOS group has no Nwell island or well tap. The curated gf180mcu
+    deck requires an n+ tap to connect the well to metal. This function
+    draws the tap and :func:`finish_block` routes it to `tap_net`, so each
+    PMOS body extracts on that net (see `lib/netlist.write_reference`).
 
     Grouping is not cosmetic. Placing devices group-by-group is what keeps a
     net LOCAL in X: in the CDAC decode bank, one `adc_cdac_cell`'s seven
@@ -331,10 +328,9 @@ def draw_devices(
     caught on this block's first assembled run (two `vdd` pins, two `vss`
     pins, ... -- one unconnected net per rail per bank).
 
-    `tap_net` is the supply each group's Nwell island is biased at -- `vdd`
-    for every PMOS body this repo draws. :func:`finish_block` routes each
-    island's n+ tap to that net's trunk; a cell whose channel has no such
-    trunk is a hard error there rather than a silently untapped well.
+    `tap_net` supplies the PMOS wells (`vdd` throughout this repo).
+    :func:`finish_block` routes each well tap to that net's trunk and
+    raises an error if a tap needs a trunk the channel does not have.
 
     `substrate_net` is the matching answer for the NMOS bodies, and it is
     the caller's to state: the tie is drawn here (`finish_block`), but a
