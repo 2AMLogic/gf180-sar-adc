@@ -80,7 +80,6 @@ MATCHING (floorplan plan Sec 2.1/2.3, `spec/comparator-budget-memo.md` Sec 9)
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 
@@ -442,22 +441,18 @@ def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
         substrate_net=info["substrate_net"],
     )
 
-    request = {
-        "_comment": [
+    nl.write_lvs_request(
+        os.path.join(outdir, f"{key}.lvs.json"),
+        name,
+        key,
+        [
             f"klt lvs request for {name} -- the extracted layout netlist against",
             "the flat reference generated from design/comparator/comparator.spice.",
             "Both sides are pre-extracted / generated SPICE, for the reason",
             "layout/lvs/cells/lvs_request_match.json records. Paths resolve",
             "against THIS file's directory.",
-            "",
-            f"    klt lvs {request_rel} --format json",
         ],
-        "layout": {"netlist": f"{key}.spice", "top": name},
-        "reference": {"netlist": f"{key}.ref.spice", "top": name},
-    }
-    with open(os.path.join(outdir, f"{key}.lvs.json"), "w", encoding="utf-8") as fh:
-        json.dump(request, fh, indent=2)
-        fh.write("\n")
+    )
 
 
 def main() -> None:

@@ -48,6 +48,7 @@ high-sheet-rho flavour a drawn resistor can actually extract as here, and
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from dataclasses import dataclass
@@ -562,3 +563,43 @@ def repo_root(start: str) -> str:
     (`os.path.relpath(path, repo_root(start))`, issue #804) instead of
     hardcoding where that artifact usually lands."""
     return os.path.dirname(design_dir(start))
+
+
+def write_lvs_request(
+    path: str,
+    top: str,
+    key: str,
+    comment: list[str],
+    *,
+    root: str | None = None,
+) -> None:
+    """Write the `klt lvs` request document that compares the extracted
+    layout netlist `<key>.spice` against the flat reference `<key>.ref.spice`
+    (`write_reference`), both as subcircuit `top`.
+
+    `comment` is the caller's own prose about what the two sides are. The
+    blank line and the `klt lvs <request_rel> --format json` invocation
+    appended after it are written HERE, derived from `path` itself -- and
+    that derivation is the whole point of one shared writer (issue #804):
+    three generators each hand-rolled this document and each drifted into
+    hardcoding the production path, so every candidate-geometry request
+    document told a reader to run the PRODUCTION request.
+    `sim/tools/check_lvs_request_invocations.py` checks the committed files
+    for that shape; this function is what keeps it from coming back.
+
+    The invocation is relative to `root` -- by default `repo_root()` of this
+    file -- so a reader at the repo root runs exactly the file written,
+    wherever the generator's `--outdir` pointed. The `layout` / `reference`
+    netlist names resolve against the document's own directory.
+    """
+    if root is None:
+        root = repo_root(os.path.dirname(os.path.abspath(__file__)))
+    request_rel = os.path.relpath(path, root)
+    request = {
+        "_comment": [*comment, "", f"    klt lvs {request_rel} --format json"],
+        "layout": {"netlist": f"{key}.spice", "top": top},
+        "reference": {"netlist": f"{key}.ref.spice", "top": top},
+    }
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(request, fh, indent=2)
+        fh.write("\n")
