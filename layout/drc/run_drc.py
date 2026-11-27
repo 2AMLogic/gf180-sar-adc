@@ -69,7 +69,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import subprocess
 import sys
 import time
 
@@ -103,6 +102,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     load_manifest,
     record_id,
     reserve_record_slot,
+    run_generator_once,
     run_klt_report,
     sha256,
     toolchain_record,
@@ -117,13 +117,9 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
 
 
 def regenerate(manifest: dict, python: str) -> None:
+    launched: set[str] = set()
     for cell in manifest["cells"]:
-        script = os.path.join(CELLS_DIR, cell["generator"])
-        proc = subprocess.run([python, script], capture_output=True, text=True)
-        if proc.returncode != 0:
-            raise ToolingError(
-                f"{cell['generator']} failed:\n{proc.stdout}{proc.stderr}"
-            )
+        run_generator_once(cell, CELLS_DIR, python, launched)
         print(f"  regenerated {cell['gds']}")
 
 
