@@ -38,8 +38,10 @@ other than "not found" is exit 2, never success and never a schema-only pass.
 
 The broker hands out short-lived presigned URLs. They are bearer credentials:
 this script keeps them in memory, never prints, logs or writes them, and
-reports a failed transfer by HTTP status only. No URL, host name or bucket is
-configured in this repository; the broker URL comes from the environment.
+reports only the HTTP status or the transport failure type and attempt count.
+An interrupted object GET restarts from byte zero, up to three attempts total
+with a 30-second socket inactivity timeout per attempt. The broker URL comes
+from the environment.
 
 Exit codes: 0 ok; 1 a manifest is invalid or names a committed blob
 (``check``) or is unreadable (``verify``); 2 usage, git or broker error;
@@ -59,6 +61,7 @@ import posixpath
 import re
 import subprocess
 import sys
+from contextlib import closing
 from urllib.parse import urlsplit
 
 MANIFEST_DIR = "manifests/artifacts/"
@@ -81,7 +84,8 @@ URI_RE = re.compile(r"^artifact:([^/\s]\S*)$")
 REPO_RE = re.compile(r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$")
 
 BROKER_TIMEOUT_S = 60
-TRANSFER_TIMEOUT_S = 600
+TRANSFER_TIMEOUT_S = 30
+TRANSFER_ATTEMPTS = 3
 CHUNK = 1 << 20
 MAX_BROKER_BODY = 1 << 20
 
@@ -356,28 +360,36 @@ def _refused(op: str, status: int, payload: dict) -> ToolError:
     return ToolError(f"artifact broker refused {op} (HTTP {status}): {err}: {msg}")
 
 
+def _fetch_hash_once(parts, target: str) -> tuple[str, int]:
+    with closing(_conn(parts, TRANSFER_TIMEOUT_S)) as conn:
+        conn.request("GET", target)
+        with conn.getresponse() as resp:
+            if resp.status != 200:
+                raise ToolError(f"presigned GET was rejected: HTTP {resp.status}")
+            digest = hashlib.sha256()
+            size = 0
+            while chunk := resp.read(CHUNK):
+                digest.update(chunk)
+                size += len(chunk)
+            # A sized read can reach EOF with Content-Length bytes still outstanding.
+            if resp.length:
+                raise http.client.IncompleteRead(b"", resp.length)
+            return digest.hexdigest(), size
+
+
 def _fetch_hash(url: str) -> tuple[str, int]:
-    """GET a presigned URL and return (sha256, size) of the body. The URL is
-    never named in any message."""
+    """GET a presigned URL and return (sha256, size) of the body."""
     parts = _http_parts(url, "the presigned URL")
     target = (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
-    conn = _conn(parts, TRANSFER_TIMEOUT_S)
-    h = hashlib.sha256()
-    n = 0
-    try:
-        conn.request("GET", target)
-        resp = conn.getresponse()
-        if resp.status != 200:
-            resp.read(64 << 10)
-            raise ToolError(f"presigned GET was rejected: HTTP {resp.status}")
-        while chunk := resp.read(CHUNK):
-            h.update(chunk)
-            n += len(chunk)
-    except (OSError, http.client.HTTPException) as exc:
-        raise ToolError(f"presigned GET failed: {type(exc).__name__}") from None
-    finally:
-        conn.close()
-    return h.hexdigest(), n
+    for _ in range(TRANSFER_ATTEMPTS):
+        try:
+            return _fetch_hash_once(parts, target)
+        except (OSError, http.client.HTTPException) as exc:
+            # Exception messages can contain the signed URL.
+            failure = type(exc).__name__
+    raise ToolError(
+        f"presigned GET failed after {TRANSFER_ATTEMPTS} attempts: {failure}"
+    )
 
 
 def verify_entry(broker: Broker, entry: dict) -> dict:
