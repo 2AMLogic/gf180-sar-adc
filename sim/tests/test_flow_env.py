@@ -86,6 +86,7 @@ DRIVERS = (
     "sta_postroute_spef.py",  # the --spef mode of the driver above (issue #481)
     "drc_pdk_cells_isolated.py",  # issue #520; migrated onto flow_env by #960
     "prove_no_net_sar_ctrl.py",  # issue #548; migrated onto flow_env by #960
+    "sdf_sar_ctrl.py",  # issue #645 (T1 item 7); the per-corner SDF record
 )
 
 
@@ -565,10 +566,10 @@ class DriverCrossModuleAttributesExistTests(unittest.TestCase):
     zero-arg helper with the shared two-arg signature) would only surface at
     the end of a real run."""
 
-    #: driver -> {alias: module file it aliases}
+    #: driver -> {alias: module file it aliases}. The STA drivers reach
+    #: `datetime` through their own import (issue #1108), so the one real
+    #: cross-driver import left is `--spef` mode's `base`.
     ALIASES = {
-        "sta_sar_ctrl.py": {"synth": "synth_sar_ctrl.py"},
-        "sta_sar_ctrl_postroute.py": {"synth": "synth_sar_ctrl.py"},
         "sta_postroute_spef.py": {"base": "sta_sar_ctrl_postroute.py"},
     }
 
@@ -684,6 +685,40 @@ class ProveNoNetImportsWithoutTheStaDriversTests(unittest.TestCase):
             0,
             f"importing prove_no_net_sar_ctrl loaded: {result.stderr.strip()}",
         )
+
+
+class StaDriversImportWithoutTheSynthDriverTests(unittest.TestCase):
+    """Issue #1108: the STA drivers reach `datetime` through their own
+    `import datetime as _dt`, like every other driver here -- they must not
+    import `synth_sar_ctrl` (~550 lines of synthesis driver) just to borrow
+    its private `_dt` alias. Checked in a subprocess so this suite's own
+    imports cannot pollute `sys.modules`."""
+
+    #: Each driver gets its own interpreter, so one driver's leak can never
+    #: be masked by another's having loaded the module first
+    #: (`sta_postroute_spef` imports `sta_sar_ctrl_postroute`).
+    _DRIVERS = ("sta_sar_ctrl", "sta_sar_ctrl_postroute", "sta_postroute_spef")
+    _MUST_NOT_LOAD = ("synth_sar_ctrl",)
+
+    def test_imports_without_the_synthesis_driver(self):
+        for module in self._DRIVERS:
+            with self.subTest(module=module):
+                code = (
+                    "import sys\n"
+                    f"sys.path.insert(0, {str(FLOW_DIR)!r})\n"
+                    f"import {module}\n"
+                    f"leaked = [m for m in {self._MUST_NOT_LOAD!r} if m in sys.modules]\n"
+                    "sys.stderr.write(','.join(leaked))\n"
+                    "sys.exit(1 if leaked else 0)\n"
+                )
+                result = subprocess.run(
+                    [sys.executable, "-c", code], capture_output=True, text=True
+                )
+                self.assertEqual(
+                    result.returncode,
+                    0,
+                    f"importing {module} loaded: {result.stderr.strip()}",
+                )
 
 
 class KltRunnerAndStaSharedPiecesTests(unittest.TestCase):

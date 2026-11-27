@@ -137,6 +137,7 @@ per-corner `sta_postroute_ref_*`/`sta_postroute_spef_*` and
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
 import json
 import os
 import sys
@@ -147,7 +148,6 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "design" / "sar-logic" / "flow"))
 
 from sim.harness.pdk import Pdk, PdkNotFound, find_pdk  # noqa: E402
-import synth_sar_ctrl as synth  # noqa: E402  (reuses working_tree_dirty)
 
 #: The git/`klt` provenance plumbing every driver in this directory
 #: shares (issue #352) -- imported from the module that owns it rather
@@ -158,7 +158,6 @@ from flow_env import (  # noqa: E402
     CLOCK_PORT,
     CORNERS,
     LIB_TAG,
-    OUT_DIR,
     RECORDS_DIR,
     REPORTS_DIR,
     TOP,
@@ -470,7 +469,7 @@ def main() -> int:
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    when = synth._dt.datetime.now(synth._dt.timezone.utc)
+    when = _dt.datetime.now(_dt.timezone.utc)
     rid = record_id(REPO_ROOT, when)
 
     if args.multicorner:
