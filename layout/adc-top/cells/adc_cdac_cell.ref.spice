@@ -6,16 +6,12 @@
 * reference are derived from the same parsed design netlist, and what
 * that does and does not let LVS prove.
 *
-* Deliberate, documented differences from the schematic, each forced by
-* `klt extract`'s gf180mcu ExtractionDeck and restated in
-* layout/adc-top/README.md:
-*   - every NMOS body is on this cell's own drawn `vss` rail, not
-*     on the schematic's `0`: DR-0049's substrate-tie strip is
-*     `Pplus`-marked and routed to the labelled `vss` trunk, so the
-*     deck's `tap_pplus` derivation claims it and `connect_global`
-*     merges its synthesized `vsubs` global into that net;
-*   - every PMOS body is on the Nwell island's own (unnamed) net, not
-*     on `vdd`: the deck never connects `nwell` to `contact`;
+* Deliberate, documented choices behind the statements below -- made by
+* the generator (`build`) and `klt extract`'s gf180mcu ExtractionDeck,
+* and explained in layout/adc-top/README.md:
+*   - the substrate: DR-0049's `Pplus`-marked substrate-tie strip is
+*     routed to the labelled `vss` trunk, so the deck's `vsubs` global
+*     merges into `vss` and no `vsubs` pin appears;
 *   - the MiM capacitor's value is the EXTRACTION DECK's model of
 *     the drawn plate (35.6528 fF for this layout's ratified
 *     4.0000 um plate), not the PDK model card's own
