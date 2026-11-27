@@ -3,7 +3,7 @@
 Current queue from GitHub labels. Updated through Guide document maintenance.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-27T05:16:57Z (snapshot; compare against live labels)_
+_Generated: 2026-11-27T07:01:26Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -33,7 +33,7 @@ Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a h
 
 Human-approved issues (`loom:issue`) ready for implementation — excluding held (`loom:blocked`/`loom:operator`/`loom:frozen`), `loom:building`, and issues closed by an open `loom:pr` PR (listed under Approved).
 
-_None._
+- **#1102**: Test rectangular guard-ring geometry and both zero-contact errors in nightly layout CI
 
 ## In Progress
 
@@ -42,6 +42,7 @@ Issues currently being built (`loom:building`).
 - **#958**: No CI job exercises layout/adc-top/parasitics/run_extract_parasitics.py against real klt
 - **#1028**: sar_ctrl SPEF timing: reconcile AC 2's 11 drivers, bounded README/signoff claim, fix renderer contradiction (part of #486)
 - **#1036**: mc_extracted_core: a one-draw null control is vacuous but passes
+- **#1100**: Share the layer, contact-array, and label drawing core between draw_guard_ring and draw_notched_guard_ring
 
 ## PRs Awaiting Review
 
@@ -58,6 +59,7 @@ PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 - **#1026**: spec: ratify DR-0038 option 1 — offset graded as 3σ about the mean (#655) *(held)*
 - **#1030**: fix: derive SPEF timing record exit status; reconcile aliased nets *(held)*
 - **#1039**: fix: require two parsed draws for the Monte Carlo null control
+- **#1101**: refactor: share guard ring layer drawing
 
 ## Proposed
 
@@ -88,6 +90,7 @@ Issues carrying `loom:curated`.
 - **#1028**: sar_ctrl SPEF timing: reconcile AC 2's 11 drivers, bounded README/signoff claim, fix renderer contradiction (part of #486) *(curated)*
 - **#1036**: mc_extracted_core: a one-draw null control is vacuous but passes *(curated)*
 - **#1067**: check_artifact_manifests.py verify stops at the artifact broker's per-caller rate limit after about 69 objects *(curated)* *(held)*
+- **#1102**: Test rectangular guard-ring geometry and both zero-contact errors in nightly layout CI *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -107,11 +110,11 @@ _None._
 | Operator merge-risk holds | 4 |
 | Very important | 1 |
 | Important | 5 |
-| Ready (`loom:issue`, net of holds/building/merge-pending) | 0 |
-| In Progress (`loom:building`) | 3 |
+| Ready (`loom:issue`, net of holds/building/merge-pending) | 1 |
+| In Progress (`loom:building`) | 4 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 5 |
-| Curated | 25 |
+| Approved PRs awaiting merge | 6 |
+| Curated | 26 |
 | Architect / Hermit proposals | 4 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
