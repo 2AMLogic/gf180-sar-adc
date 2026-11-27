@@ -3,16 +3,17 @@
 Current queue from GitHub labels. Updated through Guide document maintenance.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-27T12:15:32Z (snapshot; compare against live labels)_
+_Generated: 2026-11-27T22:35:10Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
-Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
+Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — a human merge decision, or the prerequisite shown, is missing.
 
-- **#413**: spec(DR-0033): ratify DR-0033 and supersede DR-0029 (#363 Part B gate)
-- **#961**: ci(nightly-pdk): add a klt-parasitics job for run_extract_parasitics.py --check
-- **#1026**: spec: ratify DR-0038 option 1 — offset graded as 3σ about the mean (#655)
-- **#1030**: fix: derive SPEF timing record exit status; reconcile aliased nets
-- **#1104**: test: verify guard-ring geometry and contact errors in nightly CI
+- **#413**: spec(DR-0033): ratify DR-0033 and supersede DR-0029 (#363 Part B gate) *(held: champion ratification hold)*
+- **#961**: ci(nightly-pdk): add a klt-parasitics job for run_extract_parasitics.py --check *(held: champion critical-file hold)*
+- **#1026**: spec: ratify DR-0038 option 1 — offset graded as 3σ about the mean (#655) *(held: champion ratification hold)*
+- **#1030**: fix: derive SPEF timing record exit status; reconcile aliased nets *(held: champion merge-risk hold)*
+- **#1104**: test: verify guard-ring geometry and contact errors in nightly CI *(held: champion critical-file hold)*
+- **#1113**: chore: resync installed Loom files to v0.20.48 *(held: champion critical-file hold)*
 
 ## Very Important
 
@@ -32,7 +33,13 @@ Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a h
 
 ## Ready
 
-Human-approved issues (`loom:issue`) ready for implementation — excluding held (`loom:blocked`/`loom:operator`/`loom:frozen`), `loom:building`, and issues closed by an open `loom:pr` PR (listed under Approved).
+Human-approved issues (`loom:issue`) ready for implementation — excluding held (`loom:blocked`/`loom:operator`/`loom:frozen`), `loom:building`, and issues with an open linked PR (native admission `OPEN_PR`; listed under Issues with Open PRs).
+
+_None._
+
+## Issues with Open PRs (Not Dispatchable)
+
+`loom:issue` issues an open linked PR already holds — native admission would refuse them (`OPEN_PR`); listed with the PR and its stage, not counted above.
 
 _None._
 
@@ -44,23 +51,27 @@ Issues currently being built (`loom:building`).
 - **#1028**: sar_ctrl SPEF timing: reconcile AC 2's 11 drivers, bounded README/signoff claim, fix renderer contradiction (part of #486)
 - **#1036**: mc_extracted_core: a one-draw null control is vacuous but passes
 - **#1102**: Test rectangular guard-ring geometry and both zero-contact errors in nightly layout CI
+- **#1110**: Committed .loom/ role files are older than the dispatched ones; guide.md cannot render the committed WORK_PLAN.md region
+- **#1114**: Remove stale device descriptions from generated leaf-cell LVS headers
+- **#1117**: Block-level LVS reference headers still claim PMOS bodies are off vdd and NMOS bodies on vsubs
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#1118**: fix(layout): drop stale device narrative from leaf-cell LVS reference headers
 
 ## Approved (Awaiting Merge)
 
-PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
+PRs that passed review (`loom:pr`); unmarked PRs are queued for Champion auto-merge, PRs marked `*(held …)*` are not (the hold decides).
 
-- **#413**: spec(DR-0033): ratify DR-0033 and supersede DR-0029 (#363 Part B gate) *(held)*
-- **#961**: ci(nightly-pdk): add a klt-parasitics job for run_extract_parasitics.py --check *(held)*
-- **#1026**: spec: ratify DR-0038 option 1 — offset graded as 3σ about the mean (#655) *(held)*
-- **#1030**: fix: derive SPEF timing record exit status; reconcile aliased nets *(held)*
-- **#1039**: fix: require two parsed draws for the Monte Carlo null control
-- **#1104**: test: verify guard-ring geometry and contact errors in nightly CI *(held)*
+- **#413**: spec(DR-0033): ratify DR-0033 and supersede DR-0029 (#363 Part B gate) *(held: champion ratification hold)*
+- **#961**: ci(nightly-pdk): add a klt-parasitics job for run_extract_parasitics.py --check — closes #958 *(held: champion critical-file hold)*
+- **#1026**: spec: ratify DR-0038 option 1 — offset graded as 3σ about the mean (#655) *(held: champion ratification hold)*
+- **#1030**: fix: derive SPEF timing record exit status; reconcile aliased nets — closes #486, #1028 *(held: champion merge-risk hold)*
+- **#1039**: fix: require two parsed draws for the Monte Carlo null control — closes #1036
+- **#1104**: test: verify guard-ring geometry and contact errors in nightly CI — closes #1102 *(held: champion critical-file hold)*
+- **#1113**: chore: resync installed Loom files to v0.20.48 — closes #1110 *(held: champion critical-file hold)*
 
 ## Proposed
 
@@ -92,6 +103,8 @@ Issues carrying `loom:curated`.
 - **#1036**: mc_extracted_core: a one-draw null control is vacuous but passes *(curated)*
 - **#1067**: check_artifact_manifests.py verify stops at the artifact broker's per-caller rate limit after about 69 objects *(curated)* *(held)*
 - **#1102**: Test rectangular guard-ring geometry and both zero-contact errors in nightly layout CI *(curated)*
+- **#1110**: Committed .loom/ role files are older than the dispatched ones; guide.md cannot render the committed WORK_PLAN.md region *(curated)*
+- **#1117**: Block-level LVS reference headers still claim PMOS bodies are off vdd and NMOS bodies on vsubs *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -108,14 +121,15 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 5 |
+| Operator merge-risk holds | 6 |
 | Very important | 1 |
 | Important | 5 |
-| Ready (`loom:issue`, net of holds/building/merge-pending) | 0 |
-| In Progress (`loom:building`) | 4 |
-| PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 6 |
-| Curated | 26 |
+| Ready (`loom:issue`, net of holds/building/open-linked-PRs) | 0 |
+| In Progress (`loom:building`) | 7 |
+| Held, no other bucket | 11 |
+| PRs awaiting review | 1 |
+| Approved PRs awaiting merge | 7 |
+| Curated | 28 |
 | Architect / Hermit proposals | 4 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
