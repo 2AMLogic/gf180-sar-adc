@@ -727,5 +727,76 @@ class SharedShadowReferenceTests(unittest.TestCase):
                         )
 
 
+class SharedLibraryAndCoreTests(unittest.TestCase):
+    """`gen_extracted_core_tb.library_and_core()` is the single emitter of the
+    comparator + SAR-controller library, the extracted core's `.SUBCKT` and
+    the wired conversion chain for the three `se`-tagged #13 decks (issue
+    #1091).
+
+    Each of the three generators assembled the four pieces itself, in the
+    helper's order and with the helper's separators. They agreed because
+    someone kept three copies in step by hand -- the failure mode behind the
+    emit tail (#780) and the shadow sources (#1043). The helper now takes the
+    caller's tag, and these tests keep the three generators on it.
+
+    Scoped to those three on purpose: their manifests read `se_*` nets and
+    their committed decks are byte-guarded above, which is what the second
+    test compares against."""
+
+    SE_DECKS = ("inl_dnl", "enob_fft", "power")
+
+    FORK_TELLS = (
+        "G.core_pins(",
+        "G._core_extracted(",
+        "gtop.comparator_block()",
+        "gtop.sar.library()",
+    )
+
+    @staticmethod
+    def _core():
+        sys.path.insert(0, str(PARASITICS_DIR))
+        import gen_extracted_core_tb  # noqa: PLC0415  (path-dependent import)
+
+        return gen_extracted_core_tb
+
+    def test_se_decks_assemble_the_library_through_the_shared_helper(self):
+        """A generator that fetches the pins or the library pieces itself has
+        re-forked the assembly, whatever order and separators it gives them;
+        `--check` cannot see that while the copy still agrees."""
+        for name in self.SE_DECKS:
+            script, _out = GENERATORS[name]
+            with self.subTest(deck=name):
+                text = (PARASITICS_DIR / script).read_text()
+                self.assertIn(
+                    "G.library_and_core(",
+                    text,
+                    f"{script} does not call gen_extracted_core_tb.library_and_core()",
+                )
+                for fork in self.FORK_TELLS:
+                    self.assertNotIn(
+                        fork,
+                        text,
+                        f"{script} assembles the library or the chain itself "
+                        f"({fork!r}); call "
+                        "gen_extracted_core_tb.library_and_core(top, tag=TAG)",
+                    )
+
+    def test_each_se_deck_carries_the_helpers_se_text_once(self):
+        """What the three decks are made of: `library_and_core(tag="se")`,
+        inserted verbatim, single terminating newline included, so its
+        library and chain occur once, under the `se` names the manifests
+        read."""
+        text, _pins = self._core().library_and_core("ADC_TOP", tag="se")
+        for name in self.SE_DECKS:
+            with self.subTest(deck=name):
+                deck = (REPO / GENERATORS[name][1]).read_text()
+                self.assertEqual(
+                    deck.count(text),
+                    1,
+                    f"{GENERATORS[name][1]} does not carry the helper's `se` "
+                    "text exactly once",
+                )
+
+
 if __name__ == "__main__":
     unittest.main()
