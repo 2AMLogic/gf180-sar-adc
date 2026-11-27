@@ -8,6 +8,18 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-27
 
+- **PR #1073**: evidence(sim,signoff): clean-tree switch-Ron retake, item 8 re-attest
+- **PR #1098**: refactor(layout): share the klt lvs request JSON writer in netlist.py
+- **PR #1095**: refactor(layout): share the extract verification core between proof cell and block checks
+- **PR #1097**: refactor(layout): launch each generator once per DRC/LVS --regen
+- **PR #1096**: refactor: reuse library_and_core in the three se-tagged generators
+- **PR #1093**: docs: point README scipy prerequisite at the recorded 1.17.0 floor
+- **Issue #1066** (closed): Re-take the governing extracted device-switch-ron record on a clean tree with installer provenance and repoint its summary citation
+- **Issue #1094** (closed): Share klt lvs request JSON emission in layout/adc-top/lib/netlist.py
+- **Issue #1092** (closed): Share the extraction and netlist verification core between run_extract and run_block_extract
+- **Issue #1087** (closed): Run each layout generator once per DRC or LVS regeneration
+- **Issue #1091** (closed): Reuse library_and_core in the extracted FFT, INL/DNL, and power deck generators
+- **Issue #1088** (closed): Remove the obsolete SciPy pin follow-up from the README prerequisites
 - **PR #1086**: fix(layout): fail fast on acq-leg candidate scales the DR-0050 fold cannot pair
 - **PR #1084**: fix: retry interrupted artifact downloads from byte zero
 - **PR #1085**: feat(sim): enable batch deck transport for comparator offset sampling

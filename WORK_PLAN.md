@@ -3,7 +3,7 @@
 Current queue from GitHub labels. Updated through Guide document maintenance.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-27T02:17:00Z (snapshot; compare against live labels)_
+_Generated: 2026-11-27T05:16:57Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -42,7 +42,6 @@ Issues currently being built (`loom:building`).
 - **#958**: No CI job exercises layout/adc-top/parasitics/run_extract_parasitics.py against real klt
 - **#1028**: sar_ctrl SPEF timing: reconcile AC 2's 11 drivers, bounded README/signoff claim, fix renderer contradiction (part of #486)
 - **#1036**: mc_extracted_core: a one-draw null control is vacuous but passes
-- **#1066**: Re-take the governing extracted device-switch-ron record on a clean tree with installer provenance and repoint its summary citation
 
 ## PRs Awaiting Review
 
@@ -88,7 +87,6 @@ Issues carrying `loom:curated`.
 - **#958**: No CI job exercises layout/adc-top/parasitics/run_extract_parasitics.py against real klt *(curated)*
 - **#1028**: sar_ctrl SPEF timing: reconcile AC 2's 11 drivers, bounded README/signoff claim, fix renderer contradiction (part of #486) *(curated)*
 - **#1036**: mc_extracted_core: a one-draw null control is vacuous but passes *(curated)*
-- **#1066**: Re-take the governing extracted device-switch-ron record on a clean tree with installer provenance and repoint its summary citation *(curated)*
 - **#1067**: check_artifact_manifests.py verify stops at the artifact broker's per-caller rate limit after about 69 objects *(curated)* *(held)*
 
 ## Proposed (Architect / Hermit)
@@ -96,9 +94,7 @@ Issues carrying `loom:curated`.
 - **#817**: Dedup: synth_sar_ctrl.py reimplements flow_env.working_tree_dirty *(hermit)* *(held)*
 - **#1050**: Remove the unused report.write_record helper and move its overwrite test to the artifact store *(hermit)* *(held)*
 - **#1079**: Remove the stale DRC expectations from the proof-cell generators *(hermit)* *(held)*
-- **#1087**: Run each layout generator once per DRC or LVS regeneration *(hermit)*
-- **#1088**: Remove the obsolete SciPy pin follow-up from the README prerequisites *(hermit)*
-- **#1089**: Remove the unused runner_expr helper from the batch exporter *(hermit)*
+- **#1089**: Remove the unused runner_expr helper from the batch exporter *(hermit)* *(held)*
 
 ## Epics
 
@@ -112,10 +108,10 @@ _None._
 | Very important | 1 |
 | Important | 5 |
 | Ready (`loom:issue`, net of holds/building/merge-pending) | 0 |
-| In Progress (`loom:building`) | 4 |
+| In Progress (`loom:building`) | 3 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 5 |
-| Curated | 26 |
-| Architect / Hermit proposals | 6 |
+| Curated | 25 |
+| Architect / Hermit proposals | 4 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
