@@ -8,6 +8,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-27
 
+- **PR #1101**: refactor: share guard ring layer drawing
+- **Issue #1100** (closed): Share the layer, contact-array, and label drawing core between draw_guard_ring and draw_notched_guard_ring
 - **PR #1073**: evidence(sim,signoff): clean-tree switch-Ron retake, item 8 re-attest
 - **PR #1098**: refactor(layout): share the klt lvs request JSON writer in netlist.py
 - **PR #1095**: refactor(layout): share the extract verification core between proof cell and block checks
