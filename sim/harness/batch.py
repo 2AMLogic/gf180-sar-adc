@@ -811,7 +811,7 @@ def klt_available(klt_cmd: str = KLT) -> list[str]:
 
 def _run_klt_sim(
     request_path: Path, outdir: Path, requested_backend: str, klt_cmd: str
-) -> tuple[subprocess.CompletedProcess, dict | None]:
+) -> tuple[subprocess.CompletedProcess[str], object]:
     """One ``klt sim`` on a single request, refusing an implicit backend: the
     process and its stdout's JSON payload, or ``None`` when it is not JSON."""
     if requested_backend not in OFFHOST_BACKENDS:
