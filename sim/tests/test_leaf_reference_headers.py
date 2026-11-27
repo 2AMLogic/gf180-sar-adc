@@ -23,10 +23,11 @@ device cannot contradict one. For every leaf cell this module asserts that
 * the header speaks of a MiM capacitor exactly when the reference states
   one, which is exactly when the source subcircuit does, and where it does
   the fF figure it quotes is the card's own value;
-* the one thing the header still explains is the substrate, and it names
-  the net every NMOS card's body terminal carries -- the deck's `vsubs`
-  global, a pin of the `.SUBCKT`, where the cell has no `vss` port, else
-  the cell's labelled `vss` rail;
+* the one thing the header still explains is the substrate, and its pin
+  claim matches the `.SUBCKT` pin list and NMOS card body terminals --
+  stating `` `vsubs` is a pin `` where the cell has no `vss` port, and
+  `` no `vsubs` pin appears `` where it merges into the labelled `vss`
+  rail;
 * the header keeps its provenance: source subcircuit, generator, the
   runnable `klt lvs` command and the layout README;
 * the committed header is line for line what `gen_adc_cells.
@@ -115,6 +116,22 @@ def substrate_net(pins: list[str]) -> str:
     return nl.SUBSTRATE_NET if nl.SUBSTRATE_NET in pins else "vss"
 
 
+def substrate_bullet(header: list[str]) -> str:
+    """The whitespace-normalized `- the substrate:` bullet text from
+    `header`, or `""` if no such bullet is present."""
+    lines: list[str] = []
+    for line in header:
+        body = line[1:].strip()
+        if not lines:
+            if body.lower().startswith("- the substrate:"):
+                lines.append(body)
+        elif body and not body.startswith("-") and line[1:].startswith("    "):
+            lines.append(body)
+        else:
+            break
+    return " ".join(lines)
+
+
 def source_devices(spec: dict) -> list:
     """The leaf cell's devices as `build` flattens them out of the design
     netlist, before anything is drawn."""
@@ -167,18 +184,31 @@ class LeafReferenceHeaders(unittest.TestCase):
         self.assertIn(f"({float(cap[3]) * 1e15:.4f} fF", text)
 
     def test_header_explains_the_substrate_net_the_cards_carry(self):
+        vsubs = nl.SUBSTRATE_NET
+        claims_pin = re.compile(rf"`{re.escape(vsubs)}`\s+is a pin\b")
+        claims_no_pin = re.compile(rf"\bno\s+`{re.escape(vsubs)}`\s+pin\s+appears\b")
+        seen_has_vsubs: set[bool] = set()
         for key in gen_cells.LEAF_CELLS:
             with self.subTest(cell=key):
                 _, header, statements = self.reference(key)
-                text = "\n".join(header)
+                bullet = substrate_bullet(header)
+                self.assertTrue(bullet, "missing `- the substrate:` bullet in header")
                 pins = subckt_pins(statements)
                 substrate = substrate_net(pins)
                 self.assertEqual({c[4] for c in cards(statements, "nfet")}, {substrate})
                 self.assertIn(substrate, pins)
-                self.assertIn(f"`{substrate}`", text)
-                self.assertIn("substrate", text.lower())
-                if substrate == nl.SUBSTRATE_NET:
+                self.assertIn(f"`{substrate}`", bullet)
+                has_vsubs_pin = vsubs in pins
+                seen_has_vsubs.add(has_vsubs_pin)
+                self.assertEqual(bool(claims_pin.search(bullet)), has_vsubs_pin, bullet)
+                self.assertEqual(
+                    bool(claims_no_pin.search(bullet)), not has_vsubs_pin, bullet
+                )
+                if has_vsubs_pin:
                     self.assertNotIn("vss", pins)
+                else:
+                    self.assertIn("vss", pins)
+        self.assertEqual(seen_has_vsubs, {True, False})
 
     def test_header_keeps_its_provenance(self):
         for key, spec in gen_cells.LEAF_CELLS.items():
