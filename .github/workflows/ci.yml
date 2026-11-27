@@ -16,9 +16,11 @@
 #                             -s sim/tests -t sim/tests`)
 #       -> RUNS HERE, on every push and pull request. The script's own banner
 #          calls stage 1 "no PDK required"; it is the headless half of the
-#          acceptance test. One test in this discovery,
+#          acceptance test. sim/tests/test_notched_guard_ring.py skips here
+#          because the KLayout Python package is absent. The `klt-layout` job
+#          in nightly-pdk.yml requires the full guard-ring module to pass.
 #          sim/tests/test_sar_ctrl_gate_netlist.py (issue #272's SAR-sequencer
-#          gate-netlist drift check), SKIPS itself here rather than running:
+#          gate-netlist drift check) also skips here:
 #          it needs `klt`+`yosys`+the PDK, none of which this job installs.
 #          It runs for real wherever those are present -- a contributor's
 #          machine today, and this same discovery command in nightly-pdk.yml
