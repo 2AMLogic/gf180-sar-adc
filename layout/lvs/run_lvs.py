@@ -293,6 +293,75 @@ def check_file_hash(label: str, path: str, expected_sha256: str, failures: list[
         )
 
 
+def _extract_and_check_scalars(klt: str, deck: str, entry: dict) -> tuple[dict, str, list[str]]:
+    """The core shared by `run_extract` (the proof cell) and
+    `run_block_extract` (every block-level cell): run `klt extract` live on
+    `entry["gds"]` into a scratch directory, assert the report's scalar
+    shape (`top`/`dbu_um`/device/net/pin counts and the per-class
+    `device_counts`) plus `status == "extracted"` against `entry["expect"]`,
+    and compare the fresh netlist byte-for-byte with the committed
+    `entry["netlist"]`.
+
+    The scratch copy is only the comparison target -- the report's own
+    artifacts are written from the in-memory result afterward (see `main()`).
+    Every failure is reported; none short-circuits another.
+
+    Returns `(report, netlist_text, failures)`.
+    """
+    name = entry["name"]
+    gds_path = os.path.join(CELLS_DIR, entry["gds"])
+    failures: list[str] = []
+
+    with tempfile.TemporaryDirectory(prefix="klt-extract-") as scratch:
+        scratch_netlist = os.path.join(scratch, f"{name}.spice")
+        report = _run_extract_json(klt, gds_path, deck, scratch_netlist)
+
+        with open(scratch_netlist, "rb") as fh:
+            netlist_bytes = fh.read()
+
+    expected = entry["expect"]
+    for field in ("top", "dbu_um", "device_count", "net_count", "pin_count",
+                  "device_counts"):
+        if report.get(field) != expected[field]:
+            failures.append(
+                f"{name} extract {field}: expected {expected[field]}, "
+                f"got {report.get(field)}"
+            )
+    if report.get("status") != "extracted":
+        failures.append(
+            f"{name} extract status: expected 'extracted', got "
+            f"{report.get('status')!r}"
+        )
+
+    # The freshly-extracted netlist should reproduce the committed one
+    # byte-for-byte -- extraction has no wall-clock/random content (verified
+    # while implementing this bring-up). A drift here means either the
+    # committed netlist is stale (needs --regen) or the tool's output
+    # changed upstream -- OR, per toolchain.json's PR #195 caveat, this
+    # machine's `klt extract` assigned different anonymous net labels
+    # ($NNN) to an unlabeled promoted net than the committed environment
+    # did. If the only diff is a self-consistent $NNN swap and `klt lvs`
+    # still reports mismatches=0 for the same extraction, that is known
+    # cross-platform net-numbering drift (klayout-tools#1063), not a real
+    # regression -- see toolchain.json before treating this as one.
+    committed = os.path.join(CELLS_DIR, entry["netlist"])
+    if not os.path.exists(committed):
+        failures.append(f"committed netlist missing -- run --regen: {committed}")
+    else:
+        with open(committed, "rb") as fh:
+            if fh.read() != netlist_bytes:
+                failures.append(
+                    f"{name}: fresh `klt extract` output does not match "
+                    f"the committed {entry['netlist']} byte-for-byte (if only "
+                    "anonymous $NNN net labels differ and `klt lvs` mismatches=0, "
+                    "see toolchain.json's PR #195 caveat -- known cross-platform "
+                    "net-numbering drift, klayout-tools#1063)"
+                )
+    # Callers receive UTF-8 text with universal newlines, as with a text-mode read.
+    netlist_text = netlist_bytes.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    return report, netlist_text, failures
+
+
 def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
     """Run `klt extract` live against the committed GDS, into a scratch
     directory (the report's own artifacts are written from the in-memory
@@ -301,30 +370,13 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
     Returns `(report, netlist_text, failures)`.
     """
     extract_cell = manifest["extract"]
-    gds_path = os.path.join(CELLS_DIR, extract_cell["gds"])
-    deck = manifest["deck"]
-    failures: list[str] = []
+    report, netlist_text, failures = _extract_and_check_scalars(
+        klt, manifest["deck"], extract_cell
+    )
 
-    with tempfile.TemporaryDirectory(prefix="klt-extract-") as scratch:
-        scratch_netlist = os.path.join(scratch, f"{extract_cell['name']}.spice")
-        report = _run_extract_json(klt, gds_path, deck, scratch_netlist)
-
-        with open(scratch_netlist, encoding="utf-8") as fh:
-            netlist_text = fh.read()
-
+    # On top of that shared core the proof cell pins its whole per-device
+    # and per-net shape, and tolerates no warning at all.
     expected = extract_cell["expect"]
-    for field in ("dbu_um", "device_count", "net_count", "pin_count"):
-        if report.get(field) != expected[field]:
-            failures.append(
-                f"extract {field} mismatch: expected {expected[field]}, got {report.get(field)}"
-            )
-    if report.get("device_counts") != expected["device_counts"]:
-        failures.append(
-            "extract device_counts mismatch: expected "
-            f"{expected['device_counts']}, got {report.get('device_counts')}"
-        )
-    if report.get("top") != expected["top"]:
-        failures.append(f"extract top mismatch: expected {expected['top']!r}, got {report.get('top')!r}")
     if report.get("devices") != expected["devices"]:
         failures.append(
             "extract devices[] mismatch (this is the Metal1 pin-label proof): "
@@ -332,8 +384,6 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
         )
     if report.get("nets") != expected["nets"]:
         failures.append(f"extract nets[] mismatch: expected {expected['nets']}, got {report.get('nets')}")
-    if report.get("status") != "extracted":
-        failures.append(f"extract status mismatch: expected 'extracted', got {report.get('status')!r}")
     if report.get("warnings"):
         failures.append(f"extract reported unexpected warnings: {report['warnings']}")
     # The deck's own declared device-class list. Pinned here because
@@ -349,33 +399,6 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
                 "extract device_classes mismatch -- the installed deck is not "
                 f"the pinned one: expected {expected['device_classes']}, got "
                 f"{report.get('device_classes')}"
-            )
-
-    # The freshly-extracted netlist should reproduce the committed one
-    # byte-for-byte -- extraction has no wall-clock/random content (verified
-    # while implementing this bring-up). A drift here means either the
-    # committed netlist is stale (needs --regen) or the tool's output
-    # changed upstream -- OR, per toolchain.json's PR #195 caveat, this
-    # machine's `klt extract` assigned different anonymous net labels
-    # ($NNN) to an unlabeled promoted net than the committed environment
-    # did. If the only diff is a self-consistent $NNN swap and `klt lvs`
-    # still reports mismatches=0 for the same extraction, that is known
-    # cross-platform net-numbering drift (klayout-tools#1063), not a real
-    # regression -- see toolchain.json before treating this as one.
-    committed_netlist_path = os.path.join(CELLS_DIR, extract_cell["netlist"])
-    if not os.path.exists(committed_netlist_path):
-        failures.append(f"committed netlist missing -- run with --regen: {committed_netlist_path}")
-    else:
-        with open(committed_netlist_path, encoding="utf-8") as fh:
-            committed_text = fh.read()
-        if committed_text != netlist_text:
-            failures.append(
-                "fresh `klt extract` output does not match the committed "
-                f"{extract_cell['netlist']} byte-for-byte -- run --regen if this "
-                "is an intentional deck/tool change (if only anonymous $NNN net "
-                "labels differ and `klt lvs` mismatches=0, see toolchain.json's "
-                "PR #195 caveat -- known cross-platform net-numbering drift, "
-                "klayout-tools#1063)"
             )
 
     return report, netlist_text, failures
@@ -464,42 +487,8 @@ def run_block_extract(klt: str, deck: str, block: dict) -> tuple[dict, str, list
     matching `klt lvs` case below performs, against a reference generated
     from `design/`.
     """
-    gds_path = os.path.join(CELLS_DIR, block["gds"])
-    failures: list[str] = []
-    with tempfile.TemporaryDirectory(prefix="klt-extract-") as scratch:
-        scratch_netlist = os.path.join(scratch, f"{block['name']}.spice")
-        report = _run_extract_json(klt, gds_path, deck, scratch_netlist)
-        with open(scratch_netlist, encoding="utf-8") as fh:
-            netlist_text = fh.read()
-
-    expected = block["expect"]
-    for field in ("top", "dbu_um", "device_count", "net_count", "pin_count",
-                  "device_counts"):
-        if report.get(field) != expected[field]:
-            failures.append(
-                f"{block['name']} extract {field}: expected {expected[field]}, "
-                f"got {report.get(field)}"
-            )
-    if report.get("status") != "extracted":
-        failures.append(
-            f"{block['name']} extract status: expected 'extracted', got "
-            f"{report.get('status')!r}"
-        )
-    failures += _check_warnings(block["name"], report, expected.get("warnings", []))
-
-    committed = os.path.join(CELLS_DIR, block["netlist"])
-    if not os.path.exists(committed):
-        failures.append(f"committed netlist missing -- run --regen: {committed}")
-    else:
-        with open(committed, encoding="utf-8") as fh:
-            if fh.read() != netlist_text:
-                failures.append(
-                    f"{block['name']}: fresh `klt extract` output does not match "
-                    f"the committed {block['netlist']} byte-for-byte (if only "
-                    "anonymous $NNN net labels differ and `klt lvs` mismatches=0, "
-                    "see toolchain.json's PR #195 caveat -- known cross-platform "
-                    "net-numbering drift, klayout-tools#1063)"
-                )
+    report, netlist_text, failures = _extract_and_check_scalars(klt, deck, block)
+    failures += _check_warnings(block["name"], report, block["expect"].get("warnings", []))
     return report, netlist_text, failures
 
 
