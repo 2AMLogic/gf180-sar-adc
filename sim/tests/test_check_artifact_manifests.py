@@ -18,6 +18,7 @@ import subprocess
 import tempfile
 import threading
 import unittest
+from email.utils import formatdate
 from pathlib import Path
 from unittest import mock
 
@@ -244,9 +245,32 @@ class Verify(unittest.TestCase):
                       "1 missing or mismatched", err)
         self.assertNotIn("OK:", out)
 
+    def test_first_retry_honors_the_brokers_time(self):
+        start = 1_700_000_000
+        future = formatdate(start + 120, usegmt=True)
+        past = formatdate(start - 60, usegmt=True)
+        for target, header, delay in (("stat", "60", 60), ("get", future, 120),
+                                      ("stat", past, 0)):
+            with self.subTest(op=target, retry_after=header):
+                self.sleeps.clear()
+                attempts = []
+
+                def throttle(op, sha, seen):
+                    if op != target:
+                        return False
+                    attempts.append(sum(self.sleeps))
+                    return seen == 0
+
+                broker = FakeBroker({self.sha_a: self.a}, throttle=throttle, retry_after=header)
+                with mock.patch.object(chk.time, "time", lambda: start + sum(self.sleeps)):
+                    rc, _, err = self.run_verify(broker, self.manifest(entry(self.a)))
+                self.assertEqual(rc, 0, err)
+                self.assertEqual(attempts, [0, delay])
+
     def test_retry_waits_are_bounded(self):
         no_header = [1.0, 2.0, 4.0, 8.0, 16.0, 30.0, 30.0]
-        for retry_after, sleeps in ((7, [7.0] * 7), (3600, [30.0] * 6), (None, no_header)):
+        for retry_after, sleeps in ((7, [7.0] * 7), (90, [90, 90]), (100, [100]), (3600, []),
+                                    (None, no_header), ("invalid", no_header)):
             with self.subTest(retry_after=retry_after):
                 self.sleeps.clear()
                 objects = self.store(1)
@@ -255,7 +279,8 @@ class Verify(unittest.TestCase):
                 self.assertEqual(rc, 2)
                 self.assertEqual(self.sleeps, sleeps)
                 self.assertEqual(len(broker.calls), len(sleeps) + 1)
-                self.assertIn(f"after {len(sleeps) + 1} attempts", err)
+                self.assertIn(f"after {len(sleeps) + 1} attempt", err)
+                self.assertIn("FAIL: sweep incomplete: 0 of 1 stored object(s) verified", err)
 
     def test_entries_are_paced_through_the_env_override(self):
         objects = self.store(3)

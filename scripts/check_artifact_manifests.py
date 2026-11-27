@@ -34,10 +34,10 @@ of that contract. Two subcommands:
     ``size_mismatch``, ``hash_mismatch`` or ``key_mismatch``. Entries are
     fetched ``PACE_S`` apart (``$CHECK_ARTIFACT_MANIFESTS_PACE_S`` overrides
     it) to keep a long sweep under the broker's per-caller rate limit; a
-    throttle (HTTP 429) that comes anyway is retried with backoff as
-    ``klt artifact`` retries it. Every manifest ends with a progress line,
-    ``<manifest>: <verified>/<total> verified``, counting the entries that
-    reached a verdict, matched or not.
+    throttle (HTTP 429) is retried after the broker's requested delay, or
+    with exponential backoff when it gives no usable time. Every manifest
+    ends with a progress line, ``<manifest>: <verified>/<total> verified``,
+    counting the entries that reached a verdict, matched or not.
 
 Fail closed. No broker configured, an unreachable broker or a broker refusal
 other than "not found" is exit 2, never success and never a schema-only pass.
@@ -71,6 +71,8 @@ import re
 import subprocess
 import sys
 import time
+from datetime import timezone
+from email.utils import parsedate_to_datetime
 from urllib.parse import urlsplit
 
 MANIFEST_DIR = "manifests/artifacts/"
@@ -98,7 +100,7 @@ TRANSFER_TIMEOUT_S = 600
 CHUNK = 1 << 20
 MAX_BROKER_BODY = 1 << 20
 RATE_LIMIT_ATTEMPTS = 8
-RATE_LIMIT_MAX_SLEEP_S = 30.0
+RATE_LIMIT_MAX_BACKOFF_S = 30.0
 RATE_LIMIT_TOTAL_WAIT_S = 180.0
 RATE_LIMIT_BASE_S = 1.0
 PACE_S = 1.0
@@ -337,11 +339,20 @@ def _conn(parts, timeout):
     return cls(parts.netloc, timeout=timeout)
 
 
-def _retry_after(value) -> float | None:
-    """``Retry-After`` in delta-seconds form, else ``None``."""
-    if value is None or not value.strip().isdigit():
+def _retry_after(value: str | None) -> float | None:
+    """Seconds to wait for a delay-seconds or HTTP-date header."""
+    if value is None:
         return None
-    return float(value)
+    value = value.strip()
+    if re.fullmatch(r"[0-9]+", value):
+        return float(value)
+    try:
+        date = parsedate_to_datetime(value)
+        if date.tzinfo is None:  # The asctime form of HTTP-date is implicitly UTC.
+            date = date.replace(tzinfo=timezone.utc)
+        return max(0.0, date.timestamp() - time.time())
+    except (ValueError, OverflowError):
+        return None
 
 
 def _json_object(raw: bytes) -> dict:
@@ -381,14 +392,10 @@ class Broker:
 
     def call(self, op: str, body: dict) -> tuple[int, dict]:
         """``(status, payload)`` of one broker call. A throttle (HTTP 429) is
-        retried on the budget ``klt artifact`` uses: up to
-        :data:`RATE_LIMIT_ATTEMPTS` attempts, sleeping the broker's
-        ``Retry-After`` seconds when it sends them, else a jittered
-        exponential backoff from :data:`RATE_LIMIT_BASE_S`; never more than
-        :data:`RATE_LIMIT_MAX_SLEEP_S` at a time nor
-        :data:`RATE_LIMIT_TOTAL_WAIT_S` in all. Retries are silent, no other
-        status is retried, and a broker still throttling when the budget is
-        spent raises ``ToolError``."""
+        retried up to :data:`RATE_LIMIT_ATTEMPTS` attempts. Honor the broker's
+        ``Retry-After`` when usable. Otherwise use jittered exponential backoff
+        capped at :data:`RATE_LIMIT_MAX_BACKOFF_S`. Raise ``ToolError`` if
+        another retry would exceed the attempt or total wait budget."""
         waited = 0.0
         attempt = 0
         while True:
@@ -396,12 +403,14 @@ class Broker:
             status, raw, retry_after = self._once(op, body)
             if status != 429:
                 return status, _json_object(raw)
-            backoff = random.uniform(0, RATE_LIMIT_BASE_S * 2 ** (attempt - 1))
-            delay = min(retry_after if retry_after is not None else backoff,
-                        RATE_LIMIT_MAX_SLEEP_S)
+            delay = retry_after
+            if delay is None:
+                backoff = random.uniform(0, RATE_LIMIT_BASE_S * 2 ** (attempt - 1))
+                delay = min(backoff, RATE_LIMIT_MAX_BACKOFF_S)
             if attempt >= RATE_LIMIT_ATTEMPTS or waited + delay > RATE_LIMIT_TOTAL_WAIT_S:
-                raise ToolError(f"{_refused(op, status, _json_object(raw))} (still "
-                                f"rate-limited after {attempt} attempts)") from None
+                refusal = _refused(op, status, _json_object(raw))
+                unit = "attempt" if attempt == 1 else "attempts"
+                raise ToolError(f"{refusal} (still rate-limited after {attempt} {unit})")
             _sleep(delay)
             waited += delay
 
