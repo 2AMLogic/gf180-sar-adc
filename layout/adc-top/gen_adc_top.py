@@ -1836,9 +1836,11 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
 
 
 def write_request(path: str, cell_name: str, key: str) -> None:
-    request_rel = os.path.relpath(path, nl.repo_root(HERE))
-    request = {
-        "_comment": [
+    nl.write_lvs_request(
+        path,
+        cell_name,
+        key,
+        [
             f"klt lvs request for the {cell_name} layout: the extracted layout",
             "netlist against the flat reference generated from",
             "design/adc-top/adc_top.spice (and, for ADC_BLOCK,",
@@ -1848,15 +1850,8 @@ def write_request(path: str, cell_name: str, key: str) -> None:
             "parses both -- see layout/lvs/cells/lvs_request_match.json for the",
             "engine artifact that avoids. Paths resolve against THIS file's",
             "directory.",
-            "",
-            f"    klt lvs {request_rel} --format json",
         ],
-        "layout": {"netlist": f"{key}.spice", "top": cell_name},
-        "reference": {"netlist": f"{key}.ref.spice", "top": cell_name},
-    }
-    with open(path, "w", encoding="utf-8") as fh:
-        json.dump(request, fh, indent=2)
-        fh.write("\n")
+    )
 
 
 def main() -> None:

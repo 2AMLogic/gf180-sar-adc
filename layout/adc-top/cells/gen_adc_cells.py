@@ -50,7 +50,6 @@ what it still defines.
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 
@@ -308,9 +307,11 @@ def write_reference(path: str, spec: dict, info: dict) -> list[str]:
 
 def write_request(path: str, spec: dict) -> None:
     name = spec["cell"]
-    request_rel = os.path.relpath(path, nl.repo_root(HERE))
-    request = {
-        "_comment": [
+    nl.write_lvs_request(
+        path,
+        name,
+        name.lower(),
+        [
             f"klt lvs request for {name} -- the extracted layout netlist against",
             "the flat reference generated from design/adc-top/adc_top.spice.",
             "",
@@ -321,15 +322,8 @@ def write_request(path: str, spec: dict) -> None:
             "and a NetlistSpiceReader-parsed one on the other, which splits the",
             "device class names by case and reports a spurious topology",
             "mismatch. Paths resolve against THIS file's directory.",
-            "",
-            f"    klt lvs {request_rel} --format json",
         ],
-        "layout": {"netlist": f"{name.lower()}.spice", "top": name},
-        "reference": {"netlist": f"{name.lower()}.ref.spice", "top": name},
-    }
-    with open(path, "w", encoding="utf-8") as fh:
-        json.dump(request, fh, indent=2)
-        fh.write("\n")
+    )
 
 
 def main() -> None:
