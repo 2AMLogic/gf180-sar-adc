@@ -21,6 +21,8 @@ unpaired PMOS wider than `FOLD_ROW_MAX_W` (10 um), which the unfolded widened
 `Xsi` is at all six scales; the generator now exits with a DR-0050 message
 for them. The six scales are netlist-only (the `run_sweep.sh` reproduction
 above is unaffected). The committed `layout/adc-top/candidates/acq-leg-*`
-directories and records are unchanged evidence; only `--scale 0.5` (5u/10u)
-still builds. Re-folding the widened leg would change the shared `Xsi` line
+directories and records are unchanged evidence; a scale builds when its
+drawn PMOS width (`20u * scale`, as emitted in the `wp=` token) is at most
+`FOLD_ROW_MAX_W` -- `--scale 0.5` (5u/10u) and `--scale 0.4` are working
+examples. Re-folding the widened leg would change the shared `Xsi` line
 and the scale-for-scale comparability, so it is not done here.

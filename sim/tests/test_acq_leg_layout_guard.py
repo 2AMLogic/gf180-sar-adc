@@ -41,6 +41,17 @@ class LayoutGuardTests(unittest.TestCase):
         self.assertIsNone(CAND.layout_buildable_error(at_limit))
         self.assertIsNotNone(CAND.layout_buildable_error(at_limit * 1.001))
 
+    def test_guard_uses_emitted_width_token(self):
+        """0.500026 emits wp=10.0005u, which the netlist parser reads as
+        10000 nm (allowed); 0.500028 emits 10.0006u -> 10001 nm (refused)."""
+        self.assertEqual(CAND.emitted_wp_nm(0.500026), 10000)
+        self.assertIsNone(CAND.layout_buildable_error(0.500026))
+        self.assertEqual(CAND.emitted_wp_nm(0.500028), 10001)
+        self.assertIsNotNone(CAND.layout_buildable_error(0.500028))
+
+    def test_other_buildable_scale(self):
+        self.assertIsNone(CAND.layout_buildable_error(0.4))
+
     def test_main_exits_before_layout_work(self):
         with self.assertRaises(SystemExit) as cm:
             CAND.main(["--scale", "1", "--outdir", str(CAND.HERE) + "/acq-leg-guard-unused"])
