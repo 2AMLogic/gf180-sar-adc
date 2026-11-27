@@ -141,15 +141,13 @@ class SharedExtractCoreTest(unittest.TestCase):
         Returns `(report, netlist_text, failures, argv)`.
         """
         if committed_text is not None:
-            with open(os.path.join(self.cells, entry["netlist"]), "w", encoding="utf-8") as fh:
-                fh.write(committed_text)
+            Path(self.cells, entry["netlist"]).write_bytes(committed_text.encode("utf-8"))
         argv_seen: list = []
 
         def fake(cmd, **kwargs):
             argv_seen.append(list(cmd))
             scratch = cmd[cmd.index("-o") + 1]
-            with open(scratch, "w", encoding="utf-8") as fh:
-                fh.write(netlist_text)
+            Path(scratch).write_bytes(netlist_text.encode("utf-8"))
             return subprocess.CompletedProcess(cmd, 0, json.dumps(report), "")
 
         with mock.patch.object(mod.subprocess, "run", side_effect=fake):
@@ -159,13 +157,15 @@ class SharedExtractCoreTest(unittest.TestCase):
     # -- the shared core -------------------------------------------------- #
 
     def test_clean_entry_passes_both_entry_points(self):
-        for label, as_caller in CALLERS:
-            with self.subTest(caller=label):
-                report, text, failures, _ = self._run(
-                    as_caller, _entry(), REPORT, NETLIST_TEXT, NETLIST_TEXT)
-                self.assertEqual(failures, [])
-                self.assertEqual(report, REPORT)
-                self.assertEqual(text, NETLIST_TEXT)
+        for newline in ("\n", "\r\n"):
+            netlist = NETLIST_TEXT.replace("\n", newline)
+            for label, as_caller in CALLERS:
+                with self.subTest(newline=newline, caller=label):
+                    report, text, failures, _ = self._run(
+                        as_caller, _entry(), REPORT, netlist, netlist)
+                    self.assertEqual(failures, [])
+                    self.assertEqual(report, REPORT)
+                    self.assertEqual(text, NETLIST_TEXT)
 
     def test_each_entry_extracts_its_gds_into_a_vanishing_scratch_netlist(self):
         entry = _entry()
@@ -224,12 +224,15 @@ class SharedExtractCoreTest(unittest.TestCase):
             "caveat -- known cross-platform net-numbering drift, "
             "klayout-tools#1063)"
         ]
-        per_caller = [
-            self._run(as_caller, entry, REPORT, NETLIST_TEXT, NETLIST_TEXT + "* drift\n")[2]
-            for _, as_caller in CALLERS
-        ]
-        self.assertEqual(per_caller[0], expected)
-        self.assertEqual(per_caller[0], per_caller[1])
+        for defect, fresh, committed in (
+            ("extra line", NETLIST_TEXT, NETLIST_TEXT + "* drift\n"),
+            ("CRLF vs LF", NETLIST_TEXT.replace("\n", "\r\n"), NETLIST_TEXT),
+        ):
+            for label, as_caller in CALLERS:
+                with self.subTest(defect=defect, caller=label):
+                    _, text, failures, _ = self._run(as_caller, entry, REPORT, fresh, committed)
+                    self.assertEqual(failures, expected)
+                    self.assertEqual(text, NETLIST_TEXT)
 
     def test_missing_committed_netlist_is_reported_identically(self):
         entry = _entry()

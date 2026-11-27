@@ -322,8 +322,8 @@ def _extract_and_check_scalars(klt: str, deck: str, entry: dict) -> tuple[dict, 
         scratch_netlist = os.path.join(scratch, f"{name}.spice")
         report = _run_extract_json(klt, gds_path, deck, scratch_netlist)
 
-        with open(scratch_netlist, encoding="utf-8") as fh:
-            netlist_text = fh.read()
+        with open(scratch_netlist, "rb") as fh:
+            netlist_bytes = fh.read()
 
     expected = entry["expect"]
     for field in ("top", "dbu_um", "device_count", "net_count", "pin_count",
@@ -354,8 +354,8 @@ def _extract_and_check_scalars(klt: str, deck: str, entry: dict) -> tuple[dict, 
     if not os.path.exists(committed):
         failures.append(f"committed netlist missing -- run --regen: {committed}")
     else:
-        with open(committed, encoding="utf-8") as fh:
-            if fh.read() != netlist_text:
+        with open(committed, "rb") as fh:
+            if fh.read() != netlist_bytes:
                 failures.append(
                     f"{name}: fresh `klt extract` output does not match "
                     f"the committed {entry['netlist']} byte-for-byte (if only "
@@ -363,6 +363,8 @@ def _extract_and_check_scalars(klt: str, deck: str, entry: dict) -> tuple[dict, 
                     "see toolchain.json's PR #195 caveat -- known cross-platform "
                     "net-numbering drift, klayout-tools#1063)"
                 )
+    # Callers receive UTF-8 text with universal newlines, as with a text-mode read.
+    netlist_text = netlist_bytes.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
     return report, netlist_text, failures
 
 
