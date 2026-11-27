@@ -94,8 +94,11 @@ from lib import place  # noqa: E402
 
 CELL_NAME = "COMPARATOR"
 
-#: Placement order along the row, one Nwell island (and therefore one
-#: unnamed PMOS-body net) per group. The order is the kickback constraint of
+#: Placement order along the row, one Nwell island per group. An island is
+#: a physical well, not a net of its own: each one gets the n+ tap
+#: `place.draw_devices` draws and `place.finish_block` routes to the supply
+#: trunk (`tap_net`, `vdd` here), so every PMOS body in every group reports
+#: `vdd` in the extracted netlist. The order is the kickback constraint of
 #: `layout/floorplan-matching-plan.md` Sec 2.3 made physical: the preamp,
 #: whose inputs ARE the CDAC top plates, is at one end; the regenerating
 #: latch is at the other.

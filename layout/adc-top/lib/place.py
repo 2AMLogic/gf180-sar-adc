@@ -295,10 +295,13 @@ def draw_devices(
 
     A **group** is a set of devices that shares one Nwell island and is
     placed contiguously: its NMOS columns first, then its PMOS columns. The
-    group's name is the net every one of its PMOS bodies lands on in the
-    extracted netlist (the curated gf180mcu deck never connects `nwell` to
-    `contact`, so a well can only ever be an unnamed island net -- see
-    `lib/netlist.write_reference`).
+    group's name labels that island at the call site; it is not a net. The
+    island is a physical well, and the curated gf180mcu deck never
+    connects `nwell` to `contact` by itself -- what ties the island
+    electrically is the n+ tap this function draws in it, which
+    :func:`finish_block` routes to `tap_net`. Every PMOS body in every
+    group therefore lands on `tap_net` in the extracted netlist, not on an
+    unnamed per-island well net (see `lib/netlist.write_reference`).
 
     Grouping is not cosmetic. Placing devices group-by-group is what keeps a
     net LOCAL in X: in the CDAC decode bank, one `adc_cdac_cell`'s seven
@@ -334,12 +337,22 @@ def draw_devices(
     trunk is a hard error there rather than a silently untapped well.
 
     `substrate_net` is the matching answer for the NMOS bodies, and it is
-    the caller's to state because the substrate tie is drawn at the TOP
-    level, not here: `gen_adc_top.py` rings both its regions in
-    `Pplus`-marked diffusion strapped to `vss` and passes `"vss"`, while the
-    stand-alone comparator cell draws no ring and keeps `SUBSTRATE_NET`. Both
-    values land in `body_net`, which is what generates the LVS reference --
-    so the reference states whichever one the geometry actually produces.
+    the caller's to state: the tie is drawn here (`finish_block`), but a
+    label decides what the deck calls the net it reaches. A `Pplus`-marked
+    substrate tie that lands on a labelled net makes the NMOS bodies report
+    that net (`vss` throughout this repo); a tie that reaches no labelled
+    net leaves them on the deck's `vsubs` global (`SUBSTRATE_NET`). A ring
+    is only one way to provide the tie. `gen_adc_top.py` rings both its
+    regions in `Pplus`-marked diffusion strapped to `vss` and passes
+    `"vss"`. The stand-alone comparator draws no ring and passes `"vss"` as
+    well: the strip :func:`finish_block` draws under every row with NMOS
+    columns (DR-0049) is `Pplus`-marked and routed to the cell's own
+    labelled `vss` trunk. `SUBSTRATE_NET` is for a tie with no label to
+    merge into -- the `adc_tgate` leaves have no `vss` port, so their strip
+    lands on an unlabelled track and `vsubs` keeps its name. Both
+    `substrate_net` and `tap_net` land in `body_net`, which is what
+    generates the LVS reference -- so the reference states whichever one
+    the geometry actually produces.
 
     Since #356 the group's own `nwell_net` name no longer appears in
     `body_net`: every island is tapped to `tap_net`, so a PMOS body reports

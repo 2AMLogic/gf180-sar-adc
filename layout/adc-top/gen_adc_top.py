@@ -187,8 +187,11 @@ RING_STRAP_VIA_INSET = 2000
 #: issue #356 the rings are `Pplus`-marked and routed, so the pinned
 #: extraction deck's own `tap_pplus` derivation claims them and
 #: `connect_global` merges its synthesized `vsubs` global into the drawn
-#: `vss` net. The stand-alone comparator cell draws no ring and still reports
-#: `vsubs` -- see `lib/netlist.SUBSTRATE_NET`.
+#: `vss` net. The stand-alone comparator cell draws no ring and reports
+#: `vss` all the same: since DR-0049 its own `Pplus` tie strip is routed to
+#: its labelled `vss` trunk, so `gen_comparator.build` passes `"vss"` too.
+#: A ring is only one way to provide the tie -- see
+#: `lib/netlist.SUBSTRATE_NET`.
 SUBSTRATE_TIE_NET = "vss"
 #: Analog-to-digital separation: the plan (Sec 2.4/3) asks for the guard
 #: ring to occupy the boundary between the analog core and the SAR-logic
@@ -1055,10 +1058,11 @@ def build(
         if len(ordered) != len(side):
             raise RuntimeError(f"weight ordering dropped devices on side {tag}")
         cell = layout.create_cell(f"ADC_DECODE_BANK_{tag.upper()}")
-        # One placement group -- and therefore one Nwell island and one
-        # (unnamed) PMOS-body net -- per weighted CDAC cell, so each cell's
-        # seven internal nets stay local in X and the channel packs. See
-        # lib/place.draw_devices.
+        # One placement group -- and therefore one Nwell island -- per
+        # weighted CDAC cell, so each cell's seven internal nets stay local
+        # in X and the channel packs. The island is a physical well, not a
+        # net: its n+ tap is routed to the `vdd` trunk, so every PMOS body
+        # in the bank reports `vdd`. See lib/place.draw_devices.
         cell_groups = [
             (
                 f"nw_{tag}{weight}",
