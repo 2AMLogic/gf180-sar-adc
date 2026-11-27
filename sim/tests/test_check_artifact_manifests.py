@@ -18,7 +18,9 @@ import subprocess
 import tempfile
 import threading
 import unittest
+from email.utils import formatdate
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location(
@@ -27,6 +29,7 @@ chk = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(chk)
 
 REPO = "owner/repo"
+PACE_ENV = "CHECK_ARTIFACT_MANIFESTS_PACE_S"
 ENV = {
     **os.environ,
     "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
@@ -49,25 +52,43 @@ def entry(data: bytes, name="sim/b/records/r1.json", sha=None, size=None):
 class FakeBroker:
     """objects: {sha: bytes} the store holds. ``serve_override`` maps a sha to
     the bytes actually served (a corrupted object); ``key_override`` makes
-    get answer a different key."""
+    get answer a different key. ``throttle`` makes it answer HTTP 429 while
+    ``throttle(op, sha, calls_so_far)`` is true for that call (``"always"``:
+    every call), with ``retry_after`` as the ``Retry-After`` header.
+    ``calls`` lists the ops answered."""
 
-    def __init__(self, objects, serve_override=None, key_override=None, refuse=None):
+    def __init__(self, objects, serve_override=None, key_override=None, refuse=None,
+                 throttle=None, retry_after=None):
         self.objects = objects
+        self.calls = []
+        self.throttled = {}
         fake = self
 
         class H(http.server.BaseHTTPRequestHandler):
-            def _send(self, status, payload=None, raw=None):
+            def _send(self, status, payload=None, raw=None, header=None):
                 raw = raw if raw is not None else json.dumps(payload).encode()
                 self.send_response(status)
+                if header:
+                    self.send_header(*header)
                 self.send_header("Content-Length", str(len(raw)))
                 self.end_headers()
                 self.wfile.write(raw)
 
             def do_POST(self):
                 body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                op = self.path.rsplit("/", 1)[-1]
+                fake.calls.append(op)
                 if refuse:
                     return self._send(403, {"error": refuse, "message": "denied"})
                 sha = body["sha256"]
+                seen = fake.throttled.get((op, sha), 0)
+                fake.throttled[op, sha] = seen + 1
+                if throttle == "always" or (callable(throttle) and throttle(op, sha, seen)):
+                    header = None
+                    if retry_after is not None:
+                        header = ("Retry-After", str(retry_after))
+                    return self._send(429, {"error": "rate_limited",
+                                            "message": "per-caller rate limit"}, header=header)
                 assert body["repo"] == REPO and body["kind"] == "evidence"
                 if sha not in fake.objects:
                     if self.path == "/v1/stat":
@@ -105,20 +126,34 @@ class Verify(unittest.TestCase):
         self.a, self.b = b"alpha evidence\n", b"beta evidence\n"
         self.sha_a = hashlib.sha256(self.a).hexdigest()
         self.sha_b = hashlib.sha256(self.b).hexdigest()
+        self.sleeps = []
+        for patcher in (mock.patch.object(chk, "_sleep", self.sleeps.append, create=True),
+                        mock.patch("random.uniform", lambda lo, hi: hi)):
+            patcher.start()
+            self.addCleanup(patcher.stop)
 
-    def manifest(self, *entries):
-        p = self.dir / "m.manifest.json"
+    def store(self, n, start=0):
+        """``n`` distinct one-byte objects as the {sha: bytes} a broker holds."""
+        return {hashlib.sha256(bytes([65 + start + i])).hexdigest(): bytes([65 + start + i])
+                for i in range(n)}
+
+    def entries(self, objects):
+        return [entry(data, name=f"sim/b/corners/r1/{sha[:8]}.log")
+                for sha, data in objects.items()]
+
+    def manifest(self, *entries, name="m.manifest.json"):
+        p = self.dir / name
         p.write_text(json.dumps({"schema_version": 1, "entries": list(entries)}))
         return str(p)
 
-    def run_verify(self, broker, path, env=None):
+    def run_verify(self, broker, *paths, env=None):
         out, err = io.StringIO(), io.StringIO()
         if broker is not None:
             self.addCleanup(broker.close)
-        env = env if env is not None else {chk.ENV_BROKER: broker.base}
+        env = env if env is not None else {chk.ENV_BROKER: broker.base, PACE_ENV: "0"}
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             try:
-                rc = chk.verify([path], env=env)
+                rc = chk.verify(list(paths), env=env)
             except chk.ToolError as exc:
                 print(f"ERROR: {exc}", file=err)
                 rc = chk.EXIT_ERROR
@@ -130,6 +165,7 @@ class Verify(unittest.TestCase):
         rc, out, err = self.run_verify(broker, path)
         self.assertEqual(rc, 0, err)
         self.assertIn("2 stored object(s) fetched and re-hashed", out)
+        self.assertIn("m.manifest.json: 2/2 verified", out)
         self.assertNotIn("X-Sig", out + err)  # presigned URL never printed
 
     def test_hash_mismatch(self):
@@ -162,6 +198,129 @@ class Verify(unittest.TestCase):
         rc, _, err = self.run_verify(broker, self.manifest(entry(self.a)))
         self.assertEqual(rc, 2)
         self.assertIn("not_granted", err)
+        self.assertEqual(broker.calls, ["stat"])
+        self.assertEqual(self.sleeps, [])
+
+    def test_throttled_broker_is_retried_and_the_sweep_passes(self):
+        objects = self.store(2)
+        broker = FakeBroker(objects, throttle=lambda op, sha, n: n < 2)
+        rc, out, err = self.run_verify(broker, self.manifest(*self.entries(objects)))
+        self.assertEqual(rc, 0, err)
+        self.assertIn("OK: 2 stored object(s) fetched and re-hashed", out)
+        self.assertIn("m.manifest.json: 2/2 verified", out)
+        self.assertEqual(broker.calls, ["stat", "stat", "stat", "get", "get", "get"] * 2)
+        self.assertEqual(self.sleeps, [1.0, 2.0, 1.0, 2.0] * 2)
+
+    def test_broker_that_stays_throttled_is_exit_2_with_progress(self):
+        objects = self.store(3)
+        broker = FakeBroker(objects, throttle="always")
+        rc, out, err = self.run_verify(broker, self.manifest(*self.entries(objects)))
+        self.assertEqual(rc, 2)
+        self.assertEqual(broker.calls, ["stat"] * 8)
+        self.assertIn("rate_limited", err)
+        self.assertIn("after 8 attempts", err)
+        self.assertIn("FAIL: sweep incomplete: 0 of 3 stored object(s) verified", err)
+        self.assertIn("m.manifest.json: 0/3 verified", out)
+        self.assertNotIn("OK:", out)
+
+    def test_sweep_cut_off_midway_names_complete_and_cut_off_manifests(self):
+        whole, cut, unreached = self.store(3), self.store(2, 3), self.store(2, 5)
+        missing = next(iter(whole))
+        at = list(cut)[1]
+        stored = {**whole, **cut, **unreached}
+        del stored[missing]
+        broker = FakeBroker(stored, throttle=lambda op, sha, n: sha == at)
+        paths = [self.manifest(*self.entries(whole), name="a.manifest.json"),
+                 self.manifest(*self.entries(cut), name="b.manifest.json"),
+                 self.manifest(*self.entries(unreached), name="c.manifest.json")]
+        rc, out, err = self.run_verify(broker, *paths)
+        self.assertEqual(rc, 2)
+        self.assertIn("missing", out)
+        self.assertIn("a.manifest.json: 3/3 verified", out)
+        self.assertIn("b.manifest.json: 1/2 verified", out)
+        self.assertIn("c.manifest.json: 0/2 verified", out)
+        self.assertIn("FAIL: sweep incomplete: 4 of 7 stored object(s) verified across "
+                      "3 manifest(s): 1 verified in full, cut off in ", err)
+        self.assertIn("b.manifest.json (1/2 verified), 1 not reached; of those verified, "
+                      "1 missing or mismatched", err)
+        self.assertNotIn("OK:", out)
+
+    def test_first_retry_honors_the_brokers_time(self):
+        start = 1_700_000_000
+        future = formatdate(start + 120, usegmt=True)
+        past = formatdate(start - 60, usegmt=True)
+        for target, header, delay in (("stat", "60", 60), ("get", future, 120),
+                                      ("stat", past, 0)):
+            with self.subTest(op=target, retry_after=header):
+                self.sleeps.clear()
+                attempts = []
+
+                def throttle(op, sha, seen):
+                    if op != target:
+                        return False
+                    attempts.append(sum(self.sleeps))
+                    return seen == 0
+
+                broker = FakeBroker({self.sha_a: self.a}, throttle=throttle, retry_after=header)
+                with mock.patch.object(chk.time, "time", lambda: start + sum(self.sleeps)):
+                    rc, _, err = self.run_verify(broker, self.manifest(entry(self.a)))
+                self.assertEqual(rc, 0, err)
+                self.assertEqual(attempts, [0, delay])
+
+    def test_retry_waits_are_bounded(self):
+        no_header = [1.0, 2.0, 4.0, 8.0, 16.0, 30.0, 30.0]
+        for retry_after, sleeps in ((7, [7.0] * 7), (90, [90, 90]), (100, [100]), (3600, []),
+                                    (None, no_header), ("invalid", no_header)):
+            with self.subTest(retry_after=retry_after):
+                self.sleeps.clear()
+                objects = self.store(1)
+                broker = FakeBroker(objects, throttle="always", retry_after=retry_after)
+                rc, _, err = self.run_verify(broker, self.manifest(*self.entries(objects)))
+                self.assertEqual(rc, 2)
+                self.assertEqual(self.sleeps, sleeps)
+                self.assertEqual(len(broker.calls), len(sleeps) + 1)
+                self.assertIn(f"after {len(sleeps) + 1} attempt", err)
+                self.assertIn("FAIL: sweep incomplete: 0 of 1 stored object(s) verified", err)
+
+    def test_entries_are_paced_through_the_env_override(self):
+        objects = self.store(3)
+        broker = FakeBroker(objects)
+        rc, _, err = self.run_verify(broker, self.manifest(*self.entries(objects)),
+                                     env={chk.ENV_BROKER: broker.base, PACE_ENV: "0.25"})
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(self.sleeps, [0.25, 0.25])
+
+    def test_pace_is_one_second_by_default_and_must_be_a_number(self):
+        objects = self.store(2)
+        path = self.manifest(*self.entries(objects))
+        broker = FakeBroker(objects)
+        rc, _, err = self.run_verify(broker, path, env={chk.ENV_BROKER: broker.base})
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(self.sleeps, [1.0])
+        for junk in ("fast", "-1", "nan", "inf", ""):
+            with self.subTest(junk):
+                self.sleeps.clear()
+                broker = FakeBroker(objects)
+                rc, _, err = self.run_verify(broker, path, env={chk.ENV_BROKER: broker.base,
+                                                                PACE_ENV: junk})
+                self.assertEqual(rc, 2)
+                self.assertIn(f"${PACE_ENV} must be a non-negative number", err)
+
+    def test_cli_sweep_stopped_by_the_broker_exits_2(self):
+        objects = self.store(2)
+        broker = FakeBroker(objects, throttle="always")
+        self.addCleanup(broker.close)
+        out, err = io.StringIO(), io.StringIO()
+        env = {chk.ENV_BROKER: broker.base, PACE_ENV: "0"}
+        environ = mock.patch.dict(os.environ, env)
+        environ.start()
+        self.addCleanup(environ.stop)
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = chk.main(["verify", self.manifest(*self.entries(objects))])
+        self.assertEqual(rc, 2)
+        self.assertIn("FAIL: sweep incomplete: 0 of 2 stored object(s) verified",
+                      err.getvalue())
+        self.assertNotIn("OK:", out.getvalue())
 
     def test_unreachable_broker_fails_closed(self):
         sock = socket.socket()
