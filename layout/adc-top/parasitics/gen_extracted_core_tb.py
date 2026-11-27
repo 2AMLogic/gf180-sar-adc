@@ -784,13 +784,19 @@ def _core_extracted(tag: str, mode: str, pins: list[str], top: str) -> list[str]
     return L
 
 
-def library_and_core(top: str = "ADC_TOP") -> tuple[str, list[str]]:
+def library_and_core(top: str = "ADC_TOP", tag: str = TAG) -> tuple[str, list[str]]:
     """`(text, pins)`: the comparator + SAR-controller library, the extracted
     core's own `.SUBCKT`, and one wired conversion chain, ready to append
     after `gtop._preamble(...)` and a stimulus source.
+
+    `tag` names the chain's nets (`_core_extracted`) and defaults to this
+    module's own; a deck whose manifest reads `se_*` nets passes `tag="se"`.
+    The text ends with a single newline, so a deck that appends it to a list
+    of lines and joins with newlines has one blank line between the chain
+    and whatever follows it.
     """
     pins, core_text = core_pins(top)
-    body = "\n".join(_core_extracted(TAG, "0", pins, top)) + "\n"
+    body = "\n".join(_core_extracted(tag, "0", pins, top)) + "\n"
     lib = (
         gtop.comparator_block()
         + "\n"

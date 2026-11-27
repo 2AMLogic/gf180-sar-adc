@@ -57,6 +57,12 @@ manifests' "byte-reproducible" claim: every other check reads the
 green. They live here for the same reason as the probing above -- both
 runners' manifests make the same claim and must assert it the same way.
 
+`run_generator_once` (issue #1087) is `--regen`'s generator launch. The
+`adc-top` generators write several cells per run and take no cell name, so
+both runners' per-entry traversal was relaunching the identical command
+for every cell a script had already written. One implementation is what
+keeps the two traversals in agreement about what they skip.
+
 This module is import-only -- it runs no tool at import time and has no
 side effects, so `python3 -m compileall layout` (this repo's CI) covers it
 without needing `klt` installed.
@@ -706,6 +712,45 @@ def verify_generators(cells, cells_dir: str, python: str) -> None:
                     "diff, or fix the generator."
                 )
         print(f"  {name}: {generator} reproduces {gds} byte-for-byte")
+
+
+def run_generator_once(
+    entry: dict, cells_dir: str, python: str, launched: "set[str]"
+) -> None:
+    """Launch `entry["generator"]` unless this regeneration already did
+    (issue #1087).
+
+    Both runners' `regenerate()` walk their manifest and launch a generator
+    per entry, but the `adc-top` generators are multi-output and take no
+    cell name: one launch of `gen_adc_cells.py` writes all five leaf cells,
+    one of `gen_adc_top.py` writes both `adc_top` and `adc_block`. On the
+    committed manifests that was 10 launches for 5 distinct scripts (DRC)
+    and 9 for 4 (LVS) -- five redundant launches each, rebuilding the same
+    bytes.
+
+    The traversal stays the runner's: it still visits every entry, so each
+    one's own DRC run or `klt extract` still happens. Only the launch is
+    skipped, and only for a script this regeneration has already run.
+    `launched` is the caller's own set, created inside `regenerate()` and
+    never module state, so a second `--regen` rebuilds everything; a
+    generator that fails raises before any later entry is visited. Keyed
+    on the resolved script path: the runners pass a generator no
+    arguments, so two entries naming one script would have run the
+    identical command.
+
+    `entry` is any manifest entry with a `generator` key, relative to
+    `cells_dir`; `python` is an interpreter with the pip `klayout` package
+    (`find_klayout_python()`).
+    """
+    script = os.path.join(cells_dir, entry["generator"])
+    if script in launched:
+        return
+    launched.add(script)
+    proc = subprocess.run([python, script], capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise ToolingError(
+            f"{entry['generator']} failed:\n{proc.stdout}{proc.stderr}"
+        )
 
 
 def latest_record(reports_dir: str) -> str:
