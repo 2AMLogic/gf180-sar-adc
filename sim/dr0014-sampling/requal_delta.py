@@ -4,49 +4,50 @@
     python3 sim/dr0014-sampling/requal_delta.py OLD_ID NEW_ID [--rel 0.01] [--abs 1e-3]
 
 Reads the per-corner result table of each record (`records/<id>.md`, the first
-table whose header starts with `corner-id`), pairs the two by corner id, and
-prints one row per measurement: the corner with the largest |new - old|, the
-old and new value there, the delta, and whether it exceeds the tolerance.
+table whose header starts with `corner-id`) through the shared reader
+`sim/tools/corner_table.py`, pairs the two by corner id, and prints one row per
+measurement: the corner with the largest |new - old|, the old and new value
+there, the delta, and whether it exceeds the tolerance. The shared reader keeps
+reading past an ERROR verdict that carries several lines of simulator output,
+so every corner after such a row is paired too.
 
 A measurement is "moved" when |delta| > max(--abs, --rel * max(|old|, |new|))
 at any corner. Defaults: 1 % relative, 1e-3 absolute (in the measurement's own
 unit) so a value that is numerically zero does not register as a 100 % move.
+A cell that is not a number (`n/a`, a pass/fail verdict) has no delta: the two
+sides are compared as text, and a measurement that one record has and the
+other lacks, or a verdict that changed, counts as moved.
 Stdlib only, like the rest of sim/.
 """
 
 import argparse
-import re
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+from corner_table import parse_record
 
 RECORDS = Path(__file__).resolve().parent / "records"
 
 
-def parse(record_id):
-    """Return (columns, {corner: {col: value-or-str}}) from the first corner-id table."""
-    lines = (RECORDS / f"{record_id}.md").read_text().splitlines()
-    rows, cols = {}, None
-    for line in lines:
-        s = line.strip()
-        if not s.startswith("|"):
-            if rows:
-                break
-            continue
-        cells = [c.strip() for c in s.strip("|").split("|")]
-        if cells[0] == "corner-id":
-            cols = cells
-        elif cols and not set(cells[0]) <= set("-"):
-            rows[cells[0].strip("`")] = dict(zip(cols, cells))
-    if cols is None:
-        sys.exit(f"{record_id}: no corner-id table found")
-    return cols, rows
-
-
-def num(text):
+def load(record_id):
+    """Return {corner: {col: float-or-str}}, or exit naming the record and the defect."""
     try:
-        return float(text)
-    except ValueError:
-        return None
+        return parse_record(RECORDS / f"{record_id}.md")
+    except (OSError, ValueError) as exc:
+        sys.exit(f"{record_id}: {exc}")
+
+
+def columns(rows):
+    """Measurement names in the record's own column order."""
+    return list(dict.fromkeys(name for row in rows.values() for name in row))
+
+
+def as_text(value):
+    """A cell compared as text, kept on one line; a number prints as the numeric rows do."""
+    if isinstance(value, float):
+        return f"{value:.6g}"
+    return str(value).replace("\n", "\\n")
 
 
 def main():
@@ -57,46 +58,44 @@ def main():
     ap.add_argument("--abs", dest="abs_", type=float, default=1e-3)
     args = ap.parse_args()
 
-    ocols, orows = parse(args.old)
-    ncols, nrows = parse(args.new)
+    orows, nrows = load(args.old), load(args.new)
+    ocols, ncols = columns(orows), columns(nrows)
     corners = [c for c in orows if c in nrows]
     print(f"old {args.old}: {len(orows)} corners; new {args.new}: {len(nrows)} corners; "
           f"paired {len(corners)}")
     print("| metric | corner of max \\|delta\\| | old | new | delta | tolerance | moved |")
     print("|---|---|---|---|---|---|---|")
     moved = 0
-    only_old = [c for c in ocols[1:] if c not in ncols]
-    for col in ocols[1:]:
+    only_old = [c for c in ocols if c not in ncols]
+    for col in ocols:
         if col not in ncols:
             continue
         best = None
         for c in corners:
-            o, n = num(orows[c][col]), num(nrows[c][col])
-            if o is None or n is None:
-                if orows[c][col] != nrows[c][col]:
-                    best = (float("inf"), c, orows[c][col], nrows[c][col])
-                    break
+            o, n = orows[c][col], nrows[c][col]
+            if isinstance(o, float) and isinstance(n, float):
+                tol = max(args.abs_, args.rel * max(abs(o), abs(n)))
+                score = abs(n - o) / tol
+                if best is None or score > best[0]:
+                    best = (score, c, o, n, tol)
                 continue
-            d = abs(n - o)
-            tol = max(args.abs_, args.rel * max(abs(o), abs(n)))
-            score = d / tol
-            if best is None or score > best[0]:
-                best = (score, c, o, n)
+            if o != n:
+                best = (float("inf"), c, o, n, None)
+                break
         if best is None:
             continue
-        score, c, o, n = best
-        if isinstance(o, str):
-            print(f"| `{col}` | `{c}` | {o} | {n} | n/a | exact | yes |")
+        score, c, o, n, tol = best
+        if isinstance(o, float) and isinstance(n, float):
+            flag = "yes" if score > 1 else "no"
+            moved += flag == "yes"
+            print(f"| `{col}` | `{c}` | {o:.6g} | {n:.6g} | {n - o:+.3g} | {tol:.3g} | {flag} |")
+        else:
             moved += 1
-            continue
-        tol = max(args.abs_, args.rel * max(abs(o), abs(n)))
-        flag = "yes" if score > 1 else "no"
-        moved += flag == "yes"
-        print(f"| `{col}` | `{c}` | {o:.6g} | {n:.6g} | {n - o:+.3g} | {tol:.3g} | {flag} |")
+            print(f"| `{col}` | `{c}` | {as_text(o)} | {as_text(n)} | n/a | exact | yes |")
     print(f"\n{moved} of the paired measurements moved beyond tolerance.")
     if only_old:
         print("Columns only in the old record: " + ", ".join(only_old))
-    only_new = [c for c in ncols[1:] if c not in ocols]
+    only_new = [c for c in ncols if c not in ocols]
     if only_new:
         print("Columns only in the new record: " + ", ".join(only_new))
 
