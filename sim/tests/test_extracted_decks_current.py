@@ -798,5 +798,280 @@ class SharedLibraryAndCoreTests(unittest.TestCase):
                 )
 
 
+class SharedConversionChainTests(unittest.TestCase):
+    """`gen_extracted_core_tb.conversion_chain_lines()` is the single emitter
+    of the comparator + SAR-controller library and the wired conversion chain
+    for the three `ex`-tagged scripts (issue #1134) -- the line-list
+    counterpart of `library_and_core()` (#1091), for the decks that helper
+    cannot serve: `verify_extracted_core_conversion.py`,
+    `measure_extracted_gain_err.py` and `probe_gain_err_settling.py`.
+
+    Each of the three assembled the four pieces itself, and the two gain-error
+    decks also assembled issue #98's `--core schematic` control arm, so the
+    copies drifted: the settling probe bound the MiM wrapper into extracted
+    decks that never reference it, and both arms fell through a silent
+    `else:` to the extracted core on an unrecognised `core`. The helper owns
+    both arms now; these tests keep the three scripts on it and pin what each
+    arm is made of."""
+
+    EX_SCRIPTS = (
+        "verify_extracted_core_conversion.py",
+        "measure_extracted_gain_err.py",
+        "probe_gain_err_settling.py",
+    )
+
+    #: The four pieces `library_and_core()` already owns, plus the schematic
+    #: arm's two, which only this helper emits.
+    FORK_TELLS = SharedLibraryAndCoreTests.FORK_TELLS + (
+        "gtop.library()",
+        "gtop._core(",
+    )
+
+    @staticmethod
+    def _core():
+        sys.path.insert(0, str(PARASITICS_DIR))
+        import gen_extracted_core_tb  # noqa: PLC0415  (path-dependent import)
+
+        return gen_extracted_core_tb
+
+    @staticmethod
+    def _harness():
+        sys.path.insert(0, str(REPO / "sim"))
+        from harness import corners, pdk  # noqa: PLC0415  (path-dependent import)
+
+        return corners, pdk
+
+    @staticmethod
+    def _scripts():
+        sys.path.insert(0, str(PARASITICS_DIR))
+        import measure_extracted_gain_err  # noqa: PLC0415  (path-dependent)
+        import probe_gain_err_settling  # noqa: PLC0415  (path-dependent)
+        import verify_extracted_core_conversion  # noqa: PLC0415  (path-dependent)
+
+        return verify_extracted_core_conversion, measure_extracted_gain_err, probe_gain_err_settling
+
+    @staticmethod
+    def _spice(lines) -> list[str]:
+        return [ln for ln in lines if ln.strip() and not ln.startswith("*")]
+
+    @staticmethod
+    def _flat(chain) -> list[str]:
+        """`chain` one line per element. The three libraries are each one
+        multi-line string, the way every caller appends them."""
+        return [ln for item in chain for ln in item.split("\n")]
+
+    @staticmethod
+    def _pdk():
+        """A path-only `Pdk`: the MiM binder reads the variant and nothing
+        on disk, so no PDK install is needed to compose either arm."""
+        _corners, pdk = SharedConversionChainTests._harness()
+        return pdk.Pdk(
+            path=Path("/nonexistent/gf180mcuD"), variant="gf180mcuD", source="test"
+        )
+
+    def test_ex_scripts_assemble_the_chain_through_the_shared_helper(self):
+        """A script that fetches the pins, a library piece or the schematic
+        core itself has re-forked the assembly, on either arm, whatever order
+        and separators it gives them."""
+        for script in self.EX_SCRIPTS:
+            with self.subTest(script=script):
+                text = (PARASITICS_DIR / script).read_text()
+                self.assertIn(
+                    "G.conversion_chain_lines(",
+                    text,
+                    f"{script} does not call "
+                    "gen_extracted_core_tb.conversion_chain_lines()",
+                )
+                for fork in self.FORK_TELLS:
+                    self.assertNotIn(
+                        fork,
+                        text,
+                        f"{script} assembles the library, the chain or the "
+                        f"schematic core itself ({fork!r}); call "
+                        "gen_extracted_core_tb.conversion_chain_lines()",
+                    )
+
+    def test_extracted_chain_is_the_se_decks_chain_plus_the_optional_shadow(self):
+        """Both tops, with and without the shadow reference: the extracted arm
+        is exactly what `library_and_core()` hands the three `se` decks --
+        the four pieces, in its order -- and appends the reference only when
+        asked, so the `ex` and `se` chains cannot drift apart."""
+        core = self._core()
+        for top in ("ADC_TOP", "ADC_BLOCK"):
+            text, _pins = core.library_and_core(top, tag="ex")
+            chain_lines = self._spice(text.splitlines())
+            for shadow in (False, True):
+                with self.subTest(top=top, shadow=shadow):
+                    want = chain_lines + (
+                        self._spice(core.shadow_dac_and_error("ex")) if shadow else []
+                    )
+                    chain = core.conversion_chain_lines(top, tag="ex", shadow=shadow)
+                    self.assertEqual(self._spice(self._flat(chain)), want)
+
+    def test_schematic_chain_follows_the_shared_emitters_in_order(self):
+        """Replace each emitter the schematic arm draws on and the chain must
+        carry the replacement in its position: the harness's MiM binder sits
+        between the two libraries, immediately ahead of the schematic one
+        whose `adc_cdac_cell` instantiates `mim_cap_2f0` -- ngspice needs the
+        definition before the instance -- and the binder must receive the
+        caller's `Pdk`, since the alias it binds is a variant property."""
+        core = self._core()
+        gtop = core.gtop
+        pdk = self._pdk()
+        seen: list = []
+
+        def binder(given):
+            seen.append(given)
+            return ["sentinel mim"]
+
+        replacements = {
+            (gtop, "comparator_block"): lambda: "sentinel comparator",
+            (gtop.sar, "library"): lambda: "sentinel controller",
+            (core.RUN, "mim_wrapper_subckts"): binder,
+            (gtop, "library"): lambda: "sentinel library",
+            (gtop, "_core"): lambda tag, mode: ["sentinel core"],
+        }
+        with contextlib.ExitStack() as stack:
+            for (owner, name), replacement in replacements.items():
+                stack.enter_context(patch.object(owner, name, replacement))
+            chain = core.conversion_chain_lines(
+                "ADC_TOP", tag="ex", core="schematic", pdk=pdk
+            )
+        self.assertEqual(
+            chain,
+            [
+                "sentinel comparator",
+                "sentinel controller",
+                "",
+                "sentinel mim",
+                "sentinel library",
+                "sentinel core",
+            ],
+        )
+        self.assertEqual(len(seen), 1)
+        self.assertIs(seen[0], pdk)
+
+    def test_schematic_chain_already_carries_the_shadow_reference(self):
+        """`shadow=True` adds nothing on the schematic arm: `_core()` emits
+        the ideal-shadow sources itself (the comparison contract
+        `SharedShadowReferenceTests` pins), so appending the block again
+        would double-define `b{tag}dac*` / `b{tag}di` / `b{tag}e`."""
+        core = self._core()
+        pdk = self._pdk()
+
+        def schematic(**kwargs):
+            chain = core.conversion_chain_lines(
+                "ADC_TOP", tag="ex", core="schematic", pdk=pdk, **kwargs
+            )
+            return self._spice(self._flat(chain))
+
+        plain = schematic()
+        self.assertEqual(schematic(shadow=True), plain)
+        sources = ("bexdacp", "bexdacn", "bexdi", "bexe", "bexea")
+        self.assertEqual(
+            [sum(line.split()[0] == name for line in plain) for name in sources],
+            [1] * len(sources),
+            "expected _core()'s five shadow sources, each exactly once",
+        )
+
+    def test_unknown_core_raises_instead_of_wiring_the_extracted_core(self):
+        """Both gain-error decks used to branch `if core == "schematic"` and
+        fall through an `else:` to the extracted core, so a typo in `core`
+        silently measured the wrong analog core."""
+        core = self._core()
+        for bad in ("schematics", "Schematic", "", "layout"):
+            with self.subTest(core=bad), self.assertRaises(ValueError):
+                core.conversion_chain_lines("ADC_TOP", core=bad, pdk=self._pdk())
+
+    def test_schematic_chain_without_a_pdk_raises(self):
+        core = self._core()
+        with self.assertRaises(ValueError):
+            core.conversion_chain_lines("ADC_TOP", core="schematic")
+
+    def test_each_ex_deck_carries_the_helpers_chain_once(self):
+        """What the three decks are made of: `conversion_chain_lines()`'s
+        output, verbatim and in order, for every arm each script composes --
+        the smoke deck on both tops, the gain-error deck and the settling
+        probe on both cores."""
+        core = self._core()
+        corners, _ = self._harness()
+        pdk = self._pdk()
+        corner = corners.CORNERS["tt"]
+        smoke, gain, settling = self._scripts()
+
+        def chain(top="ADC_TOP", **kwargs):
+            return core.conversion_chain_lines(top, tag=core.TAG, **kwargs)
+
+        def settling_deck(arm):
+            return settling.compose_deck(
+                "ADC_TOP", pdk, corner, 27.0, 2.97, 8, 1, arm
+            )[0]
+
+        decks = {
+            ("smoke", "ADC_TOP", "extracted"): (
+                smoke.compose_deck("ADC_TOP", pdk, corner, 27.0, 3.3)[0],
+                chain(),
+            ),
+            ("smoke", "ADC_BLOCK", "extracted"): (
+                smoke.compose_deck("ADC_BLOCK", pdk, corner, 27.0, 3.3)[0],
+                chain("ADC_BLOCK"),
+            ),
+            ("gain", "ADC_TOP", "extracted"): (
+                gain.compose_deck("ADC_TOP", pdk, corner, 27.0, 3.3)[0],
+                chain(shadow=True),
+            ),
+            ("gain", "ADC_TOP", "schematic"): (
+                gain.compose_deck(
+                    "ADC_TOP", pdk, corner, 27.0, 3.3, core="schematic"
+                )[0],
+                chain(core="schematic", pdk=pdk, shadow=True),
+            ),
+            ("settling", "ADC_TOP", "extracted"): (
+                settling_deck("extracted"),
+                chain(shadow=True),
+            ),
+            ("settling", "ADC_TOP", "schematic"): (
+                settling_deck("schematic"),
+                chain(core="schematic", pdk=pdk, shadow=True),
+            ),
+        }
+        for (script, top, arm), (deck, expected) in decks.items():
+            with self.subTest(script=script, top=top, core=arm):
+                self.assertEqual(
+                    deck.count("\n".join(expected)),
+                    1,
+                    f"{script} ({top}, {arm}) does not carry the helper's "
+                    "chain exactly once",
+                )
+
+    def test_settling_probe_binds_the_mim_alias_only_where_it_is_used(self):
+        """The drift the consolidation removes: the settling probe split its
+        preamble to bind the MiM aliases on every run, so `--core extracted`
+        decks carried the `.subckt mim_cap_*` wrappers that nothing
+        instantiates (the extracted `.SUBCKT` calls the native PDK subckt).
+        Its preamble is the shared unsplit one now, and the binder runs on
+        the schematic arm alone."""
+        core = self._core()
+        corners, _ = self._harness()
+        pdk = self._pdk()
+        corner = corners.CORNERS["tt"]
+        _smoke, _gain, settling = self._scripts()
+
+        def wrappers(lines):
+            return [ln for ln in lines if ln.startswith(".subckt mim_cap_")]
+
+        bound = len(wrappers(core.RUN.mim_wrapper_subckts(pdk)))
+        self.assertGreater(bound, 0)
+        for arm, expected in (("extracted", 0), ("schematic", bound)):
+            with self.subTest(core=arm):
+                lines = settling.compose_deck(
+                    "ADC_TOP", pdk, corner, 27.0, 2.97, 8, 1, arm
+                )[0].splitlines()
+                preamble = core.pvt_preamble(pdk, corner, 27.0, 2.97)
+                start = lines.index(preamble[0])
+                self.assertEqual(lines[start : start + len(preamble)], preamble)
+                self.assertEqual(len(wrappers(lines)), expected)
+
+
 if __name__ == "__main__":
     unittest.main()

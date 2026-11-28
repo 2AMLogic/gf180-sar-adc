@@ -108,11 +108,7 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     lines.append(f"v{tag}vinn {tag}_vinn 0 dc {{vcm}}")
     lines.append("")
 
-    pins, core_text = G.core_pins(top)
-    lines.append(G.gtop.comparator_block())
-    lines.append(G.gtop.sar.library())
-    lines.append(core_text)
-    lines += G._core_extracted(tag, "0", pins, top)
+    lines += G.conversion_chain_lines(top, tag=tag)
 
     lines.append("")
     lines.append(".control")

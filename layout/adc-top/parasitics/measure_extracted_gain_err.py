@@ -89,7 +89,6 @@ sys.path.insert(0, str(REPO / "sim"))
 
 from harness import corners as C  # noqa: E402
 from harness import pdk as PDK  # noqa: E402
-from harness.runner import mim_wrapper_subckts  # noqa: E402
 
 import gen_extracted_core_tb as G  # noqa: E402 (same directory)
 
@@ -123,6 +122,7 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     error-node instrumentation, wired onto `gen_adc_top._core()` instead of
     the extracted `.SUBCKT`, so a `core="extracted"` vs `core="schematic"`
     delta isolates the deck's own methodology from the layout parasitics).
+    Any other value raises `ValueError` rather than wiring either core.
     """
     tag = G.TAG
     lines = [
@@ -154,32 +154,12 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     lines.append(f"v{tag}vinn {tag}_vinn 0 dc {{vcm}}")
     lines.append("")
 
-    lines.append(G.gtop.comparator_block())
-    lines.append(G.gtop.sar.library())
-    if core == "schematic":
-        # issue #98's decisive control: the SAME 2-endpoint stimulus above,
-        # wired onto gen_adc_top._core() -- schematic everything, zero
-        # layout parasitics. _core() already emits its own ideal-shadow-DAC
-        # / error node internally (from the same shared shadow_* emitters
-        # G.shadow_dac_and_error() calls for the extracted path), so it is
-        # NOT called again here -- doing so would double-define
-        # b{tag}dac{s} / b{tag}di / b{tag}e.
-        #
-        # gen_adc_top.library()'s adc_cdac_cell instantiates the STABLE
-        # alias mim_cap_2f0 (design/adc-top/gen_adc_top.py's own comment:
-        # "Areas from the measured MiM density law"), not the PDK's native
-        # subckt name -- the extracted core's .SUBCKT calls that native name
-        # directly (remediate_extracted.py's MIM_SUBCKT), so only the
-        # schematic path needs this variant-bound wrapper
-        # (sim/harness/runner.py's mim_wrapper_subckts()).
-        lines += ["", *mim_wrapper_subckts(pdk)]
-        lines.append(G.gtop.library())
-        lines += G.gtop._core(tag, "0")
-    else:
-        pins, core_text = G.core_pins(top)
-        lines.append(core_text)
-        lines += G._core_extracted(tag, "0", pins, top)
-        lines += G.shadow_dac_and_error(tag)
+    # issue #98's decisive control: `--core schematic` swaps in
+    # `gen_adc_top._core()` under the SAME 2-endpoint stimulus above.
+    # `shadow=True` appends the ideal-shadow reference on the extracted arm
+    # only -- `_core()` already carries it -- and the helper binds the MiM
+    # alias wrapper the schematic library needs (see its docstring).
+    lines += G.conversion_chain_lines(top, tag=tag, core=core, pdk=pdk, shadow=True)
 
     lines.append("")
     lines.append(".control")
