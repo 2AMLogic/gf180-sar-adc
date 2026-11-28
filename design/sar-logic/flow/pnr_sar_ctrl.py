@@ -161,6 +161,7 @@ from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
     run,
     run_klt_json,
     working_tree_dirty,
+    write_record,
 )
 
 CORNER = "tt_025C_3v30"
@@ -460,11 +461,9 @@ def main() -> int:
     print(f"  klt drc status={drc.get('status')} violation_count={drc.get('violation_count')}")
 
     if not args.no_record:
-        RECORDS_DIR.mkdir(parents=True, exist_ok=True)
         record_path = RECORDS_DIR / f"{rid}.{LIB_TAG}.pnr.md"
-        if record_path.exists():
-            raise PnrError(f"record {record_path} already exists -- refusing to overwrite")
-        record_path.write_text(
+        write_record(
+            record_path,
             render_record(
                 rid=rid,
                 when=when,
@@ -481,7 +480,8 @@ def main() -> int:
                 gds_rel=str(gds_out.relative_to(REPO_ROOT)),
                 def_rel=str(def_out.relative_to(REPO_ROOT)),
                 verilog_rel=str(v_out.relative_to(REPO_ROOT)),
-            )
+            ),
+            error_cls=PnrError,
         )
         print(f"Evidence record written to {record_path}")
 

@@ -36,6 +36,7 @@ from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
     git,
     record_id,
     sha256,
+    write_record,
 )
 
 MACRO_REPORT = REPORTS_DIR / "20261015-221946-0a0ab20b.mcu7t5v0.pnr_drc.json"
@@ -54,7 +55,6 @@ def main() -> int:
     commit = git(REPO, "rev-parse", "HEAD") or "unknown"
     rec_path = RECORDS_DIR / f"{rid}.{LIB_TAG}.cell_drc.md"
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    RECORDS_DIR.mkdir(parents=True, exist_ok=True)
     if rec_path.exists():
         print(f"ERROR: record {rec_path} already exists -- refusing to overwrite", file=sys.stderr)
         return 1
@@ -102,7 +102,7 @@ def main() -> int:
         lines.append(f"| `{cell}` | {st} | {n} | {rc} | {m} |")
     lines += ["", "Reproduce: `python3 design/sar-logic/flow/drc_pdk_cells_isolated.py` "
               "(needs `klt` on PATH and the `klayout` module).", ""]
-    rec_path.write_text("\n".join(lines))
+    write_record(rec_path, "\n".join(lines))
     print(rid)
     return 0
 
