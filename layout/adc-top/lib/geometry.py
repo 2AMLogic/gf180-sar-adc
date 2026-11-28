@@ -859,6 +859,14 @@ def draw_mosfet(
     )
 
 
+def _union_box(boxes: list[kdb.Box]) -> kdb.Box:
+    """Bounding box of every box in `boxes`, which must not be empty."""
+    out = boxes[0]
+    for a in boxes[1:]:
+        out = out + a
+    return out
+
+
 def contact_array(
     cell: kdb.Cell,
     layers: dict[tuple[int, int], int],
@@ -909,6 +917,55 @@ def contact_array(
             )
             y += CO_PITCH
     return count
+
+
+def draw_tap_strip(
+    cell: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    box: kdb.Box,
+    implant_layer: tuple[int, int],
+    *,
+    draw_metal1: bool = True,
+    strip_name: str = "tap strip",
+) -> int:
+    """Draw ONE contacted, implant-marked diffusion strip and return the
+    number of contact cuts in it.
+
+    The single tap/tie primitive of this library: `box` on `Comp`, `box`
+    grown by `IMPLANT_MARGIN` on `implant_layer` (`L_NPLUS` for an Nwell
+    tap, `L_PPLUS` for a substrate tie), tiled along X by
+    :func:`contact_array` with `CO_SIDE` squares, and -- unless
+    `draw_metal1` is false -- `Metal1` exactly over it. Both the Nwell tap
+    strips :func:`draw_shared_nwell` draws and the per-row substrate-tie
+    strip `place._draw_substrate_tie_strip` draws are this. (The guard
+    rings are not: their bars are contacted through :func:`contact_array`
+    directly and their `Metal1` is inset from the `Comp` it sits on.)
+
+    `Metal1` exactly over the diffusion: `metal1.enclosing.contact.1` is
+    then the same `CO_ENCLOSURE` the diffusion gives, and the bar is the
+    strip's own height, over `metal1.width.1`. Pass `draw_metal1=False` for
+    a strip whose cuts land on a `Metal1` bar the caller draws instead --
+    the two Comp segments of a `trunk`-mode substrate tie share one
+    unbroken bar across their stitch corridor.
+
+    The cuts are tiled FIRST, and a strip that cannot hold one is refused
+    BEFORE anything is inserted, so a rejected strip leaves no orphan
+    diffusion or implant behind. The minimum is :func:`contact_array`'s
+    own: `CO_SIDE + 2 * CO_ENCLOSURE`, along X and across.
+    """
+    cuts = contact_array(cell, layers, box, along_x=True)
+    if cuts == 0:
+        raise RuntimeError(
+            f"{strip_name} {box} is too short to hold a single "
+            f"{CO_SIDE} nm contact with {CO_ENCLOSURE} nm enclosure"
+        )
+    cell.shapes(layers[L_COMP]).insert(box)
+    cell.shapes(layers[implant_layer]).insert(
+        box.enlarged(IMPLANT_MARGIN, IMPLANT_MARGIN)
+    )
+    if draw_metal1:
+        cell.shapes(layers[L_METAL1]).insert(box)
+    return cuts
 
 
 @dataclass(frozen=True)
@@ -968,9 +1025,7 @@ def draw_shared_nwell(
     """
     if not actives:
         return None
-    core = actives[0]
-    for a in actives[1:]:
-        core = core + a
+    core = _union_box(actives)
 
     tap_y0 = core.top + TAP_ACTIVE_GAP
     tap_y1 = tap_y0 + TAP_COMP_H
@@ -983,20 +1038,9 @@ def draw_shared_nwell(
     tap_comp = kdb.Box(core.left, tap_y0, core.right, tap_y1)
 
     cell.shapes(layers[L_NWELL]).insert(box)
-    cell.shapes(layers[L_COMP]).insert(tap_comp)
-    cell.shapes(layers[L_NPLUS]).insert(
-        tap_comp.enlarged(IMPLANT_MARGIN, IMPLANT_MARGIN)
+    cuts = draw_tap_strip(
+        cell, layers, tap_comp, L_NPLUS, strip_name="well tap strip"
     )
-    cuts = contact_array(cell, layers, tap_comp, along_x=True)
-    if cuts == 0:
-        raise RuntimeError(
-            f"well tap strip {tap_comp} is too short to hold a single "
-            f"{CO_SIDE} nm contact with {CO_ENCLOSURE} nm enclosure"
-        )
-    # Metal1 exactly over the tap diffusion: `metal1.enclosing.contact.1` is
-    # then the same 70 nm the diffusion gives, and the bar is `TAP_COMP_H`
-    # wide, over `metal1.width.1`.
-    cell.shapes(layers[L_METAL1]).insert(tap_comp)
 
     # EXTRA TAP STRIPS (DR-0049, issue #885). The 0.8.0 deck's
     # `comp.tap_distance.nwell.lv.1` (DF.13_LV) flags a whole PMOS S/D
@@ -1014,9 +1058,7 @@ def draw_shared_nwell(
     served_tops = tap_y1 - TAP_DISTANCE_LV
     uncovered = [a for a in actives if a.top <= served_tops]
     while uncovered:
-        sub = uncovered[0]
-        for a in uncovered[1:]:
-            sub = sub + a
+        sub = _union_box(uncovered)
         y0 = sub.top + TAP_ACTIVE_GAP
         y1 = y0 + TAP_COMP_H
         if y1 >= tap_y0:
@@ -1043,18 +1085,9 @@ def draw_shared_nwell(
                     "one-strip-per-band construction cannot tap it"
                 )
         strip = kdb.Box(sub.left, y0, sub.right, y1)
-        cell.shapes(layers[L_COMP]).insert(strip)
-        cell.shapes(layers[L_NPLUS]).insert(
-            strip.enlarged(IMPLANT_MARGIN, IMPLANT_MARGIN)
+        strip_cuts = draw_tap_strip(
+            cell, layers, strip, L_NPLUS, strip_name="extra well tap strip"
         )
-        strip_cuts = contact_array(cell, layers, strip, along_x=True)
-        if strip_cuts == 0:
-            raise RuntimeError(
-                f"extra well tap strip {strip} is too short to hold a "
-                f"single {CO_SIDE} nm contact with {CO_ENCLOSURE} nm "
-                "enclosure"
-            )
-        cell.shapes(layers[L_METAL1]).insert(strip)
         extra_taps.append((strip, strip, strip_cuts))
         served_tops = y1 - TAP_DISTANCE_LV
         uncovered = [a for a in actives if a.top <= served_tops]
@@ -1131,17 +1164,15 @@ def draw_sd_implants(
     """
     nplus_box: kdb.Box | None = None
     if nfet_actives:
-        core = nfet_actives[0]
-        for a in nfet_actives[1:]:
-            core = core + a
-        nplus_box = core.enlarged(SD_IMPLANT_MARGIN, SD_IMPLANT_MARGIN)
+        nplus_box = _union_box(nfet_actives).enlarged(
+            SD_IMPLANT_MARGIN, SD_IMPLANT_MARGIN
+        )
         cell.shapes(layers[L_NPLUS]).insert(nplus_box)
     pplus_box: kdb.Box | None = None
     if pfet_actives:
-        core = pfet_actives[0]
-        for a in pfet_actives[1:]:
-            core = core + a
-        pplus_box = core.enlarged(SD_IMPLANT_MARGIN, SD_IMPLANT_MARGIN)
+        pplus_box = _union_box(pfet_actives).enlarged(
+            SD_IMPLANT_MARGIN, SD_IMPLANT_MARGIN
+        )
         cell.shapes(layers[L_PPLUS]).insert(pplus_box)
     _assert_implant_clearances(nplus_box, pplus_box, tap_comp, pfet_actives)
     return SdImplants(nplus=nplus_box, pplus=pplus_box)
