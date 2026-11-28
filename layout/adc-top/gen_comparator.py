@@ -411,9 +411,6 @@ def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
                 "*     `vsubs` global into that net;",
             ]
         ),
-        "*   - PMOS bodies on their own Nwell island's net, one per placed",
-        "*     group, not on `vdd` (the deck never connects `nwell` to",
-        "*     `contact`);",
         "*   - `Vpp`/`Vpn`, the schematic's zero-volt top-plate current probes,",
         "*     are net aliases, not components.",
     ]
