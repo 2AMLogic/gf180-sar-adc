@@ -3,7 +3,7 @@
 Current queue from GitHub labels. Updated through Guide document maintenance.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-27T22:35:10Z (snapshot; compare against live labels)_
+_Generated: 2026-11-28T00:37:10Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — a human merge decision, or the prerequisite shown, is missing.
@@ -52,14 +52,21 @@ Issues currently being built (`loom:building`).
 - **#1036**: mc_extracted_core: a one-draw null control is vacuous but passes
 - **#1102**: Test rectangular guard-ring geometry and both zero-contact errors in nightly layout CI
 - **#1110**: Committed .loom/ role files are older than the dispatched ones; guide.md cannot render the committed WORK_PLAN.md region
-- **#1114**: Remove stale device descriptions from generated leaf-cell LVS headers
 - **#1117**: Block-level LVS reference headers still claim PMOS bodies are off vdd and NMOS bodies on vsubs
+- **#1129**: Share pinned toolchain provenance and case-report writers in layout/klt_env.py
+- **#1133**: Share klt.sta.request/1 builders and the corner-pass predicate in design/sar-logic/flow/flow_env.py
+- **#1134**: Share conversion-chain and schematic-control assembly in gen_extracted_core_tb.py
+- **#1135**: Share timeout point recording, fleet-provider lookup, and klt CLI setup in sim/harness/
+- **#1137**: ToolchainRecordTests fails when run in isolation: relies on an earlier class for layout/ on sys.path
+- **#1140**: Requalification note 595 says record 20261020-231430-0bf0747 carries no measurement table; it carries a 27-row table
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#1118**: fix(layout): drop stale device narrative from leaf-cell LVS reference headers
+- **#1141**: fix(flow): report unreported STA slack as FAIL instead of crashing
+- **#1142**: refactor: share one conversion-chain emitter for the ex-tagged decks
+- **#1144**: refactor(harness): deduplicate timeout recording, provider lookup and klt CLI setup
 
 ## Approved (Awaiting Merge)
 
@@ -72,6 +79,8 @@ PRs that passed review (`loom:pr`); unmarked PRs are queued for Champion auto-me
 - **#1039**: fix: require two parsed draws for the Monte Carlo null control — closes #1036
 - **#1104**: test: verify guard-ring geometry and contact errors in nightly CI — closes #1102 *(held: champion critical-file hold)*
 - **#1113**: chore: resync installed Loom files to v0.20.48 — closes #1110 *(held: champion critical-file hold)*
+- **#1120**: fix(layout): drop stale body narrative from block-level LVS reference headers — closes #1117
+- **#1138**: refactor: share pinned toolchain and case-report writers in klt_env — closes #1129
 
 ## Proposed
 
@@ -105,6 +114,9 @@ Issues carrying `loom:curated`.
 - **#1102**: Test rectangular guard-ring geometry and both zero-contact errors in nightly layout CI *(curated)*
 - **#1110**: Committed .loom/ role files are older than the dispatched ones; guide.md cannot render the committed WORK_PLAN.md region *(curated)*
 - **#1117**: Block-level LVS reference headers still claim PMOS bodies are off vdd and NMOS bodies on vsubs *(curated)*
+- **#1133**: Share klt.sta.request/1 builders and the corner-pass predicate in design/sar-logic/flow/flow_env.py *(curated)*
+- **#1137**: ToolchainRecordTests fails when run in isolation: relies on an earlier class for layout/ on sys.path *(curated)*
+- **#1140**: Requalification note 595 says record 20261020-231430-0bf0747 carries no measurement table; it carries a 27-row table *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -112,6 +124,7 @@ Issues carrying `loom:curated`.
 - **#1050**: Remove the unused report.write_record helper and move its overwrite test to the artifact store *(hermit)* *(held)*
 - **#1079**: Remove the stale DRC expectations from the proof-cell generators *(hermit)* *(held)*
 - **#1089**: Remove the unused runner_expr helper from the batch exporter *(hermit)* *(held)*
+- **#1139**: Share contacted tap/tie strip drawing in layout/adc-top/lib/geometry.py and filter uncontactable tie slivers *(hermit)*
 
 ## Epics
 
@@ -125,11 +138,11 @@ _None._
 | Very important | 1 |
 | Important | 5 |
 | Ready (`loom:issue`, net of holds/building/open-linked-PRs) | 0 |
-| In Progress (`loom:building`) | 7 |
+| In Progress (`loom:building`) | 12 |
 | Held, no other bucket | 11 |
-| PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 7 |
-| Curated | 28 |
-| Architect / Hermit proposals | 4 |
+| PRs awaiting review | 3 |
+| Approved PRs awaiting merge | 9 |
+| Curated | 31 |
+| Architect / Hermit proposals | 5 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
