@@ -360,6 +360,57 @@ def _manifest_citation_part(key: str, entry) -> tuple:
     )
 
 
+def _iter_citation_specs(citations: dict):
+    """`(key, label, part_spec)` for every leaf citation in a freshness-style
+    `{key: spec}` mapping, in sorted key order.
+
+    A compound item yields once per entry of its `parts` list, labelled
+    `item <key> part <idx> (<role>)`; an ordinary item yields once, labelled
+    `item <key>`, with the spec itself as the leaf. Every loop over the
+    citations -- `check()`'s steps 1-3, `preflight_attestations`, `_overlay`
+    and `_edit_and_repin` -- goes through here, so there is one place that
+    knows what a compound citation looks like (issue #1149). The `part_spec`
+    yielded is the dict in `citations` itself, so a caller may update it.
+    """
+    for key in sorted(citations):
+        spec = citations[key]
+        parts_spec = spec.get("parts")
+        if isinstance(parts_spec, list):
+            for idx, part_spec in enumerate(parts_spec):
+                yield key, f"item {key} part {idx} ({part_spec.get('role', '?')})", part_spec
+        else:
+            yield key, f"item {key}", spec
+
+
+def _citation_shape_mismatch(key: str, spec: dict, entry) -> str | None:
+    """`None` when freshness's `spec` and the manifest's `entry` (one value of
+    `manifest_citations()`) have the same shape; otherwise one line saying how
+    they disagree.
+
+    Symmetric on purpose (issue #1149). `check()` used to look only at the
+    manifest side and `regen()` only at the freshness side, so a compound
+    citation hand-edited to an ordinary one crashed `check()` with
+    `KeyError: 'file'`, and an ordinary one hand-edited to a list crashed
+    `regen()` with a `TypeError`/`ValueError`.
+    """
+    parts_spec = spec.get("parts")
+    want_n = len(parts_spec) if isinstance(parts_spec, list) else None
+    got_n = len(entry) if isinstance(entry, list) else None
+    if want_n == got_n:
+        return None
+    manifest_side = (
+        f"manifest cites {got_n} compound parts"
+        if got_n is not None
+        else "manifest cites a single entry"
+    )
+    freshness_side = (
+        f"freshness declares {want_n} parts"
+        if want_n is not None
+        else "freshness declares no parts"
+    )
+    return f"item {key}: {manifest_side}, {freshness_side}"
+
+
 def _check_citation_agreement(
     label: str, path: str, pin: str | None, spec: dict, fail, ok
 ) -> None:
@@ -542,6 +593,36 @@ def _check_envelope_and_artifacts(root: str, label: str, spec: dict, fail, ok) -
                 f"{label}: {len(_attested_hashes(envelope))} attested file "
                 "hashes match the tree"
             )
+
+
+def _check_report_citation_part(
+    label: str, cit: dict, want_file: str, want_pin: str | None, fail
+) -> bool:
+    """Step 4b of `check()` for one leaf citation: does the report's own
+    `citation` (`cit`) say the grader read `want_file` pinned at `want_pin`?
+    Returns `False` after recording a failure.
+
+    Shared between a compound item's parts and an ordinary item's single
+    citation -- the two used to carry the same two failure blocks word for
+    word (issue #1149). It records rather than returns messages, and the
+    caller prints the `[ok]`, because a compound row is summarised once for
+    all its parts rather than once per part.
+    """
+    if cit.get("file") != want_file:
+        fail(
+            f"{label}: report was graded on {cit.get('file')}, manifest now "
+            f"cites {want_file} -- a citation was re-pointed without "
+            "`--regen`, so the committed verdict describes a different file"
+        )
+        return False
+    if cit.get("content_hash") != want_pin:
+        fail(
+            f"{label}: report's citation pins "
+            f"{cit.get('content_hash')!r}, manifest pins {want_pin!r} for "
+            "the same file"
+        )
+        return False
+    return True
 
 
 def _check_spec_projection(root: str, manifest: dict, fail, ok) -> None:
@@ -764,46 +845,21 @@ def check(root: str, verbose: bool = True) -> list:
         )
     for key in sorted(set(declared) & set(cites)):
         entry = cites[key]
-        spec = declared[key]
-        if isinstance(entry, list):
-            parts_spec = spec.get("parts")
-            if not isinstance(parts_spec, list) or len(parts_spec) != len(entry):
-                fail(
-                    f"item {key}: manifest cites {len(entry)} compound parts, "
-                    "freshness declares "
-                    f"{len(parts_spec) if isinstance(parts_spec, list) else 'no'} "
-                    "parts"
-                )
-                continue
-            for idx, (path, pin) in enumerate(entry):
-                _check_citation_agreement(
-                    f"item {key} part {idx} ({parts_spec[idx].get('role', '?')})",
-                    path,
-                    pin,
-                    parts_spec[idx],
-                    fail,
-                    ok,
-                )
-        else:
-            path, pin = entry
-            _check_citation_agreement(f"item {key}", path, pin, spec, fail, ok)
+        mismatch = _citation_shape_mismatch(key, declared[key], entry)
+        if mismatch:
+            fail(mismatch)
+            continue
+        # The shapes agree, so leaf i of the manifest is leaf i of freshness.
+        leaves = entry if isinstance(entry, list) else [entry]
+        for (_key, label, part_spec), (path, pin) in zip(
+            _iter_citation_specs({key: declared[key]}), leaves
+        ):
+            _check_citation_agreement(label, path, pin, part_spec, fail, ok)
 
     # 2. every cited envelope still says what it said, and (3.) the repo
     #    artifacts behind it still hash the same ---------------------------
-    for key in sorted(declared):
-        spec = declared[key]
-        parts_spec = spec.get("parts")
-        if isinstance(parts_spec, list):
-            for idx, part_spec in enumerate(parts_spec):
-                _check_envelope_and_artifacts(
-                    root,
-                    f"item {key} part {idx} ({part_spec.get('role', '?')})",
-                    part_spec,
-                    fail,
-                    ok,
-                )
-        else:
-            _check_envelope_and_artifacts(root, f"item {key}", spec, fail, ok)
+    for _key, label, part_spec in _iter_citation_specs(declared):
+        _check_envelope_and_artifacts(root, label, part_spec, fail, ok)
 
     # 4. the committed report agrees with manifest + toolchain -----------
     report_spec = freshness["report"]
@@ -817,8 +873,7 @@ def check(root: str, verbose: bool = True) -> list:
             "(sha256 mismatch) -- a tier report is `--regen` output, never "
             "hand-edited"
         )
-    with open(report_path, encoding="utf-8") as fh:
-        report = json.load(fh)
+    report = load_json(root, report_spec["json"])
 
     # The text rendering beside it is committed for humans to read as a diff,
     # so it is pinned for the same reason the JSON is: an edited `signoff.txt`
@@ -932,42 +987,20 @@ def check(root: str, verbose: bool = True) -> list:
                     f"compound parts, manifest names {len(want)} for {key}"
                 )
                 continue
-            mismatched = False
-            for idx, (want_file, want_pin) in enumerate(want):
-                part_cit = cit_parts[idx]
-                if part_cit.get("file") != want_file:
-                    fail(
-                        f"row {row} part {idx}: report was graded on "
-                        f"{part_cit.get('file')}, manifest now cites "
-                        f"{want_file} -- a citation was re-pointed without "
-                        "`--regen`, so the committed verdict describes a "
-                        "different file"
-                    )
-                    mismatched = True
-                elif part_cit.get("content_hash") != want_pin:
-                    fail(
-                        f"row {row} part {idx}: report's citation pins "
-                        f"{part_cit.get('content_hash')!r}, manifest pins "
-                        f"{want_pin!r} for the same file"
-                    )
-                    mismatched = True
-            if not mismatched:
+            # A list, not a generator under `all()`: every mismatched part
+            # is reported, not only the first.
+            agreed = [
+                _check_report_citation_part(
+                    f"row {row} part {idx}", part_cit, want_file, want_pin, fail
+                )
+                for idx, (part_cit, (want_file, want_pin))
+                in enumerate(zip(cit_parts, want))
+            ]
+            if all(agreed):
                 ok(f"row {row}: report and manifest cite the same {len(want)} compound parts")
             continue
         want_file, want_pin = want
-        if cit["file"] != want_file:
-            fail(
-                f"row {row}: report was graded on {cit['file']}, manifest now "
-                f"cites {want_file} -- a citation was re-pointed without "
-                "`--regen`, so the committed verdict describes a different file"
-            )
-        elif cit.get("content_hash") != want_pin:
-            fail(
-                f"row {row}: report's citation pins "
-                f"{cit.get('content_hash')!r}, manifest pins {want_pin!r} for "
-                "the same file"
-            )
-        else:
+        if _check_report_citation_part(f"row {row}", cit, want_file, want_pin, fail):
             ok(f"row {row}: report and manifest cite the same {want_file}")
 
     # A manifest citation whose row renders NO citation cannot be compared
@@ -1218,9 +1251,7 @@ def mint_attestations(root: str, klt_bin: str) -> None:
     for key in ITEM2_LAYOUT:
         problems[key] = _mint_item2(root, klt_bin, key)
 
-    manifest_path = os.path.join(root, MANIFEST_REL)
-    with open(manifest_path, encoding="utf-8") as fh:
-        manifest = json.load(fh)
+    manifest = load_json(root, MANIFEST_REL)
     envelopes = {k: v[1] for k, v in ITEM1_ATTESTATIONS.items()}
     envelopes.update({k: v["envelope"] for k, v in ITEM2_LAYOUT.items()})
     for key, rel in envelopes.items():
@@ -1230,11 +1261,45 @@ def mint_attestations(root: str, klt_bin: str) -> None:
         # of the envelope file.
         bound = dotted(load_json(root, rel), "provenance.input.content_hash")
         manifest["evidence"][key] = {"file": rel, "content_hash": bound}
-    with open(manifest_path, "w", encoding="utf-8") as fh:
-        json.dump(manifest, fh, indent=2)
-        fh.write("\n")
+    _write_json(root, MANIFEST_REL, manifest)
     for key, failed in problems.items():
         print(f"{key}: {'FAILED -- ' + '; '.join(failed) if failed else 'attested'}")
+
+
+def _preflight_citation_structure(root: str) -> None:
+    """Refuse to `--regen` while the manifest and `signoff/freshness.json`
+    disagree on which citations exist, or on whether each is ordinary or
+    compound (issue #1149).
+
+    `regen()`'s refresh walks `freshness.json`'s citations and reads the
+    manifest's entry of the same key, so a key present on one side only, or
+    a `parts` list on one side and a single entry on the other, is a shape
+    it cannot refresh. Before this check that died with `KeyError`,
+    `TypeError` or `ValueError` after the report directory had already been
+    written, or silently dropped an added key. Raised before anything is
+    written, like `preflight_attestations`, so no `signoff/reports/
+    <record-id>/` is left behind; every disagreement is named in the one
+    refusal.
+    """
+    declared = load_json(root, FRESHNESS_REL)["citations"]
+    cites = manifest_citations(load_json(root, MANIFEST_REL))
+    problems = []
+    if set(declared) != set(cites):
+        problems.append(
+            f"signoff/freshness.json declares citations {sorted(declared)} "
+            f"but the manifest cites {sorted(cites)}"
+        )
+    for key in sorted(set(declared) & set(cites)):
+        mismatch = _citation_shape_mismatch(key, declared[key], cites[key])
+        if mismatch:
+            problems.append(mismatch)
+    if problems:
+        raise ToolingError(
+            "--regen refuses to mint a report: the manifest and "
+            "signoff/freshness.json disagree on the citation structure -- "
+            "they must agree (by hand) before --regen can refresh their "
+            "hashes\n  " + "\n  ".join(problems)
+        )
 
 
 def preflight_attestations(root: str) -> None:
@@ -1255,15 +1320,12 @@ def preflight_attestations(root: str) -> None:
     # One envelope can back several citations (`10.analog` and `10.digital`
     # cite the same file), so report per envelope and name every key.
     keys_by_envelope: dict = {}
-    for key in sorted(freshness["citations"]):
+    for key, _label, part in _iter_citation_specs(freshness["citations"]):
         if key in ITEM1_ATTESTATIONS:
             continue
-        spec = freshness["citations"][key]
-        parts = spec.get("parts")
-        for part in parts if isinstance(parts, list) else [spec]:
-            rel = part.get("file")
-            if rel and os.path.exists(os.path.join(root, rel)):
-                keys_by_envelope.setdefault(rel, []).append(key)
+        rel = part.get("file")
+        if rel and os.path.exists(os.path.join(root, rel)):
+            keys_by_envelope.setdefault(rel, []).append(key)
 
     problems = []
     for rel, keys in sorted(keys_by_envelope.items()):
@@ -1285,8 +1347,10 @@ def preflight_attestations(root: str) -> None:
 
 
 def regen(root: str, klt: str | None) -> int:
-    # Before `resolve_klt`: an author who owes a hand re-attest should be
-    # told so whether or not the pinned `klt` is installed.
+    # Before `resolve_klt`: an author who owes a hand re-attest, or whose
+    # manifest and freshness.json have drifted apart, should be told so
+    # whether or not the pinned `klt` is installed.
+    _preflight_citation_structure(root)
     preflight_attestations(root)
     klt_bin = resolve_klt(root, klt)
     rec_id = record_id(root)
@@ -1337,46 +1401,29 @@ def regen(root: str, klt: str | None) -> int:
 
     # Re-derive freshness.json's values in place, preserving every hand-written
     # `_comment`/`note` -- same shape as layout/lvs/run_lvs.py --regen-manifest.
+    # `mint_attestations()` rewrote the manifest since the preflight at the
+    # top of `regen()`, so the structure is checked again against the very
+    # document the refresh is about to walk.
+    _preflight_citation_structure(root)
     freshness = load_json(root, FRESHNESS_REL)
     cites = manifest_citations(load_json(root, MANIFEST_REL))
     for key, spec in freshness["citations"].items():
+        # A compound spec refreshes once per part, against the manifest's
+        # list of the same length; an ordinary spec is its own single leaf.
         entry = cites[key]
-        parts_spec = spec.get("parts")
-        if isinstance(parts_spec, list):
-            if not isinstance(entry, list) or len(entry) != len(parts_spec):
-                raise ToolingError(
-                    f"signoff/freshness.json citation {key!r} declares "
-                    f"{len(parts_spec)} parts, but the manifest now cites "
-                    f"{len(entry) if isinstance(entry, list) else 'a single'} "
-                    "-- the manifest and freshness.json structures must "
-                    "agree (by hand) before --regen can refresh their hashes"
-                )
-            for part_spec, (path, pin) in zip(parts_spec, entry):
-                part_spec["file"] = path
-                part_spec["manifest_pins"] = pin
-                with open(os.path.join(root, path), encoding="utf-8") as fh:
-                    envelope = json.load(fh)
-                part_spec["envelope_asserts"] = {
-                    field: dotted(envelope, field)
-                    for field in part_spec.get("envelope_asserts", {})
-                }
-                part_spec["artifacts"] = {
-                    artifact: sha256(os.path.join(root, artifact))
-                    for artifact in part_spec.get("artifacts", {})
-                }
-            continue
-        path, pin = entry
-        spec["file"] = path
-        spec["manifest_pins"] = pin
-        with open(os.path.join(root, path), encoding="utf-8") as fh:
-            envelope = json.load(fh)
-        spec["envelope_asserts"] = {
-            field: dotted(envelope, field) for field in spec.get("envelope_asserts", {})
-        }
-        spec["artifacts"] = {
-            artifact: sha256(os.path.join(root, artifact))
-            for artifact in spec.get("artifacts", {})
-        }
+        pairs = zip(spec["parts"], entry) if isinstance(spec.get("parts"), list) else ((spec, entry),)
+        for part_spec, (path, pin) in pairs:
+            part_spec["file"] = path
+            part_spec["manifest_pins"] = pin
+            envelope = load_json(root, path)
+            part_spec["envelope_asserts"] = {
+                field: dotted(envelope, field)
+                for field in part_spec.get("envelope_asserts", {})
+            }
+            part_spec["artifacts"] = {
+                artifact: sha256(os.path.join(root, artifact))
+                for artifact in part_spec.get("artifacts", {})
+            }
     freshness["expected_rows"] = {
         row_key(item): {"status": item.get("status"), "reason": item.get("reason")}
         for item in report["items"]
@@ -1393,9 +1440,7 @@ def regen(root: str, klt: str | None) -> int:
         "t1_not_applicable_count": report.get("t1_not_applicable_count", 0),
         "graded_by": report.get("build", {}).get("version"),
     }
-    with open(os.path.join(root, FRESHNESS_REL), "w", encoding="utf-8") as fh:
-        json.dump(freshness, fh, indent=2)
-        fh.write("\n")
+    _write_json(root, FRESHNESS_REL, freshness)
 
     print(f"wrote {json_rel}")
     print(f"wrote {text_rel}")
@@ -1437,15 +1482,9 @@ def _overlay(root: str, dest: str) -> None:
         for name in os.listdir(os.path.join(root, RECORDS_REL))
         if name.endswith(".md")
     )
-    for spec in freshness["citations"].values():
-        parts_spec = spec.get("parts")
-        if isinstance(parts_spec, list):
-            for part_spec in parts_spec:
-                wanted.append(part_spec["file"])
-                wanted.extend(part_spec.get("artifacts", {}))
-        else:
-            wanted.append(spec["file"])
-            wanted.extend(spec.get("artifacts", {}))
+    for _key, _label, part in _iter_citation_specs(freshness["citations"]):
+        wanted.append(part["file"])
+        wanted.extend(part.get("artifacts", {}))
     for entry in manifest_citations(manifest).values():
         if isinstance(entry, list):
             wanted.extend(path for path, _ in entry)
@@ -1502,11 +1541,9 @@ def _edit_and_repin(root: str, rel: str) -> None:
     fresh = sha256(os.path.join(root, rel))
 
     def repin(doc) -> None:
-        for spec in doc["citations"].values():
-            parts = spec.get("parts")
-            for part in parts if isinstance(parts, list) else [spec]:
-                if rel in (part.get("artifacts") or {}):
-                    part["artifacts"][rel] = fresh
+        for _key, _label, part in _iter_citation_specs(doc["citations"]):
+            if rel in (part.get("artifacts") or {}):
+                part["artifacts"][rel] = fresh
 
     _mutate_json(os.path.join(root, FRESHNESS_REL), repin)
 
