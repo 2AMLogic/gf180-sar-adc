@@ -234,6 +234,16 @@ awk '/^KEPT_SET_PATTERNS=\(/{p=1} p{print} /^standing_auth_eval any$/{exit}' "$C
 # the critical-file hits through it, so run_eval defines it as the block does.
 awk '/^CRITICAL_PATTERNS=\(/{p=1} p{print} p&&/^\)/{exit}' "$CHAMPION_MD" >"$CRIT_SRC"
 
+# The shell shard has no daemon build. Rust tests cover the native parser;
+# LOOM_TEST_REAL_DAEMON opts into running the same cases against that parser.
+workflow_permission_check() {
+    case "$*" in
+        "forge workflow-write-all-check") cat >/dev/null; return "${WORKFLOW_WRITE_ALL_RC:-0}" ;;
+        "forge workflow-secrets-check") cat >/dev/null; return "${WORKFLOW_SECRETS_RC:-0}" ;;
+        *) return 2 ;;
+    esac
+}
+
 # run_eval <mode> <config-json> <files> <api> <ci: green|red> <labels>
 # <files> is the critical-files criterion's own $FILES (critical) / FAST_PATH_FILES (any).
 # <api> is the files-API body the stubbed `gh api` returns: "" = the read fails,
@@ -252,6 +262,7 @@ run_eval() {
         FAST_PATH_FILES="$files"
         LABELS="$labels"
         STUB_API="$api"
+        LOOM_DAEMON_BIN="${LOOM_TEST_REAL_DAEMON:-workflow_permission_check}"
         rm -f "$CFG_DIR/shacount"
         gh() { stub_gh "$@"; }
         # loom-daemon forge additive-migrations (#13102): STUB_ADDITIVE_RC=0 clears the PR; default = held.
@@ -939,7 +950,7 @@ cap_class() { # cap_class <privilegedContentPatterns-json|-> -> a ci class with 
     [ "$1" = "-" ] || extra=",\"privilegedContentPatterns\":$1"
     printf '{"champion":{"standingAuthorizations":[{"id":"ci-cap","filePatterns":[".github/workflows/*.yml"],"conditions":["judgeApproval","greenCi"],"coversCriticalFiles":true,"forbiddenDiffPatterns":["^\\\\s*permissions:","id-token","secrets\\\\.","pull_request_target"]%s}]}}' "$extra"
 }
-CAP_CLASS="$(cap_class "$PRIV_RX")"
+CAP_CLASS="$(cap_class "$(printf '%s\n' "$PRIV_RX" | jq -c '. + ["write-all"]')" | jq -c '.champion.standingAuthorizations[].checkWorkflowWriteAll = true')"
 CONTENT_DIR="$(mktemp -d)"
 trap 'rm -f "$EVAL_SRC" "$LOADER_SRC" "$CRIT_SRC" "${BLOCK_SRC:-}"; rm -rf "$CFG_DIR" "$CONTENT_DIR"' EXIT
 
@@ -971,6 +982,53 @@ export STUB_CONTENT_DIR="$CONTENT_DIR"
 
 out="$(run_eval critical "$CAP_CLASS" "$CI_PATH" "$API_CI" green "loom:pr")"
 assert_eq "ELIGIBLE:ci-cap" "$out" "negative control: GITHUB_TOKEN-only, read-only workflow is covered"
+
+put_content "$CI_PATH" ci-write-all-test-name.yml
+out="$(run_eval critical "$CAP_CLASS" "$CI_PATH" "$API_CI" green "loom:pr")"
+assert_eq "ELIGIBLE:ci-cap" "$out" "typed capability covers a harmless write-all test name and command"
+legacy_class="$(printf '%s\n' "$CAP_CLASS" | jq -c 'del(.champion.standingAuthorizations[].checkWorkflowWriteAll)')"
+out="$(run_eval critical "$legacy_class" "$CI_PATH" "$API_CI" green "loom:pr")"
+assert_eq "NOT ELIGIBLE:" "$out" "an unmodified custom write-all regex still matches free text"
+missing_legacy="$(printf '%s\n' "$CAP_CLASS" | jq -c '.champion.standingAuthorizations[].privilegedContentPatterns |= map(select(. != "write-all"))')"
+out="$(run_eval critical "$missing_legacy" "$CI_PATH" "$API_CI" green "loom:pr")"
+assert_eq "NOT ELIGIBLE:" "$out" "typed capability requires the fallback pattern for older Champions"
+put_content "$CI_PATH" ci-write-all-permission.yml
+out="$(WORKFLOW_WRITE_ALL_RC=1 run_eval critical "$CAP_CLASS" "$CI_PATH" "$API_CI" green "loom:pr")"
+assert_eq "NOT ELIGIBLE:" "$out" "typed capability holds a real write-all job permission"
+put_content "$CI_PATH" ci-github-token-only.yml
+
+echo
+echo "--- #14915: checkWorkflowSecrets (structural secret classification) ---"
+# The shared list with both structural checks opted in: the two legacy secrets
+# regexes are present, so the fallback requirement holds and they are
+# substituted entry for entry.
+SEC_CLASS="$(printf '%s\n' "$CAP_CLASS" | jq -c '.champion.standingAuthorizations[].checkWorkflowSecrets = true')"
+put_content "$CI_PATH" ci-pathfilter-deploy-secrets.yml
+out="$(run_eval critical "$SEC_CLASS" "$CI_PATH" "$API_CI" green "loom:pr")"
+assert_eq "ELIGIBLE:ci-cap" "$out" "structural check clears a deploy_secrets.py path filter"
+out="$(run_eval critical "$CAP_CLASS" "$CI_PATH" "$API_CI" green "loom:pr")"
+assert_eq "NOT ELIGIBLE:" "$out" "legacy regex still matches the same literal (existing configurations unchanged)"
+put_content "$CI_PATH" ci-stepname-secrets-tests.yml
+out="$(run_eval critical "$SEC_CLASS" "$CI_PATH" "$API_CI" green "loom:pr")"
+assert_eq "ELIGIBLE:ci-cap" "$out" "structural check clears a secrets.sh tests step name"
+put_content "$CI_PATH" ci-github-token-only.yml
+out="$(run_eval critical "$SEC_CLASS" "$CI_PATH" "$API_CI" green "loom:pr")"
+assert_eq "ELIGIBLE:ci-cap" "$out" "an evaluated secrets.GITHUB_TOKEN stays exempt under the structural check"
+put_content "$CI_PATH" ci-with-cloudflare-secret.yml
+out="$(WORKFLOW_SECRETS_RC=1 run_eval critical "$SEC_CLASS" "$CI_PATH" "$API_CI" green "loom:pr")"
+assert_eq "NOT ELIGIBLE:" "$out" "structural check holds a real secrets.CLOUDFLARE_API_TOKEN reference"
+out="$(run_eval critical "$CAP_CLASS" "$CI_PATH" "$API_CI" green "loom:pr")"
+assert_eq "NOT ELIGIBLE:" "$out" "legacy regex holds the same file (both semantics agree on real references)"
+out="$(WORKFLOW_SECRETS_RC=2 run_eval critical "$SEC_CLASS" "$CI_PATH" "$API_CI" green "loom:pr")"
+assert_eq "NOT ELIGIBLE:" "$out" "an indeterminate secrets classification fails closed"
+put_content "$CI_PATH" ci-pathfilter-deploy-secrets.yml
+missing_sec="$(printf '%s\n' "$SEC_CLASS" | jq -c '.champion.standingAuthorizations[].privilegedContentPatterns |= map(select(. != "secrets\\.(?!GITHUB_TOKEN\\b)" and . != "secrets:\\s*inherit"))')"
+out="$(run_eval critical "$missing_sec" "$CI_PATH" "$API_CI" green "loom:pr")"
+assert_eq "NOT ELIGIBLE:" "$out" "checkWorkflowSecrets requires a legacy secrets fallback entry"
+bad_sec="$(printf '%s\n' "$SEC_CLASS" | jq -c '.champion.standingAuthorizations[].checkWorkflowSecrets = "yes"')"
+out="$(run_eval critical "$bad_sec" "$CI_PATH" "$API_CI" green "loom:pr")"
+assert_eq "NOT ELIGIBLE:" "$out" "a non-boolean checkWorkflowSecrets is malformed and skips the class"
+put_content "$CI_PATH" ci-github-token-only.yml
 
 out="$(run_eval critical "$CAP_CLASS" ".github/workflows/missing.yml" "$(one_file_api .github/workflows/missing.yml '+# x')" green "loom:pr")"
 assert_eq "NOT ELIGIBLE:" "$out" "content the contents API cannot serve fails closed"
@@ -1038,6 +1096,7 @@ assert_doc_contains "$CHAMPION_MD" '`criticalFilesOnly` (#12648' "champion-pr-me
 assert_doc_contains "$PROMPT_DIR/champion-critical-file-hold.md" '"criticalFilesOnly": true' "champion-critical-file-hold.md documents the criticalFilesOnly class"
 assert_doc_contains "$CHAMPION_REF_MD" "Critical files only (#12648)" "champion-reference.md documents the criticalFilesOnly class"
 assert_doc_contains "$CHAMPION_MD" '`privilegedContentPatterns` (#12954' "champion-pr-merge.md documents privilegedContentPatterns"
+assert_doc_contains "$CHAMPION_MD" '`checkWorkflowSecrets` (#14915' "champion-pr-merge.md documents checkWorkflowSecrets"
 assert_doc_contains "$CHAMPION_MD" "standing_auth_content_clear" "champion-pr-merge.md ships the head-contents check"
 assert_doc_contains "$CHAMPION_REF_MD" "Classify by capability, not by filename (#12954)" "champion-reference.md documents privilegedContentPatterns"
 

@@ -15,6 +15,10 @@
 #   7. stale reaping — an abandoned slot older than the threshold is reclaimed.
 #   8. re-entrancy — LOOM_BUILD_SLOT_HELD makes a nested acquire a no-op.
 #   9. path shape parity with `loom_daemon::build_slot::slot_path` ("$dir/slot-N").
+#  10. a slot released between the failed mkdir and the -d test is retried
+#      (bounded), not misread as an unusable store (#15157).
+#  11. mutual exclusion survives a NON-ATOMIC `mkdir` on PATH (uutils coreutils
+#      on Ubuntu 26.04, #15287): a second acquire cannot also take the only slot.
 #
 # Style follows test-disk-headroom.sh: throwaway mktemp dirs, assert harness,
 # no network, no real ~/.loom.
@@ -125,6 +129,89 @@ printf 'x' > "$DIR"
 assert_true "$CASE_RC" "an unusable slot dir degrades open (never a failure, never a spin)"
 
 echo ""
+echo "=== build-slot.sh: a slot released mid-race is retried, not 'unusable' (#15157) ==="
+
+# Deterministic interleaving: the FIRST `mkdir <slot>` loses to a "peer" whose
+# release then lands before the follow-up `-d` test — i.e. mkdir reports failure
+# and NO slot dir is on disk. Shadow mkdir with a function (counter in a file,
+# because the round runs in a command substitution subshell).
+DIR="$(new_slot_dir)"
+mkdir -p "$DIR"
+MKDIR_COUNT_FILE="$TMPROOT/mkdir-count.vanish"
+: > "$MKDIR_COUNT_FILE"
+(
+    export LOOM_BUILD_SLOT_DIR="$DIR"
+    mkdir() {
+        if [[ "${1:-}" == "$DIR/slot-0" ]]; then
+            printf 'x\n' >> "$MKDIR_COUNT_FILE"
+            if [[ "$(wc -l < "$MKDIR_COUNT_FILE")" -le 1 ]]; then
+                return 1   # lost the race; the peer's rmdir already ran
+            fi
+        fi
+        command mkdir "$@"
+    }
+    rc=0
+    # Not `$(...)`: that subshell would swallow LOOM_BUILD_SLOT_PATH.
+    loom_build_slot_acquire "vanished" 2>"$TMPROOT/vanished.err" >/dev/null || rc=$?
+    OUT="$(cat "$TMPROOT/vanished.err")"
+    [[ "$rc" == "0" ]] || exit 1
+    [[ "$LOOM_BUILD_SLOT_PATH" == "$DIR/slot-0" ]] || exit 2
+    grep -q "degrading open" <<<"$OUT" && exit 3
+    grep -q "WITHOUT a slot" <<<"$OUT" && exit 4
+    [[ -d "$DIR/slot-0" ]] || exit 5
+    exit 0
+) && CASE_RC=0 || CASE_RC=$?
+assert_true "$CASE_RC" "a slot that vanished between mkdir and -d is retried and taken (no degrade-open)"
+
+# A mkdir that ALWAYS fails with the slot absent (a permission-denied store the
+# shell cannot create in) must exhaust the bounded retry and still degrade open.
+DIR="$(new_slot_dir)"
+mkdir -p "$DIR"
+MKDIR_COUNT_FILE="$TMPROOT/mkdir-count.denied"
+: > "$MKDIR_COUNT_FILE"
+(
+    export LOOM_BUILD_SLOT_DIR="$DIR"
+    mkdir() {
+        if [[ "${1:-}" == "$DIR/slot-0" ]]; then
+            printf 'x\n' >> "$MKDIR_COUNT_FILE"
+            return 1
+        fi
+        command mkdir "$@"
+    }
+    rc=0
+    OUT="$(loom_build_slot_acquire "denied" 2>&1)" || rc=$?
+    [[ "$rc" == "0" ]] || exit 1
+    [[ -z "$LOOM_BUILD_SLOT_PATH" ]] || exit 2
+    grep -q "unusable" <<<"$OUT" || exit 3
+    exit 0
+) && CASE_RC=0 || CASE_RC=$?
+assert_true "$CASE_RC" "a persistently failing mkdir (slot absent) still degrades open"
+ATTEMPTS="$(wc -l < "$MKDIR_COUNT_FILE" | tr -d ' ')"
+if (( ATTEMPTS >= 2 && ATTEMPTS <= 8 )); then
+    pass "the vanished-slot retry is bounded (${ATTEMPTS} mkdir attempts, no spin)"
+else
+    fail "the vanished-slot retry was not bounded as expected (${ATTEMPTS} mkdir attempts)"
+fi
+
+# A real read-only store (skipped as root, which ignores mode bits).
+if [[ "$(id -u)" != "0" ]]; then
+    DIR="$(new_slot_dir)"
+    mkdir -p "$DIR"
+    chmod 555 "$DIR"
+    (
+        export LOOM_BUILD_SLOT_DIR="$DIR"
+        rc=0
+        OUT="$(loom_build_slot_acquire "readonly" 2>&1)" || rc=$?
+        [[ "$rc" == "0" ]] || exit 1
+        [[ -z "$LOOM_BUILD_SLOT_PATH" ]] || exit 2
+        grep -q "unusable" <<<"$OUT" || exit 3
+        exit 0
+    ) && CASE_RC=0 || CASE_RC=$?
+    chmod 755 "$DIR"
+    assert_true "$CASE_RC" "a permission-denied slot dir degrades open (bounded, no spin)"
+fi
+
+echo ""
 echo "=== build-slot.sh: LOOM_BUILD_SLOTS=0 disables serialization ==="
 
 DIR="$(new_slot_dir)"
@@ -224,6 +311,94 @@ assert_eq "$(LOOM_BUILD_SLOT_DIR="/tmp/x" loom_build_slot_dir)" "/tmp/x" \
     "LOOM_BUILD_SLOT_DIR overrides the default location"
 assert_eq "$(LOOM_BUILD_SLOT_DIR="   " HOME=/h loom_build_slot_dir)" "/h/.loom/locks/build-slot" \
     "a blank override falls back to the machine-wide ~/.loom/locks/build-slot"
+
+echo ""
+echo "=== build-slot.sh: a non-atomic (uutils) mkdir on PATH cannot double-grant a slot (#15287) ==="
+
+# Ubuntu 26.04's /usr/bin/mkdir is uutils coreutils 0.10.0, which exits 0 when the
+# target directory already exists (21/100 two-racer double-wins measured). The
+# stub reproduces exactly that, deterministically: a mkdir of an EXISTING dir
+# succeeds. The slot must still be exclusive, because build-slot goes through
+# lib/atomic-mkdir.sh instead of the PATH mkdir.
+REAL_BASH="$(command -v bash)"
+REAL_MKDIR="$(command -v gnumkdir 2>/dev/null || command -v mkdir)"
+STUB_ROOT="$TMPROOT/stubs"
+mkdir -p "$STUB_ROOT"
+make_uutils_stub() { # <bindir> <marker>
+    local stub="$1/mkdir"
+    cat > "$stub" <<EOF
+#!$REAL_BASH
+if [[ "\${1:-}" == "--version" ]]; then echo "mkdir (uutils coreutils) 0.10.0"; exit 0; fi
+if [[ "\${1:-}" == "-p" ]]; then exec "$REAL_MKDIR" "\$@"; fi
+echo "called:\$*" >> "$2"
+"$REAL_MKDIR" "\$@" 2>/dev/null || [[ -d "\${!#}" ]]
+EOF
+    chmod +x "$stub"
+}
+
+# Take the only slot, then a second (non-nested) acquire must NOT get it.
+# $1 = slot dir; PATH is set by the caller.
+assert_slot_exclusive_under_stub() {
+    local dir="$1" out rc=0
+    export LOOM_BUILD_SLOT_DIR="$dir" LOOM_BUILD_SLOTS=1
+    loom_build_slot_acquire "first" >/dev/null 2>&1 || return 1
+    [[ "$LOOM_BUILD_SLOT_PATH" == "$dir/slot-0" ]] || return 2
+    out="$(
+        unset LOOM_BUILD_SLOT_HELD
+        LOOM_BUILD_SLOT_PATH=""
+        loom_build_slot_acquire "second" 2>&1
+        [[ -z "$LOOM_BUILD_SLOT_PATH" ]] || echo "SECOND-GOT-SLOT"
+    )" || rc=$?
+    loom_build_slot_release >/dev/null 2>&1 || true
+    [[ "$rc" == "0" ]] || return 3
+    if grep -q "SECOND-GOT-SLOT" <<<"$out"; then return 4; fi
+    grep -q "degrading open" <<<"$out" || return 5
+    return 0
+}
+
+# Control: the stub really is non-atomic (otherwise the cases below prove nothing).
+(
+    FAKE_BIN="$STUB_ROOT/control"
+    mkdir -p "$FAKE_BIN"
+    make_uutils_stub "$FAKE_BIN" "$FAKE_BIN/called.log"
+    T="$STUB_ROOT/control-target"
+    "$FAKE_BIN/mkdir" "$T" && "$FAKE_BIN/mkdir" "$T"
+) && CASE_RC=0 || CASE_RC=$?
+assert_true "$CASE_RC" "control: the stub mkdir double-wins on an existing dir (the uutils bug)"
+
+# Case 1: gnumkdir present -> used; the broken mkdir is never called.
+(
+    FAKE_BIN="$STUB_ROOT/gnu"
+    mkdir -p "$FAKE_BIN"
+    make_uutils_stub "$FAKE_BIN" "$FAKE_BIN/uutils-called.log"
+    printf '#!%s\nexec "%s" "$@"\n' "$REAL_BASH" "$REAL_MKDIR" > "$FAKE_BIN/gnumkdir"
+    chmod +x "$FAKE_BIN/gnumkdir"
+    SLOTS="$STUB_ROOT/gnu-slots"
+    mkdir -p "$SLOTS"
+    export PATH="$FAKE_BIN:$PATH"
+    assert_slot_exclusive_under_stub "$SLOTS/build-slot" || exit $?
+    [[ ! -e "$FAKE_BIN/uutils-called.log" ]] || exit 6
+    exit 0
+) && CASE_RC=0 || CASE_RC=$?
+assert_true "$CASE_RC" "uutils mkdir + gnumkdir: the slot stays exclusive and the broken mkdir is bypassed"
+
+# Case 2: no gnumkdir -> direct mkdir(2) via python3/perl.
+(
+    FAKE_BIN="$STUB_ROOT/fallback"
+    mkdir -p "$FAKE_BIN"
+    make_uutils_stub "$FAKE_BIN" "$FAKE_BIN/uutils-called.log"
+    for tool in cat date stat sed rm rmdir tr hostname sleep python3 perl wc head dirname grep; do
+        tpath="$(command -v "$tool" 2>/dev/null || true)"
+        [[ -n "$tpath" ]] && ln -s "$tpath" "$FAKE_BIN/$tool"
+    done
+    SLOTS="$STUB_ROOT/fallback-slots"
+    mkdir -p "$SLOTS"
+    export PATH="$FAKE_BIN"
+    assert_slot_exclusive_under_stub "$SLOTS/build-slot" || exit $?
+    [[ ! -e "$FAKE_BIN/uutils-called.log" ]] || exit 6
+    exit 0
+) && CASE_RC=0 || CASE_RC=$?
+assert_true "$CASE_RC" "uutils mkdir without gnumkdir: the slot stays exclusive via direct mkdir(2)"
 
 echo ""
 echo "=== build-gate.sh sources the helper ==="

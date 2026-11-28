@@ -10,10 +10,10 @@ Three throttles caused that tail. Each is fixed below.
 
 ## 1. Promotion runs every pass, even while PRs remain
 
-> **Step dispatch (#11894, live since #11909).** Promotion runs as one terminal targeted Champion step per curated issue (`/loom:champion --issue N`), drawn by the work finder. The interval Champion runs `--non-item` only. See [`docs/design/work-finder-step-dispatch.md`](https://github.com/rjwalters/loom/blob/main/docs/design/work-finder-step-dispatch.md) §12.
+> **Step dispatch (#11894, live since #11909).** Promotion runs as one terminal targeted Champion step per curated issue (`/loom:champion --issue N`), drawn by the work finder. The interval Champion runs `--non-item` only. See [`docs/design/work-finder-step-dispatch.md`](https://github.com/2AMLogic/loom/blob/main/docs/design/work-finder-step-dispatch.md) §12.
 
 Champion used to promote only once no PRs remained. A repository with a steady
-or held PR queue never reached promotion. On 2026-10-07, rjwalters/loom had 38
+or held PR queue never reached promotion. On 2026-10-07, 2AMLogic/loom had 38
 open `loom:pr` PRs, 30 of them held by `loom:operator`, so "no PRs remain" was
 never true. Promotion now runs every pass (`champion.md` → "Autonomous
 Operation"), whether or not PRs remain held, sequenced, waiting on CI, or
@@ -31,7 +31,7 @@ later re-renders keep them. To change a value on a host, export it and re-run
 environment. See "Changing daemon environment variables" and "Env keys carried
 forward across a re-render" in `daemon-reference.md`. For a hand-run
 `/loom:champion`, export the value in that shell. Precedence is env var >
-`LOOM_HYPERPARAMS` vector > config block > default (`hyperparameters.md`).
+config block > default (`hyperparameters.md`).
 
 ## 3. "Needs revision" goes to Curator, not to the operator
 

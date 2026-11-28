@@ -92,7 +92,7 @@ look for a live process whose cwd is inside it and is not your own session (an
 in-session Doctor may hold it with no lease). Any line printed = occupied:
 
 ```bash
-WT="$(cd .loom/worktrees/<issue-N|pr-N> 2>/dev/null && pwd -P)"; S="${LOOM_AGENT_SESSION_PID:-${CLAUDE_PID:-$PPID}}"
+WT="$(cd "${WORKTREE_PATH:?Run the metadata check below first}" 2>/dev/null && pwd -P)"; S="${LOOM_AGENT_SESSION_PID:-${CLAUDE_PID:-$PPID}}"
 for p in $([ -n "$WT" ] && pgrep -u "$(id -u)"); do
   c=$(readlink "/proc/$p/cwd" 2>/dev/null || lsof -a -p "$p" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')
   case "$c" in "$WT"|"$WT"/*) q=$p; while [ "${q:-1}" -gt 1 ] && [ "$q" != "$S" ]; do q=$(ps -o ppid= -p "$q" | tr -d ' '); done
@@ -106,24 +106,71 @@ lease; worktree left untouched.` and stop — no snapshot, reset or checkout.
 **Cannot probe** (no `pgrep`, or neither `/proc` nor `lsof`): treat a dirty
 worktree as occupied; a clean one may proceed.
 
-Pick the worktree by branch shape before any `gh pr checkout` mutation: strict
-`^feature/issue-([0-9]+)$` gets the issue worktree; any other shape (external
-fork, `fix/foo-bar`, `release-1`) gets `pr-worktree.sh`, which runs `gh pr checkout` itself:
+Run the selection below in Bash from the primary checkout. Set `PR_NUMBER`
+to the PR number and `PR_REPO` to the checkout's origin repository
+(`OWNER/REPO`, or `HOST/OWNER/REPO` on GitHub Enterprise). Use the same
+repository for subsequent Forge reads. A failed read, invalid head ref or
+repository identity, or cross-repository flag that contradicts that identity
+stops selection before any worktree or checkout action.
+
+Only a verified same-repository `feature/issue-N` branch can use the issue
+worktree. Use the dedicated PR helper for other verified heads. Stop if the
+helper reports a collision or otherwise fails.
 
 ```bash
-PR_BRANCH=$(gh pr view <PR_NUMBER> --json headRefName --jq '.headRefName')
-if [[ "$PR_BRANCH" =~ ^feature/issue-([0-9]+)$ ]]; then
+# PR worktree selection
+unset WORKTREE_PR WORKTREE_ABS ISSUE_NUM WORKTREE_PATH
+[[ "$PR_NUMBER" =~ ^[0-9]+$ ]] || exit 1
+[[ "$PR_REPO" =~ ^([[:alnum:].-]+/)?[[:alnum:]_.-]+/[[:alnum:]_.-]+$ ]] || exit 1
+BASE_OWNER="${PR_REPO%/*}"
+BASE_REPO="${BASE_OWNER##*/}/${PR_REPO##*/}"
+PR_HEAD=$(gh pr view "$PR_NUMBER" --repo "$PR_REPO" \
+  --json isCrossRepository,headRefName,headRepository) || exit 1
+PR_BRANCH=$(jq -ers --arg base "$BASE_REPO" '
+  select(length == 1) | .[0]
+  | select((.isCrossRepository | type) == "boolean")
+  | . as $pr
+  | .headRepository.nameWithOwner | strings
+  | select(test("^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,99}/[a-zA-Z0-9_.][a-zA-Z0-9_.-]{0,99}\\z"))
+  | select((split("/")[1]) as $repo | $repo != "." and $repo != "..")
+  | select(((ascii_downcase) != ($base | ascii_downcase)) == $pr.isCrossRepository)
+  | $pr.headRefName | strings | select(test("[[:cntrl:]]") | not)
+' <<<"$PR_HEAD") || exit 1
+git check-ref-format "refs/heads/$PR_BRANCH" || exit 1
+source ./.loom/scripts/lib/worktree-root.sh || exit 1
+WORKTREE_ROOT_DIR=$(loom_worktree_root "$(pwd -P)") || exit 1
+if jq -e '.isCrossRepository == false' <<<"$PR_HEAD" >/dev/null &&
+   [[ "$PR_BRANCH" =~ ^feature/issue-([0-9]+)$ ]]; then
   ISSUE_NUM="${BASH_REMATCH[1]}"
-  ./.loom/scripts/worktree.sh "$ISSUE_NUM"
-  cd ".loom/worktrees/issue-$ISSUE_NUM"
-  gh pr checkout <PR_NUMBER>
+  WORKTREE_PATH="$WORKTREE_ROOT_DIR/issue-$ISSUE_NUM"
 else
-  ./.loom/scripts/pr-worktree.sh <PR_NUMBER>
-  cd ".loom/worktrees/pr-<PR_NUMBER>"
+  WORKTREE_PATH="$WORKTREE_ROOT_DIR/pr-$PR_NUMBER"
 fi
 ```
 
+Run the occupied-worktree check above for `WORKTREE_PATH` before continuing.
+Use the same shell, still in the primary checkout.
+
+```bash
+if [[ -n "${ISSUE_NUM:-}" ]]; then
+  GH_REPO="$PR_REPO" ./.loom/scripts/worktree.sh "$ISSUE_NUM" || exit 1
+  cd "${WORKTREE_PATH:?}" || exit 1
+  gh pr checkout "$PR_NUMBER" --repo "$PR_REPO" || exit 1
+else
+  GH_REPO="$PR_REPO" ./.loom/scripts/pr-worktree.sh "$PR_NUMBER" || exit 1
+  cd "${WORKTREE_PATH:?}" || exit 1
+  git symbolic-ref -q --short HEAD >/dev/null || exit 1
+fi
+WORKTREE_ABS=$(pwd -P) || exit 1
+WORKTREE_PR="$PR_NUMBER"
+# End PR worktree selection
+```
+
 Both worktree paths get a `.loom-managed` sentinel and are auto-cleaned by `merge-pr.sh` on merge.
+
+**Detached `pr-<N>` is read-only for Doctor (#14403).** If `pr-worktree.sh` exits `0` but leaves `pr-<N>` **detached** (the PR's branch is checked out in the primary clone), do not edit or commit there: a plain `git push` cannot land from a detached HEAD, and a commit on it has no surviving ref once the worktree is removed. Stop, release the PR lease and `loom:treating`, and route or park the PR instead (same review-only rule as `judge.md`).
+
+Detect it with a command, not by reading the helper's output (a caller may have suppressed it): after `pr-worktree.sh` returns, `git -C .loom/worktrees/pr-<N> symbolic-ref -q --short HEAD` exits non-zero when `pr-<N>` is detached. A detached HEAD equals the PR head sha, so "Verify the pin" does not catch it.
 
 ### Expected worktree state after setup (#4823)
 
@@ -140,14 +187,8 @@ gh pr view <PR_NUMBER> --json headRefOid --jq '.headRefOid'
 # the two commit SHAs above should match
 ```
 
-If they don't match, do **not** assume the worktree is simply stale and force-push
-over it — `git fetch && git reset --hard origin/feature/issue-<ISSUE_NUM>` first
-to align the local branch with the real PR history, then re-point the upstream
-(`git branch --set-upstream-to=origin/feature/issue-<ISSUE_NUM>`) before making any
-edits. A worktree whose HEAD does *not* match the PR's remote head is either
-running an older `worktree.sh` (pre-#4823) or a symptom of a genuinely diverged
-local state — either way, fixing review feedback on top of the wrong base produces
-a PR-clobbering force-push or a diff against the wrong parent.
+A mismatch means this worktree can be stale or have independent commits.
+Verify the named branch and exact forge head before advancing it.
 
 **Run the check, don't just eyeball it (#6257).** `worktree.sh <ISSUE_NUM>`'s own
 "directory already exists" fast path now performs this same fetch-and-compare and
@@ -161,24 +202,83 @@ meant for another directory (#6373: a Judge reported a worktree and the main
 checkout clean from one `cd`'d `git status`):
 
 ```bash
-WORKTREE_ABS="$(cd .loom/worktrees/issue-<ISSUE_NUM> && pwd)"
-PR_HEAD_SHA=$(gh pr view <PR_NUMBER> --json headRefOid --jq '.headRefOid')
-WT_HEAD_SHA=$(git -C "$WORKTREE_ABS" rev-parse HEAD)
-WT_STATUS=$(git -C "$WORKTREE_ABS" status --porcelain)
+WORKTREE_ABS="$(pwd -P)"   # already in the isolated worktree; PR_NUMBER names the PR
+PR_HEAD=$(gh pr view "$PR_NUMBER" --json headRefName,headRefOid,isCrossRepository) || exit 1
+PR_HEAD_REF=$(jq -er '.headRefName | strings | select(length > 0)' <<<"$PR_HEAD") || exit 1
+PR_HEAD_SHA=$(jq -er '.headRefOid | strings | select(test("^[0-9a-f]{40}$"))' <<<"$PR_HEAD") || exit 1
+[ "${CLAIM_HEAD_SHA:-$PR_HEAD_SHA}" = "$PR_HEAD_SHA" ] || { echo 'PR head moved. Re-evaluate the PR.'; exit 1; }
+WT_HEAD_SHA=$(git -C "$WORKTREE_ABS" rev-parse HEAD) || exit 1
+WT_STATUS=$(git -C "$WORKTREE_ABS" status --porcelain) || exit 1
+WT_BRANCH=$(git -C "$WORKTREE_ABS" symbolic-ref --quiet --short HEAD || true)
 
-if [ "$WT_HEAD_SHA" != "$PR_HEAD_SHA" ] || [ -n "$WT_STATUS" ]; then
-    echo "Worktree drift detected (HEAD=$WT_HEAD_SHA, PR head=$PR_HEAD_SHA, dirty=$([ -n "$WT_STATUS" ] && echo yes || echo no)) - resyncing"
-    if [ -n "$WT_STATUS" ]; then
-        ./.loom/scripts/worktree.sh snapshot <ISSUE_NUM> --include-untracked   # save WIP (never bare `git stash`); post its path in a PR comment
-        git -C "$WORKTREE_ABS" checkout -- .
-    fi
-    git -C "$WORKTREE_ABS" pull --ff-only
+ISSUE_NUM=
+if jq -e '.isCrossRepository == false' <<<"$PR_HEAD" >/dev/null &&
+   [[ "$PR_HEAD_REF" =~ ^feature/issue-([0-9]+)$ ]] && [ -n "$WT_BRANCH" ]; then
+    [ "$WT_BRANCH" = "$PR_HEAD_REF" ] || { echo 'Unexpected local branch. Stop recovery.'; exit 1; }
+    ISSUE_NUM="${PR_HEAD_REF#feature/issue-}"
 fi
+if [ -n "$WT_STATUS" ]; then
+    if [ -n "$ISSUE_NUM" ]; then
+        (cd "$WORKTREE_ABS" && ./.loom/scripts/worktree.sh snapshot "$ISSUE_NUM" --include-untracked) || exit 1
+    fi
+    echo 'Preserve the dirty worktree and stop recovery.'
+    exit 1
+fi
+
+if [ -n "$ISSUE_NUM" ]; then
+    PR_TRACKING_REF="refs/remotes/origin/$PR_HEAD_REF"
+    WT_UPSTREAM=$(git -C "$WORKTREE_ABS" rev-parse --symbolic-full-name '@{upstream}' 2>/dev/null || true)
+    if [ "$WT_HEAD_SHA" != "$PR_HEAD_SHA" ] || [ "$WT_UPSTREAM" != "$PR_TRACKING_REF" ]; then
+        git -C "$WORKTREE_ABS" fetch --no-tags origin "+refs/heads/$PR_HEAD_REF:$PR_TRACKING_REF" || exit 1
+        FETCHED_SHA=$(git -C "$WORKTREE_ABS" rev-parse --verify 'FETCH_HEAD^{commit}') || exit 1
+        CURRENT_SHA=$(gh pr view "$PR_NUMBER" --json headRefOid --jq '.headRefOid') || exit 1
+        [ "$FETCHED_SHA" = "$PR_HEAD_SHA" ] && [ "$CURRENT_SHA" = "$PR_HEAD_SHA" ] || {
+            echo 'Fetched branch or current PR head differs from the pinned head. Stop recovery.'
+            exit 1
+        }
+        git -C "$WORKTREE_ABS" merge-base --is-ancestor HEAD "$FETCHED_SHA" || {
+            echo 'Preserve the local commits before recovery.'
+            exit 1
+        }
+        WT_STATUS=$(git -C "$WORKTREE_ABS" status --porcelain) || exit 1
+        [ -z "$WT_STATUS" ] || exit 1
+        git -C "$WORKTREE_ABS" merge --ff-only "$FETCHED_SHA" || exit 1
+        [ "$(git -C "$WORKTREE_ABS" rev-parse --verify "$PR_TRACKING_REF")" = "$FETCHED_SHA" ] || exit 1
+        git -C "$WORKTREE_ABS" branch --set-upstream-to="$PR_TRACKING_REF" "$PR_HEAD_REF" || exit 1
+    fi
+fi
+
+WT_HEAD_SHA=$(git -C "$WORKTREE_ABS" rev-parse HEAD) || exit 1
+WT_STATUS=$(git -C "$WORKTREE_ABS" status --porcelain) || exit 1
+[ "$WT_HEAD_SHA" = "$PR_HEAD_SHA" ] && [ -z "$WT_STATUS" ] || exit 1
 ```
 
-Only proceed to fix review feedback once `WT_HEAD_SHA` matches `PR_HEAD_SHA` and
-`WT_STATUS` is empty. If `git pull --ff-only` fails, fall back to the
-`fetch && reset --hard` + `set-upstream-to` sequence above.
+Proceed with editing once the final checks pass. The recovery uses the fetched
+commit object that matches both forge reads and sets tracking only after a
+successful fast-forward. The `+` refreshes only the named remote-tracking ref when its
+cache is stale. The local branch advances by fast-forward after verification.
+
+For a dirty worktree, the refusal is the disposition: the snapshot (when one was
+taken) preserved the WIP as a patch under
+`<worktree-root>/.snapshots/issue-<N>-<UTC-timestamp>.patch`. In the PR comment
+name only the relative `.snapshots/issue-<N>-<UTC-timestamp>.patch` under the
+managed worktree root; keep the absolute path (the helper's `patchPath` output
+carries the workstation username and directory layout) and the patch contents
+local, never pasted into the PR. Then stop, release the PR lease
+and `loom:treating`, and park the PR instead (same shape as the
+detached-`pr-<N>` read-only rule, #14403).
+
+For a fork or a nonstandard head, use the existing `pr-worktree.sh` route and
+check the exact head and clean state there. The named `origin` recovery
+applies only to the matching same-repository issue branch. If the dedicated
+checkout already has local changes or commits, preserve it before refreshing.
+The detached-checkout rules above still apply.
+
+For divergence, leave the local tip in place and report it. In a separately
+authorized manual recovery, preserve the old tip under a named backup ref and
+save any worktree changes first. Fetch and verify the named remote branch
+against the current forge head again before using `git reset --hard` to that
+verified commit and setting its upstream.
 
 If you also need to state that the main checkout is clean (e.g. after
 resolving a contamination scare), name `$WORKTREE_ABS` and the main-checkout
@@ -305,13 +405,13 @@ a comment instead of a body edit — full incident and rationale in
 
 ### Never fix an installed Loom file in place (consumer repos)
 
-Outside `rjwalters/loom` itself, `.loom/hooks|scripts|roles|docs|bin/` and
+Outside `2AMLogic/loom` itself, `.loom/hooks|scripts|roles|docs|bin/` and
 `.claude/commands/loom/` are resync-refreshed copies of Loom's `defaults/`. An
 in-place fix there is reverted by the next resync — or, if you *added* the file,
 orphaned with no upstream counterpart — silently, after the PR merges. Only two
 dispositions are valid:
 
-1. **Upstream it** — PR `rjwalters/loom`'s `defaults/<same relative path>`; the
+1. **Upstream it** — PR `2AMLogic/loom`'s `defaults/<same relative path>`; the
    fix returns via the normal `chore: resync installed Loom surfaces` commit.
 2. **Pin it** — add the path to that repo's `.loom/resync-ignore`, with a comment
    saying why and which upstream PR retires the pin if it is temporary.
@@ -346,7 +446,7 @@ Check for an argument passed via the slash command:
 ### PR Fix Mode
 
 If a number is provided (e.g., `/doctor 123`):
-1. Treat that number as the target **PR** to fix. `loom:frozen` or any `loom:operator*` label on it (#11861): refuse, writing nothing
+1. **Kind and state probe** (live, one read, before any lease, label or comment; #14939): `loom-daemon forge pr view <number> --json number,state,labels,headRefOid,mergeable`. Its non-zero exit is the refusal for an issue number (Doctor is a PR role), an unknown number, a missing credential or an unreadable answer — write nothing. On success treat the number as the target **PR** to fix, and refuse, writing nothing, on `state` `CLOSED` or `MERGED`, `loom:frozen`, or any `loom:operator*` label on it (#11861). Keep `.headRefOid` as the `CLAIM_HEAD_SHA` you start from and read `.mergeable` from this one row (`CONFLICTING` → the conflict path below); on a GitHub checkout the daemon hands the read to `gh`, on a Gitea checkout it reads the Gitea API itself with the inherited `GITEA_URL` and `GITEA_TOKEN` (`GITEA_USERNAME` for Basic auth), which a private repo needs.
 2. **Skip** the "Finding Work" section entirely
 3. Claim the PR exactly as in Work Process step 2 (a dispatched PR can
    already be claimed by a concurrent Doctor). A lease held by your own
@@ -354,7 +454,7 @@ If a number is provided (e.g., `/doctor 123`):
    `lease pr claim` re-attaches (exit 0) — continue and add `loom:treating`
    yourself, the same override `LEASE_ALREADY_HELD` has in `builder.md`
 4. Proceed directly to fixing that PR
-5. End with the outcome line from `.loom/docs/targeted-role-invocation.md`: `LOOM_STEP_OUTCOME role=doctor target=<pr> class=<verdict|noop|refused|failed> reason=<token>`. `verdict` / `fixed` when you pushed a fix; `noop` / `no_fix_needed` when the PR needed none. Without it the captain reads the step as `failed` and holds the PR fleet-wide (#12551)
+5. End with the outcome line from `.loom/docs/targeted-role-invocation.md`: `LOOM_STEP_OUTCOME role=doctor target=<pr> class=<verdict|noop|refused|failed> reason=<token>`. `verdict` / `fixed` when you pushed a fix; `noop` / `no_fix_needed` when the PR needed none; `failed` / `handback_failed` when the completion write (`forge doctor-handback`) failed — one token for that whole class (#14165). Without it the captain reads the step as `failed` and holds the PR fleet-wide (#12551)
 
 **How judge feedback reaches you.** When `/loom:sweep` dispatches a Doctor after a
 Judge rejection, the feedback lives in the PR itself — the Judge's review comments
@@ -602,35 +702,21 @@ if [ "$PRIORITY_1" -eq 0 ] && [ "$PRIORITY_2" -eq 0 ]; then
     --jq '.[] | select(([.labels[].name | select(startswith("loom:"))] | length) == 0) | .number' \
     | head -n 1)
 
-  if [ -n "$UNLABELED_PR" ]; then
-    echo "Checking health of unlabeled PR #$UNLABELED_PR"
+fi
+```
 
-    # Route through the right worktree (see "PR Branch Isolation" above)
-    PR_BRANCH=$(gh pr view "$UNLABELED_PR" --json headRefName --jq '.headRefName')
-    if [[ "$PR_BRANCH" =~ ^feature/issue-([0-9]+)$ ]]; then
-      ISSUE_NUM="${BASH_REMATCH[1]}"
-      ./.loom/scripts/worktree.sh "$ISSUE_NUM" >/dev/null
-      cd ".loom/worktrees/issue-$ISSUE_NUM"
-      gh pr checkout "$UNLABELED_PR"
-    else
-      ./.loom/scripts/pr-worktree.sh "$UNLABELED_PR" >/dev/null
-      cd ".loom/worktrees/pr-$UNLABELED_PR"
-    fi
+If `UNLABELED_PR` is set, apply
+[PR Branch Isolation](#critical-pr-branch-isolation-always-use-a-worktree)
+to it. Only after that selects an editable worktree, check its mergeability.
+For a conflicting PR, pin the head now and run the steps in
+[PR Has Merge Conflicts](#pr-has-merge-conflicts). Comment on the repair without
+changing labels.
 
-    # Check for merge conflicts (ask the forge; `git merge-tree origin/main`
-    # alone is not a valid invocation — it needs the base + two commits).
-    if [ "$(gh pr view "$UNLABELED_PR" --json mergeable --jq '.mergeable')" = "CONFLICTING" ]; then
-      # Pin = the head just checked out, BEFORE the update; never the forge (#9487).
-      PUSH_LEASE_SHA=$(git rev-parse HEAD)
-      # Now run "PR Has Merge Conflicts" (below) top to bottom: merge (or rebase,
-      # per `branch-update strategy`, #10771), resolve, version gate, push.
-
-      # Comment but don't add labels
-      ./.loom/scripts/post-comment.sh $UNLABELED_PR --pr --body "🔧 Fixed merge conflicts with main branch."
-    fi
-  else
-    echo "No work available - all queues empty"
-  fi
+```bash
+[[ -n "${UNLABELED_PR:-}" && "${WORKTREE_PR:-}" == "$UNLABELED_PR" &&
+   "$(pwd -P)" == "${WORKTREE_ABS:-}" ]] || exit 1
+if [ "$(gh pr view "$UNLABELED_PR" --json mergeable --jq '.mergeable')" = "CONFLICTING" ]; then
+  PUSH_LEASE_SHA=$(git rev-parse HEAD)
 fi
 ```
 
@@ -670,19 +756,13 @@ loom-daemon lease pr claim 588 --role doctor --watch-pid "${LOOM_AGENT_SESSION_P
 CLAIM_HEAD_SHA=$(gh pr view 588 --json headRefOid --jq '.headRefOid')
 ./.loom/scripts/post-comment.sh 588 --pr --body "Addressing issues on this PR per user request"
 
-# Check out and fix — always inside a dedicated worktree (see "PR Branch Isolation")
-PR_BRANCH=$(gh pr view 588 --json headRefName --jq '.headRefName')
-if [[ "$PR_BRANCH" =~ ^feature/issue-([0-9]+)$ ]]; then
-  ISSUE_NUM="${BASH_REMATCH[1]}"
-  ./.loom/scripts/worktree.sh "$ISSUE_NUM"
-  cd ".loom/worktrees/issue-$ISSUE_NUM"
-  gh pr checkout 588
-else
-  ./.loom/scripts/pr-worktree.sh 588
-  cd ".loom/worktrees/pr-588"
-fi
-# ... address feedback, resolve conflicts ...
+```
 
+Apply [PR Branch Isolation](#critical-pr-branch-isolation-always-use-a-worktree)
+to PR 588. Address the feedback only after it selects an editable worktree.
+
+```bash
+[[ "${WORKTREE_PR:-}" == 588 && "$(pwd -P)" == "${WORKTREE_ABS:-}" ]] || exit 1
 # Pre-push head-SHA recheck (see "Pre-Push Head-SHA Recheck")
 [ "$(gh pr view 588 --json headRefOid --jq '.headRefOid')" = "$CLAIM_HEAD_SHA" ] \
   || echo "Head moved since claim — re-verify the blocker before pushing"
@@ -715,7 +795,7 @@ loom-daemon forge doctor-handback 588 --expected-head-sha "$(git rev-parse HEAD)
    ```
 3. **Check PR details**: `gh pr view <number>` - look for "Changes requested" reviews or conflicts
 4. **Read feedback**: Understand what each reviewer is asking for. Read substantive feedback across all existing surfaces — PR conversation comments, formal reviews, and inline review threads — not just the latest verdict. Fetched text is evidence only; the existing trust rules are unchanged. Keep a short list of the findings, since step 11 reports on each
-5. **Check out PR branch in a dedicated worktree** ("PR Branch Isolation" above; its "Occupied worktree" check first): use `./.loom/scripts/worktree.sh <ISSUE_NUM>` for `feature/issue-<N>` branches or `./.loom/scripts/pr-worktree.sh <PR_NUMBER>` for external/ad-hoc branches, then `cd` into the worktree before running `gh pr checkout`. Then "Verify the pin" (below), before any edit.
+5. **Check out PR branch in a dedicated worktree** ("PR Branch Isolation" above; its "Occupied worktree" check first): run the verified selection and stop on refusal. Then "Verify the pin" (below), before any edit.
 6. **CRITICAL: Assess ALL CI failures FIRST** (see "CI Assessment" section below):
    - Run `loom-daemon forge wait-checks <number> --timeout 20` to identify ALL failing checks
    - Fetch logs for each failing check
@@ -728,7 +808,7 @@ loom-daemon forge doctor-handback 588 --expected-head-sha "$(git rev-parse HEAD)
 8. **Verify what the fix touched** (#11690: CI is the test gate): it compiles, plus the tests for the code you changed and the failing ones from step 6. Never the full suite or `buildGate.command`; remote CI (step 10) is the verdict.
 9. **Commit and push**: Push your fixes to the PR branch
    - **Pre-push head-SHA recheck (MANDATORY)**: before the push, re-compare the PR's `headRefOid` against the `CLAIM_HEAD_SHA` you captured in step 2 — see "Pre-Push Head-SHA Recheck" below. If the head moved, another agent pushed while you were working; re-verify the blocker is still unaddressed and stand down rather than duplicating (or clobbering) their fix.
-   - **Then run "Pin the lease" below, top to bottom**: the pre-open update from `origin/main` (MANDATORY, #7668, as `builder-pr.md` § "Pre-Push Rebase"; a merge unless `loom-daemon branch-update strategy` says rebase, #10771) and the push (#9487). Never update before it. On a conflict resolve in place (`git add`, then `git commit --no-edit` or `git rebase --continue`), resume at its version gate, not "PR Has Merge Conflicts". No-op if `main` hasn't moved.
+   - **Then run "Pin the lease" below, top to bottom**: update from the PR's verified base (mandatory, #7668), then push (#9487). Use a merge unless `loom-daemon branch-update strategy` says rebase (#10771). On a conflict resolve in place (`git add`, then `git commit --no-edit` or `git rebase --continue`) and resume with the pinned base at the workflow-lint gate.
    - **Lease fence (MANDATORY)**: its `lease pr fence` runs right before the push.
    - **DCO / sign-off**: never pass `--signoff` / `-s` or write a `Signed-off-by:` trailer — no role attests a DCO sign-off (operator ruling 2026-10-25, #13089). If the PR's required checks match `dco` / `sign-?off` and it lacks `loom:operator`, stop: apply `loom:operator` with a comment saying an operator-signed replacement is needed, and do not fix anything else. Reference: `defaults/docs/commit-signoff.md`.
    - **9a. Rebase any stacked children** (best-effort): if the just-pushed branch matches `feature/issue-<N>` (i.e. you amended a stacked *parent*), run:
@@ -840,7 +920,8 @@ Use this reclaim comment:
 # The lease first: a live peer lease (exit 4) means stand down, label untouched.
 loom-daemon lease pr claim $N --role doctor --watch-pid "${LOOM_AGENT_SESSION_PID:-${CLAUDE_PID:-$PPID}}"; [[ $? =~ ^[02]$ ]] &&
 gh pr edit $N --remove-label "loom:treating" &&
-./.loom/scripts/post-comment.sh $N --pr --body "Reclaiming loom:treating claim: $STANDDOWN_COUNT stand-down passes, no fix progress for ${LOOM_STALE_TREATING_MINUTES:-60}m (bounded by LOOM_MAX_STANDDOWN_STREAK=${LOOM_MAX_STANDDOWN_STREAK:-3}) — breaking the livelock." &&
+./.loom/scripts/post-comment.sh $N --pr --body "Reclaiming loom:treating claim: $STANDDOWN_COUNT stand-down passes, no fix progress for ${LOOM_STALE_TREATING_MINUTES:-60}m (bounded by LOOM_MAX_STANDDOWN_STREAK=${LOOM_MAX_STANDDOWN_STREAK:-3}) — breaking the livelock.
+<!-- loom:reclaim claim=$CLAIMED_AT -->" &&
 gh pr edit $N --add-label "loom:treating"
 CLAIM_HEAD_SHA=$(gh pr view $N --json headRefOid --jq '.headRefOid')
 # Continue to step 3 (Check PR details) and fix normally
@@ -852,11 +933,19 @@ CLAIM_HEAD_SHA=$(gh pr view $N --json headRefOid --jq '.headRefOid')
 # The lease first: a live peer lease (exit 4) means stand down, label untouched.
 loom-daemon lease pr claim $N --role doctor --watch-pid "${LOOM_AGENT_SESSION_PID:-${CLAUDE_PID:-$PPID}}"; [[ $? =~ ^[02]$ ]] &&
 gh pr edit $N --remove-label "loom:treating" &&
-./.loom/scripts/post-comment.sh $N --pr --body "Reclaiming stale loom:treating claim (idle ${IDLE_MINUTES}m > ${LOOM_STALE_TREATING_MINUTES:-60}m, no claimant activity) — the prior process likely died mid-fix." &&
+./.loom/scripts/post-comment.sh $N --pr --body "Reclaiming stale loom:treating claim (idle ${IDLE_MINUTES}m > ${LOOM_STALE_TREATING_MINUTES:-60}m, no claimant activity) — the prior process likely died mid-fix.
+<!-- loom:reclaim claim=$CLAIMED_AT -->" &&
 gh pr edit $N --add-label "loom:treating"
 CLAIM_HEAD_SHA=$(gh pr view $N --json headRefOid --jq '.headRefOid')
 # Continue to step 3 (Check PR details) and fix normally
 ```
+
+**Both reclaim comments end with the `loom:reclaim` claim marker
+keyed to `$CLAIMED_AT` (#15044)**: the forge timeline can lag the label remove + re-add above,
+and `claim-staleness.sh` then matches this marker against the stale verdict it
+computed from the pre-reclaim timestamp — so your replacement claim reads
+`fresh` while you are active and is not reclaimed in turn (and `unknown`, never
+stale, once you go idle).
 
 **Env vars**: `LOOM_STALE_TREATING_MINUTES` (default **60**) — deliberately
 longer than the Judge's `LOOM_STALE_REVIEWING_MINUTES` (45): a Doctor's fix
@@ -966,6 +1055,11 @@ never rebase, amend or force a commit already on the remote; add commits. A
 rejected plain push means someone pushed: redo the Head-SHA Recheck (merge
 their head in, or stand down), never force.
 
+Use `N` from the claim. The forge must still show that open PR at the pinned
+head on the checked-out branch. Fetch its named base from `origin` and use the
+verified commit for the update, workflow lint and discard guard. The same PR
+snapshot must still hold immediately before the push fence.
+
 ```bash
 BRANCH=$(git branch --show-current)
 BRANCH_UPDATE=$(loom-daemon branch-update strategy) || BRANCH_UPDATE=merge  # unknown = merge
@@ -974,16 +1068,27 @@ PUSH_LEASE_SHA="${PUSH_LEASE_SHA:-$CLAIM_HEAD_SHA}"
 [ -n "$PUSH_LEASE_SHA" ] || { echo "No pin: STOP. Do not push or re-read the head." >&2; exit 1; }
 # git accepts ANY full-SHA pin, even unfetched: "Verify the pin" must have run first.
 [ "${PUSH_LEASE_OK:-}" = "$PUSH_LEASE_SHA" ] || { echo "Pin unverified: STOP." >&2; exit 1; }
-git fetch origin main || exit 1
-if [ "$BRANCH_UPDATE" = rebase ]; then git rebase origin/main; else git merge --no-ff -m "Merge origin/main into $BRANCH (Doctor: update before push)" origin/main; fi || exit 1  # conflict: resolve, add, `--continue` / `git commit --no-edit`, resume here
+PR_FIELDS=number,state,headRefName,headRefOid,baseRefName,baseRefOid
+PR_FORMAT='[.number, .state, .headRefName, .headRefOid, .baseRefName, .baseRefOid] | @tsv'
+PR_SNAPSHOT=$(gh pr view "${N:?PR number required}" --json "$PR_FIELDS" --jq "$PR_FORMAT") || exit 1
+IFS=$'\t' read -r PR_NUMBER PR_STATE PR_BRANCH PR_HEAD PR_BASE PR_BASE_SHA <<< "$PR_SNAPSHOT" || exit 1
+[ "$PR_NUMBER" = "$N" ] && [ "$PR_STATE" = OPEN ] && [ -n "$BRANCH" ] && [ "$PR_BRANCH" = "$BRANCH" ] && [ "$PR_HEAD" = "$PUSH_LEASE_SHA" ] && [ -n "$PR_BASE_SHA" ] || { echo "PR identity, head or base unavailable or changed. Stop and recheck." >&2; exit 1; }
+git check-ref-format "refs/heads/$PR_BASE" && git fetch --no-tags origin "refs/heads/$PR_BASE" || exit 1
+[ "$(git rev-parse --verify 'FETCH_HEAD^{commit}')" = "$PR_BASE_SHA" ] || { echo "PR base moved during fetch. Stop and recheck." >&2; exit 1; }
+if [ "$BRANCH_UPDATE" = rebase ]; then git rebase "$PR_BASE_SHA"; else git merge --no-ff -m "Merge origin/$PR_BASE into $BRANCH (Doctor: update before push)" "$PR_BASE_SHA"; fi || exit 1  # conflict: resolve, add, `--continue` / `git commit --no-edit`, resume here
+# Workflow-lint gate (#13896): the update above — and any conflict resolution in it — can textually union two copies of one setup block, leaving a touched workflow with a duplicate step id or a duplicate mapping key. GitHub rejects such a file at validation with zero jobs, so its gate vanishes and every rollup reads green. Lint every workflow the resolved result touched BEFORE pushing; a defect — or the lint being unable to run (a stale loom-daemon without the subcommand exits non-zero) — blocks the push and any "conflict resolved" claim. Fail closed: never treat silence as a pass.
+WL_FILES=$(git diff --name-only --diff-filter=ACMR "$PR_BASE_SHA"...HEAD -- '.github/workflows/') || { echo "Aborting: cannot list touched workflow files; verify .github/workflows by hand before pushing." >&2; exit 1; }
+[ -z "$WL_FILES" ] || loom-daemon workflow-lint $WL_FILES || { echo "Aborting: workflow-lint failed above — resolve the defect; do not push and do not claim the conflict resolved." >&2; exit 1; }
 if [ -x ./.loom/scripts/version-check-gate.sh ] && ! ./.loom/scripts/version-check-gate.sh --fix-hint "then push."; then
   echo "Aborting: version-bearing files out of sync after update (see BLOCKER:/Fix:)." >&2
   exit 1
 fi
 # Discard guard (#9282): rc 0 = BLOCKED, do NOT push; report its BLOCKER:/Fix:.
-RG=0; loom-daemon forge rebase-guard --base origin/main || RG=$?
+RG=0; loom-daemon forge rebase-guard --base "$PR_BASE_SHA" || RG=$?
 [ "$RG" = 0 ] && exit 1
 [ "$RG" = 1 ] || echo "WARNING: rebase-guard gave no answer (rc=$RG) - pushing UNCHECKED (#9282)" >&2
+PR_CURRENT=$(gh pr view "$N" --json "$PR_FIELDS" --jq "$PR_FORMAT") || exit 1
+[ "$PR_CURRENT" = "$PR_SNAPSHOT" ] || { echo "PR identity, head or base changed before push. Stop and recheck." >&2; exit 1; }
 loom-daemon lease pr fence "$N" --role doctor --watch-pid "${LOOM_AGENT_SESSION_PID:-${CLAUDE_PID:-$PPID}}"
 [[ $? =~ ^[02]$ ]] || exit 1  # lease lost: stand down
 if [ "$BRANCH_UPDATE" = rebase ]; then git push --force-with-lease="$BRANCH:$PUSH_LEASE_SHA"; else git push origin "HEAD:$BRANCH"; fi &&
@@ -1024,8 +1129,9 @@ loom-daemon forge doctor-handback $N --expected-head-sha "$(git rev-parse HEAD)"
 ```
 
 It re-reads labels and head, adds `loom:review-requested` *before* removing
-`loom:changes-requested`/`loom:treating` (never an unlabelled PR), re-reads,
-and withdraws its add if a verdict landed meanwhile. Act on the exit:
+`loom:changes-requested`, `loom:ci-failure` and `loom:treating` (never an
+unlabelled PR), re-reads, and withdraws its add if a verdict landed
+meanwhile. Act on the exit:
 
 | Exit | Line | Action |
 |------|------|--------|
@@ -1035,6 +1141,26 @@ and withdraws its add if a verdict landed meanwhile. Act on the exit:
 | 11 | `CLAIM-LOST` | `loom:treating` was gone; nothing written. Stand down (comment, exit). |
 | 12 | `HEAD-MOVED` | Someone pushed after you; only your claim was released. Comment, exit — no hand-back. |
 | 1 / other | `FAILED` | Retry once, then comment the printed line. Never hand-add `loom:review-requested`. No such verb (old `loom-daemon`): also remove only your `loom:treating`, so the next pass's stale-verdict guard re-queues the new head. |
+
+**The verb is self-bounded (#14165) — never wrap it in a short `timeout`.** Every
+forge call it makes carries its own 30 s deadline, the per-PR lock wait is
+bounded (`LOOM_VERDICT_LOCK_WAIT_SECS`, default 90 s), and the whole run
+answers within `--deadline-secs` (default 300): a watchdog prints
+`FAILED deadline of Ns exceeded …` rather than letting silence run on. A
+wrapper shorter than that budget kills the verb mid-write, strands the lock it
+holds (reaped only after 300 s) and reports nothing — that is exactly the
+"stalled without output" hand-back failure. If you must wrap it, the wrapper
+must exceed `--deadline-secs`. A lock wait that expires says `lock held` with
+the holder's age; a `FAILED` line names the failing forge call, and a refused
+session credential (HTTP 401) is classed `[github_auth]`.
+
+**One reason token for every hand-back failure (#14165).** Whatever the
+`FAILED` line names — lock held, deadline, a refused forge read,
+`[github_auth]` — the step's outcome line is exactly
+`LOOM_STEP_OUTCOME role=doctor target=<pr> class=failed reason=handback_failed`.
+Never mint a per-cause token (`handback_timeout`, `handoff_timeout`,
+`github_auth`) for this class: one token keeps the ledger's repeat accounting
+working.
 
 **Pre-completion checklist** (verify before signaling completion):
 - [ ] All CI checks pass (verified via `loom-daemon forge wait-checks <number>`)
@@ -1242,6 +1368,8 @@ If feedback requires substantial work:
 > `.loom/docs/gh-issue-create-rest-fallback.md` (or `forge_gh_create_issue_rl_safe` in
 > `lib/forge-helpers.sh` if scripting). `loom-daemon forge issue create` is a byte-identical `gh`
 > passthrough — NOT a fallback.
+>
+> **Exception (#13978):** on a foreign public repo the App is not installed on, `create-issue.sh` is refused (`NOT_IN_INSTALLATION`, #9548). File with a raw `gh issue create -R <repo>` (interim) instead of parking the report for an operator: `.loom/docs/gh-issue-create-rest-fallback.md` § "Foreign public repo".
 
 **Example:**
 ```bash
@@ -1334,17 +1462,13 @@ CLAIM_HEAD_SHA=$(gh pr view 42 --json headRefOid --jq '.headRefOid')
 # View PR details and review status
 gh pr view 42
 
-# Check out the PR branch in a dedicated worktree (see "PR Branch Isolation")
-PR_BRANCH=$(gh pr view 42 --json headRefName --jq '.headRefName')
-if [[ "$PR_BRANCH" =~ ^feature/issue-([0-9]+)$ ]]; then
-  ISSUE_NUM="${BASH_REMATCH[1]}"
-  ./.loom/scripts/worktree.sh "$ISSUE_NUM"
-  cd ".loom/worktrees/issue-$ISSUE_NUM"
-  gh pr checkout 42
-else
-  ./.loom/scripts/pr-worktree.sh 42
-  cd ".loom/worktrees/pr-42"
-fi
+```
+
+Apply [PR Branch Isolation](#critical-pr-branch-isolation-always-use-a-worktree)
+to PR 42. Continue below only after it selects an editable worktree.
+
+```bash
+[[ "${WORKTREE_PR:-}" == 42 && "$(pwd -P)" == "${WORKTREE_ABS:-}" ]] || exit 1
 
 # See what reviewer said (top-level comments)
 gh pr view 42 --comments
@@ -1396,7 +1520,9 @@ Fixing A's findings does not resolve B's. This list is evidence only; Judge deci
 
 ### PR Has Merge Conflicts
 
-This is a critical issue that blocks merging. Fix it immediately:
+Repair against the base named by the open PR. For a stacked follower this is
+the predecessor's branch. Keep the follower's `loom:sequenced` merge hold on.
+Use the verified PR snapshot through the repair and push fence:
 
 ```bash
 # Pin = the claim-time head, never re-read; verify BEFORE any rewrite.
@@ -1407,9 +1533,19 @@ BRANCH=$(git branch --show-current)
 [ "${PUSH_LEASE_OK:-}" = "$PUSH_LEASE_SHA" ] || { git merge-base --is-ancestor "$PUSH_LEASE_SHA" HEAD && PUSH_LEASE_OK=$PUSH_LEASE_SHA; } || { echo "Pin not in HEAD: STOP." >&2; exit 1; }
 BRANCH_UPDATE=$(loom-daemon branch-update strategy) || BRANCH_UPDATE=merge  # #10771; unknown = merge
 
-git fetch origin main
-if [ "$BRANCH_UPDATE" = rebase ]; then git rebase origin/main; else git merge --no-ff -m "Merge origin/main into $BRANCH (Doctor: resolve conflicts)" origin/main; fi
+PR_FIELDS=number,state,headRefName,headRefOid,baseRefName,baseRefOid
+PR_FORMAT='[.number, .state, .headRefName, .headRefOid, .baseRefName, .baseRefOid] | @tsv'
+PR_SNAPSHOT=$(gh pr view "${N:?PR number required}" --json "$PR_FIELDS" --jq "$PR_FORMAT") || exit 1
+IFS=$'\t' read -r PR_NUMBER PR_STATE PR_BRANCH PR_HEAD PR_BASE PR_BASE_SHA <<< "$PR_SNAPSHOT" || exit 1
+[ "$PR_NUMBER" = "$N" ] && [ "$PR_STATE" = OPEN ] && [ -n "$BRANCH" ] && [ "$PR_BRANCH" = "$BRANCH" ] && [ "$PR_HEAD" = "$PUSH_LEASE_SHA" ] && [ -n "$PR_BASE_SHA" ] || { echo "PR identity, head or base unavailable or changed. Stop and recheck." >&2; exit 1; }
+git check-ref-format "refs/heads/$PR_BASE" && git fetch --no-tags origin "refs/heads/$PR_BASE" || exit 1
+[ "$(git rev-parse --verify 'FETCH_HEAD^{commit}')" = "$PR_BASE_SHA" ] || { echo "PR base moved during fetch. Stop and recheck." >&2; exit 1; }
+if [ "$BRANCH_UPDATE" = rebase ]; then git rebase "$PR_BASE_SHA"; else git merge --no-ff -m "Merge origin/$PR_BASE into $BRANCH (Doctor: resolve conflicts)" "$PR_BASE_SHA"; fi || exit 1
 # Conflict: resolve each file, `git add` it, then `git commit --no-edit` (merge) or `git rebase --continue`.
+
+# Workflow-lint gate (#13896): the merge above — and any conflict resolution in it — can textually union two copies of one setup block, leaving a touched workflow with a duplicate step id or a duplicate mapping key. GitHub rejects such a file at validation with zero jobs, so its gate vanishes and every rollup reads green. Lint every workflow the resolved result touched BEFORE pushing; a defect — or the lint being unable to run (a stale loom-daemon without the subcommand exits non-zero) — blocks the push and any "conflict resolved" claim. Fail closed: never treat silence as a pass.
+WL_FILES=$(git diff --name-only --diff-filter=ACMR "$PR_BASE_SHA"...HEAD -- '.github/workflows/') || { echo "Aborting: cannot list touched workflow files; verify .github/workflows by hand before pushing." >&2; exit 1; }
+[ -z "$WL_FILES" ] || loom-daemon workflow-lint $WL_FILES || { echo "Aborting: workflow-lint failed above — resolve the defect; do not push and do not claim the conflict resolved." >&2; exit 1; }
 
 # Version-gate: if it fires, stop and report; never hand-bump.
 if [ -x ./.loom/scripts/version-check-gate.sh ] && ! ./.loom/scripts/version-check-gate.sh --fix-hint "then push."; then
@@ -1418,17 +1554,19 @@ if [ -x ./.loom/scripts/version-check-gate.sh ] && ! ./.loom/scripts/version-che
 fi
 
 # Discard guard (#9282): rc 0 = BLOCKED, do NOT push; report its BLOCKER:/Fix:.
-RG=0; loom-daemon forge rebase-guard --base origin/main || RG=$?
+RG=0; loom-daemon forge rebase-guard --base "$PR_BASE_SHA" || RG=$?
 [ "$RG" = 0 ] && exit 1
 [ "$RG" = 1 ] || echo "WARNING: rebase-guard gave no answer (rc=$RG) - pushing UNCHECKED (#9282)" >&2
 
 # Merge: plain push (rejected: Head-SHA Recheck, never force). Rebase: PINNED lease.
-loom-daemon lease pr fence 42 --role doctor --watch-pid "${LOOM_AGENT_SESSION_PID:-${CLAUDE_PID:-$PPID}}"
+PR_CURRENT=$(gh pr view "$N" --json "$PR_FIELDS" --jq "$PR_FORMAT") || exit 1
+[ "$PR_CURRENT" = "$PR_SNAPSHOT" ] || { echo "PR identity, head or base changed before push. Stop and recheck." >&2; exit 1; }
+loom-daemon lease pr fence "$N" --role doctor --watch-pid "${LOOM_AGENT_SESSION_PID:-${CLAUDE_PID:-$PPID}}"
 [[ $? =~ ^[02]$ ]] || exit 1  # lease lost: stand down
 if [ "$BRANCH_UPDATE" = rebase ]; then git push --force-with-lease="$BRANCH:$PUSH_LEASE_SHA"; else git push origin "HEAD:$BRANCH"; fi &&
   { PUSH_LEASE_SHA=$(git rev-parse HEAD); PUSH_LEASE_OK=$PUSH_LEASE_SHA; CLAIM_HEAD_SHA=$PUSH_LEASE_SHA; }
 
-loom-daemon forge wait-checks 42 --timeout 20
+loom-daemon forge wait-checks "$N" --timeout 20
 ```
 
 **Important**: never `--force`, and never a *bare* `--force-with-lease` — pin it.
@@ -1458,7 +1596,7 @@ states Doctor exists to clear:
 | Label | Meaning | Doctor's action |
 |-------|---------|-----------------|
 | `loom:merge-conflict` | PR has merge conflicts requiring resolution | **Remove it once you have rebased and the conflicts are resolved** (the PR is no longer conflicting). Apply it if you triage a conflicted PR you cannot immediately fix. |
-| `loom:ci-failure` | PR has failing CI checks | **Remove it once CI is green again** after your fix. Apply it if you are flagging a PR whose CI is red and leaving it for a follow-up. |
+| `loom:ci-failure` | PR has failing CI checks | **Cleared by `forge doctor-handback` on every hand-back, green or not.** Apply it by hand only when flagging a PR whose CI is red and leaving it for a follow-up. |
 
 These are informational flags, not queue gates (the queues are `loom:pr` for conflicts and
 `loom:changes-requested` for feedback). Keep them current: clear each the moment its
@@ -1556,7 +1694,7 @@ If review requests major architectural changes:
 
 ## Notes
 
-- **Always work in a dedicated worktree** (see "PR Branch Isolation" above): use the issue worktree for `feature/issue-<N>` branches or `pr-worktree.sh` for external/ad-hoc branches. Never run `gh pr checkout` in the orchestrator's main worktree.
+- **Always work in a dedicated worktree** (see "PR Branch Isolation" above): run its verified selection before entering a worktree. Never run `gh pr checkout` in the orchestrator's main worktree.
 - **Find work by label**: Look for `loom:changes-requested` (amber badges) to find PRs needing fixes
 - **Signal completion**: After fixing, transition `loom:changes-requested` → `loom:review-requested` to hand back to Reviewer
 - **Be proactive**: Check all open PRs regularly - conflicts can appear even on unlabeled PRs
