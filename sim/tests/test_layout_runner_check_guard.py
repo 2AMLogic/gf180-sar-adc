@@ -3,11 +3,12 @@
 
 The four `layout/` signoff runners (DRC, LVS, ERC, power) stamp a toolchain
 provenance block into the record they mint.  `--check` writes no record, so
-the probes that only feed that block -- the `git` launches (ERC/power inline,
-DRC/LVS inside `klt_env.toolchain_record`) and the interpreter probes for the
-`klayout` package (DRC/LVS `toolchain_record`) -- are guarded by `if
-args.check` (#1001, #1004).  Nothing else pins those guards, so moving a probe
-back above its guard would silently regress `--check` latency.
+the probes that only feed that block -- the `git` launches (inside
+`klt_env.pinned_toolchain_record` for ERC/power and `klt_env.toolchain_record`
+for DRC/LVS) and the interpreter probes for the `klayout` package (DRC/LVS
+`toolchain_record`) -- are guarded by `if args.check` (#1001, #1004).  Nothing
+else pins those guards, so moving a probe back above its guard would silently
+regress `--check` latency.
 
 The test is hermetic: `subprocess.run` is replaced by a recorder that never
 launches anything, so no `klt`, `git` or network is needed.  Each runner's
