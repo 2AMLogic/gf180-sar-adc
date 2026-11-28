@@ -170,6 +170,8 @@ from flow_env import (  # noqa: E402
     sta_request,
     verdict_table,
     working_tree_dirty,
+    # `run_multicorner_mode`'s `write_record: bool` parameter shadows the bare name inside it.
+    write_record as _write_record,
 )
 
 #: This driver's own output tree, excluded from the dirty-working-tree check
@@ -410,12 +412,12 @@ def run_multicorner_mode(*, pdk: Pdk, rid: str, when, write_record: bool) -> int
         sha=sha,
     )
     if write_record:
-        RECORDS_DIR.mkdir(parents=True, exist_ok=True)
         record_path = RECORDS_DIR / f"{rid}.{LIB_TAG}.sta_{TARGET}_multicorner.md"
-        if record_path.exists():
-            print(f"ERROR: record {record_path} already exists -- refusing to overwrite", file=sys.stderr)
+        try:
+            _write_record(record_path, text)
+        except FileExistsError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
             return 1
-        record_path.write_text(text)
         print(f"Evidence record written to {record_path}")
     bad = [c["corner"] for c in response["corners"] if not _corner_ok(c)]
     if bad:
@@ -490,24 +492,25 @@ def main() -> int:
         )
 
     if not args.no_record:
-        RECORDS_DIR.mkdir(parents=True, exist_ok=True)
         record_path = RECORDS_DIR / f"{rid}.{LIB_TAG}.sta_{TARGET}.md"
-        if record_path.exists():
-            print(f"ERROR: record {record_path} already exists -- refusing to overwrite", file=sys.stderr)
-            return 1
         sha = git(REPO_ROOT, "rev-parse", "HEAD") or "unknown"
         dirty = working_tree_dirty(REPO_ROOT, OWN_OUTPUT_PREFIXES)
-        record_path.write_text(
-            render_record(
-                rid=rid,
-                when=when,
-                pdk=pdk,
-                klt_v=klt_version(REPO_ROOT),
-                results=results,
-                dirty=dirty,
-                sha=sha,
+        try:
+            _write_record(
+                record_path,
+                render_record(
+                    rid=rid,
+                    when=when,
+                    pdk=pdk,
+                    klt_v=klt_version(REPO_ROOT),
+                    results=results,
+                    dirty=dirty,
+                    sha=sha,
+                ),
             )
-        )
+        except FileExistsError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
         print(f"Evidence record written to {record_path}")
 
     bad = [r for r in results if not (r.setup_pass and r.hold_pass)]

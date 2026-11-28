@@ -31,8 +31,10 @@ No PDK, no `klt`, no ngspice needed:
 from __future__ import annotations
 
 import ast
+import contextlib
 import datetime as dt
 import hashlib
+import io
 import itertools
 import json
 import os
@@ -68,8 +70,10 @@ DESIGN_POINT_NAMES = (
     "TOP", "CELL_LIBRARY", "LIB_TAG", "CLOCK_PORT", "CLOCK_PERIOD_NS", "CORNERS",
     "OUT_DIR", "REPORTS_DIR", "RECORDS_DIR",
 )
-#: Added by issue #646: formerly copy-pasted per driver.
-DEDUPED_NAMES = ("liberty_path", "working_tree_dirty")
+#: Added by issue #646: formerly copy-pasted per driver. Extended by issue
+#: #1148: the append-only record writer, open-coded at eight sites. Deliberately
+#: not in `SHARED_NAMES`: pinned `synth_sar_ctrl.py` still carries its own copy.
+DEDUPED_NAMES = ("liberty_path", "working_tree_dirty", "write_record")
 ALLOWED_IMPORTS = (
     set(SHARED_NAMES) | set(STA_SHARED_NAMES) | set(DESIGN_POINT_NAMES) | set(DEDUPED_NAMES)
 )
@@ -1093,6 +1097,303 @@ class StaDriversDelegateTheRequestAndVerdictTests(unittest.TestCase):
             with self.subTest(entry=entry):
                 self.assertIs(self.base._corner_ok(entry), False)
                 self.assertIs(self.sdf.corner_ok(entry), False)
+
+
+class WriteRecordTests(unittest.TestCase):
+    """`flow_env.write_record` (issue #1148): the one append-only record
+    writer for the `design/sar-logic/flow/` drivers.
+
+    It was eight copies of one three-step sequence -- create the directory,
+    refuse an existing path, write -- and the last two steps were separate,
+    so a record created between them was overwritten. The refusal is now the
+    open call itself (``"x"``, exclusive creation). The wording is pinned
+    because five drivers print the exception as their own ``ERROR:`` line
+    (six sites) and `pnr_sar_ctrl.py` raises it as `PnrError`: every copy
+    said exactly this.
+    """
+
+    TEXT = "# Record 20261128-011203-abcdef12.mcu7t5v0.sta\n\n- **Corner**: `tt_025C_3v30` (25 °C) — ±0.0 µm² ✓\n"
+    SENTINEL = b"the record an earlier run minted\n"
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        #: Under a `records/` directory that does not exist yet, as on a
+        #: driver's first run into a fresh checkout.
+        self.path = Path(tmp.name) / "records" / "20261128-011203-abcdef12.mcu7t5v0.sta.md"
+
+    def _minted(self) -> None:
+        self.path.parent.mkdir(parents=True)
+        self.path.write_bytes(self.SENTINEL)
+
+    def test_creates_the_record_directory_and_writes_the_text(self):
+        self.assertFalse(self.path.parent.exists())
+        returned = flow_env.write_record(self.path, self.TEXT)
+        self.assertEqual(returned, self.path)
+        self.assertEqual(self.path.read_bytes(), self.TEXT.encode("utf-8"))
+
+    def test_opens_exclusively_as_utf8_whatever_the_locale(self):
+        with mock.patch("builtins.open", mock.mock_open()) as opened:
+            flow_env.write_record(self.path, self.TEXT)
+        opened.assert_called_once_with(self.path, "x", encoding="utf-8")
+        opened().write.assert_called_once_with(self.TEXT)
+
+    def test_refuses_an_existing_record_with_the_wording_every_copy_used(self):
+        self._minted()
+        with self.assertRaises(FileExistsError) as cm:
+            flow_env.write_record(self.path, self.TEXT)
+        self.assertEqual(str(cm.exception), f"record {self.path} already exists -- refusing to overwrite")
+        self.assertEqual(self.path.read_bytes(), self.SENTINEL)
+
+    def test_error_cls_names_the_refusal_and_nothing_else(self):
+        """`pnr_sar_ctrl.py` passes `error_cls` on every write, so a fresh
+        record is still written and only the refusal carries the type."""
+        class PnrError(RuntimeError):
+            pass
+
+        self.assertEqual(flow_env.write_record(self.path, self.TEXT, error_cls=PnrError), self.path)
+        self.assertEqual(self.path.read_bytes(), self.TEXT.encode("utf-8"))
+        with self.assertRaises(PnrError) as cm:
+            flow_env.write_record(self.path, self.TEXT, error_cls=PnrError)
+        self.assertNotIsInstance(cm.exception, FileExistsError)
+        self.assertEqual(str(cm.exception), f"record {self.path} already exists -- refusing to overwrite")
+        self.assertEqual(self.path.read_bytes(), self.TEXT.encode("utf-8"))
+
+    @staticmethod
+    def _pre_1148_copy(path: Path, text: str) -> None:
+        """The sequence every driver carried before #1148, verbatim."""
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.exists():
+            raise FileExistsError(f"record {path} already exists -- refusing to overwrite")
+        path.write_text(text)
+
+    def test_the_pre_1148_copy_overwrote_a_record_created_after_its_check(self):
+        """The control for the test below, and the defect in one line: with
+        `exists()` answering False for a file that is there -- the window
+        between the check and the write, closed the other way -- the old
+        sequence overwrote the record."""
+        self._minted()
+        with mock.patch.object(Path, "exists", return_value=False):
+            self._pre_1148_copy(self.path, self.TEXT)
+        self.assertEqual(self.path.read_bytes(), self.TEXT.encode("utf-8"))
+
+    def test_write_record_refuses_that_same_record(self):
+        self._minted()
+        with mock.patch.object(Path, "exists", return_value=False):
+            with self.assertRaises(FileExistsError):
+                flow_env.write_record(self.path, self.TEXT)
+        self.assertEqual(self.path.read_bytes(), self.SENTINEL)
+
+    def test_every_committed_record_round_trips_byte_for_byte(self):
+        """No record already committed changes under the new writer: its text,
+        written again by `write_record`, is the committed bytes. The records
+        minted before #1148 were written by `write_text` under the locale
+        default; measured at `03f0f516` (17 records), all are pure ASCII with
+        LF newlines, so the explicit UTF-8 here cannot differ from that
+        default on any host."""
+        records = sorted((FLOW_DIR / "sar_ctrl" / "records").glob("*.md"))
+        self.assertTrue(records)
+        for record in records:
+            with self.subTest(record=record.name):
+                out = self.path.parent / record.name
+                flow_env.write_record(out, record.read_text())
+                self.assertEqual(out.read_bytes(), record.read_bytes())
+
+
+class NoFlowModuleKeepsItsOwnCopyOfTheRecordGuardTests(unittest.TestCase):
+    """Issue #1148's non-recurrence net: the refusal every open-coded copy
+    carried -- ``record <path> already exists -- refusing to overwrite`` --
+    lives in `flow_env.py` alone, with two deliberate exceptions.
+
+    Same shape as `NoDuplicateProvenancePlumbingLeftTests`: a text-level scan
+    over every module under `design/sar-logic/flow/`, not only `DRIVERS`, so
+    a new module cannot re-fork the guard outside the list.
+    `synth_sar_ctrl.py` is exempt for the reason `PINNED_LOCAL_DEFS` gives:
+    its bytes are pinned by `signoff/freshness.json`, so its copy stays until
+    the next re-pin. `drc_pdk_cells_isolated.py` is the one driver that still
+    says it: it checks before it runs four `klt drc` jobs, so a re-run under a
+    taken record ID fails fast instead of after the runs. Its record is still
+    written through the shared writer, and the last test here holds it to
+    exactly that.
+    """
+
+    _GUARD = "already exists -- refusing to overwrite"
+    _FAIL_FAST_ONLY = {"drc_pdk_cells_isolated.py"}
+
+    def test_flow_env_is_the_only_unpinned_module_carrying_the_guard(self):
+        exempt = {"flow_env.py", *PINNED_LOCAL_DEFS, *self._FAIL_FAST_ONLY}
+        offenders = [
+            str(path.relative_to(FLOW_DIR))
+            for path in sorted(FLOW_DIR.rglob("*.py"))
+            if path.name not in exempt and self._GUARD in path.read_text()
+        ]
+        self.assertEqual(
+            offenders,
+            [],
+            "these design/sar-logic/flow/ modules carry their own copy of the "
+            f"append-only guard: {offenders} -- write through "
+            "flow_env.write_record() instead (issue #1148: eight copies of one "
+            "check-then-write sequence, with a window in each).",
+        )
+
+    def test_the_pinned_exemption_is_load_bearing(self):
+        """If this fails, `synth_sar_ctrl.py` no longer carries the guard:
+        drop it from the exemption above rather than leave it guarding nothing."""
+        self.assertIn(self._GUARD, (FLOW_DIR / "synth_sar_ctrl.py").read_text())
+
+    def test_the_isolated_drc_driver_keeps_only_its_fail_fast_check(self):
+        """The other exemption, as narrow as it reads: the wording once (the
+        check before the `klt drc` runs), and the record itself created by the
+        shared writer -- not `write_text`, which would reopen the window."""
+        text = (FLOW_DIR / "drc_pdk_cells_isolated.py").read_text()
+        self.assertEqual(text.count(self._GUARD), 1)
+        self.assertNotIn("rec_path.write_text(", text)
+        self.assertIn("write_record(rec_path, ", text)
+        self.assertLess(text.index(self._GUARD), text.index('subprocess.run(["klt", "drc"'))
+
+
+class DriversDelegateTheRecordWriteTests(unittest.TestCase):
+    """Issue #1148, the driver half: the seven unpinned drivers write their
+    records through `flow_env.write_record`, under the name each imported.
+
+    Two of them -- `sta_sar_ctrl_postroute.py` and `sta_postroute_spef.py` --
+    take a ``write_record: bool`` mode flag in the very function that writes
+    the record, so the bare name is a bool there; they import the helper as
+    `_write_record`. The AST checks see that each call site uses the name the
+    module imported (a swap is a `NameError`, or ``'bool' object is not
+    callable``, at the end of a real run), and the live ones, that the name
+    is `flow_env`'s own function.
+    """
+
+    #: module file -> the name its record writer is bound to. `pnr_sar_ctrl.py`
+    #: (pulls in `gen_adc_top`, which needs the pip `klayout` package) and
+    #: `drc_pdk_cells_isolated.py` (imports `klayout.db`) are covered by the
+    #: AST checks only, as in `SynthDriverUsesTheSharedObjectsTests`.
+    LOADABLE = {
+        "prove_no_net_sar_ctrl.py": "write_record",
+        "sdf_sar_ctrl.py": "write_record",
+        "sta_sar_ctrl.py": "write_record",
+        "sta_sar_ctrl_postroute.py": "_write_record",
+        "sta_postroute_spef.py": "_write_record",  # imports the module above by bare name
+    }
+    UNPINNED = tuple(name for name in DRIVERS if name not in PINNED_LOCAL_DEFS)
+
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, str(FLOW_DIR))  # `sta_postroute_spef` imports its sibling modules by bare name
+        cls.addClassCleanup(cls._drop_flow_dir)
+
+    @classmethod
+    def _drop_flow_dir(cls) -> None:
+        sys.path.remove(str(FLOW_DIR))
+
+    @staticmethod
+    def _record_writer_aliases(name: str) -> dict[str, str]:
+        """{the name `name` binds the record writer to: its name in `flow_env`}."""
+        tree = ast.parse((FLOW_DIR / name).read_text(), filename=name)
+        return {
+            alias.asname or alias.name: alias.name
+            for node in tree.body
+            if isinstance(node, ast.ImportFrom) and node.module == "flow_env"
+            for alias in node.names
+            if alias.name == "write_record"
+        }
+
+    @staticmethod
+    def _record_writer_calls(name: str) -> set[str]:
+        """The names `name` calls a record writer by -- the bare name or the alias."""
+        tree = ast.parse((FLOW_DIR / name).read_text(), filename=name)
+        return {
+            node.func.id
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+            and node.func.id in ("write_record", "_write_record")
+        }
+
+    def test_every_unpinned_driver_imports_the_shared_writer(self):
+        self.assertEqual(len(self.UNPINNED), 7)
+        for name in self.UNPINNED:
+            with self.subTest(driver=name):
+                self.assertEqual(sorted(self._record_writer_aliases(name).values()), ["write_record"])
+
+    def test_every_unpinned_driver_calls_the_writer_under_the_name_it_imported(self):
+        for name in self.UNPINNED:
+            with self.subTest(driver=name):
+                bound = set(self._record_writer_aliases(name))
+                called = self._record_writer_calls(name)
+                self.assertTrue(called, f"{name} imports the record writer but never calls it")
+                self.assertEqual(called, bound)
+
+    def test_the_record_writer_each_loadable_driver_holds_is_flow_envs(self):
+        for name, attr in self.LOADABLE.items():
+            with self.subTest(driver=name):
+                driver = load_module(Path(name).stem, FLOW_DIR / name)
+                self.assertIs(getattr(driver, attr), flow_env.write_record)
+
+    def test_prove_no_net_main_writes_then_refuses_through_the_shared_writer(self):
+        """`prove_no_net_sar_ctrl.main()` end to end with the prover stubbed:
+        the record directory does not exist before the first run and the
+        record is the renderer's text afterwards; a second run under the same
+        record ID reports the refusal the driver always printed and exits 1
+        with the first record's bytes untouched."""
+        driver = load_module("prove_no_net_sar_ctrl", FLOW_DIR / "prove_no_net_sar_ctrl.py")
+        pdk = type("P", (), {"variant": "gf180mcuD", "version": "open_pdks-unit-test"})()
+        result = {
+            "inputs": {"def_sha256": "d" * 64, "verilog_sha256": "v" * 64},
+            "corners": [
+                {
+                    "corner": corner,
+                    "liberty": f"{corner}.lib",
+                    "proof": {
+                        "outputs_examined": 1,
+                        "no_net": list(driver.EXPECTED_NO_NET),
+                        "outputs": {},
+                        "inputs": {"liberty_sha256": "1" * 64},
+                    },
+                }
+                for corner, _ in flow_env.CORNERS
+            ],
+            "signal_pins_agree": True,
+            "exempt_set_equal": True,
+        }
+        rid = "20261128-011203-abcdef12"
+        sha = "c0ffee0000000000000000000000000000000000"
+
+        def run(root: Path) -> tuple[int, str, str, str]:
+            """`main()` once under `root`: (exit code, stderr, stdout, the
+            record text the renderer produced in that run)."""
+            out, err = io.StringIO(), io.StringIO()
+            with (
+                mock.patch.object(sys, "argv", ["prove_no_net_sar_ctrl.py"]),
+                mock.patch.object(driver, "REPO_ROOT", root),  # the success message is relative to it
+                mock.patch.object(driver, "RECORDS_DIR", root / "records"),
+                mock.patch.object(driver, "find_pdk", return_value=pdk),
+                mock.patch.object(driver, "record_id", return_value=rid),
+                mock.patch.object(driver, "git", return_value=sha),
+                mock.patch.object(driver, "prove_all_corners", return_value=result),
+                contextlib.redirect_stdout(out),
+                contextlib.redirect_stderr(err),
+            ):
+                rc = driver.main()
+                expected = driver.render(result, rid, pdk)
+            return rc, err.getvalue(), out.getvalue(), expected
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            record = root / "records" / f"{rid}.{driver.LIB_TAG}.no_net_prover.md"
+            self.assertFalse(record.parent.exists())
+
+            rc, err, out, expected = run(root)
+            self.assertEqual((rc, err), (0, ""))
+            self.assertEqual(record.read_text(), expected)
+            self.assertIn(f"wrote records/{record.name}", out)
+
+            record.write_bytes(b"minted by an earlier run\n")
+            rc, err, _, _ = run(root)
+            kept = record.read_bytes()
+        self.assertEqual(rc, 1)
+        self.assertEqual(err, f"ERROR: record {record} already exists -- refusing to overwrite\n")
+        self.assertEqual(kept, b"minted by an earlier run\n")
 
 
 if __name__ == "__main__":

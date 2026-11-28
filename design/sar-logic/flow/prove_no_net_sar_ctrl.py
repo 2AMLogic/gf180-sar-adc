@@ -39,6 +39,7 @@ from flow_env import (  # noqa: E402
     liberty_path,
     record_id,
     sha256,
+    write_record,
 )
 from sim.harness.pdk import PdkNotFound, find_pdk  # noqa: E402
 
@@ -138,12 +139,12 @@ def main() -> int:
     if args.no_record:
         print(text)
     else:
-        RECORDS_DIR.mkdir(parents=True, exist_ok=True)
         path = RECORDS_DIR / f"{rid}.{LIB_TAG}.no_net_prover.md"
-        if path.exists():
-            print(f"ERROR: record {path} already exists -- refusing to overwrite", file=sys.stderr)
+        try:
+            write_record(path, text)
+        except FileExistsError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
             return 1
-        path.write_text(text)
         print(f"wrote {path.relative_to(REPO_ROOT)}")
     return 0 if result["signal_pins_agree"] and result["exempt_set_equal"] else 2
 

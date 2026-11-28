@@ -9,6 +9,9 @@
 4. (issue #1133) A corner whose setup or hold slack `klt sta` did not report
    is such a FAIL too: the record renders it as `n/a` and names it, and the
    command exits 1 instead of raising -- under `--no-record` as well.
+5. (issue #1148) The record `--multicorner` writes is append-only: created
+   through `flow_env.write_record`, refused and left untouched when it
+   already exists.
 
 No PDK, no `klt`, no simulator needed:
 
@@ -289,6 +292,64 @@ class MulticornerModeExitsOneOnUnreportedSlack(unittest.TestCase):
                 self.assertEqual(err, f"FAIL at corner(s): {BAD_CORNER}\n")
                 self.assertTrue(no_record, "--no-record must not create the record directory")
                 self.assertEqual(len(written), 2, "the request and response JSON are still kept")
+
+
+class MulticornerModeRecordIsAppendOnly(unittest.TestCase):
+    """Issue #1148: the record half of `run_multicorner_mode`, which the class
+    above leaves out with `write_record=False`.
+
+    The record is written through `flow_env.write_record` (imported as
+    `_write_record`: the mode flag of the same name shadows the bare name in
+    this function). A record directory that does not exist yet is created on
+    the way, and a record that already exists is refused with the line the
+    driver always printed, exits 1, and is left as the earlier run wrote it.
+    """
+
+    RECORD = f"{STA_RID}.mcu7t5v0.sta_postroute_multicorner.md"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mod = load_module("sta_postroute_5dig_record", STA_DRIVER)
+
+    def _run(self, response: dict, records: Path) -> tuple[int, str, str]:
+        """`run_multicorner_mode(write_record=True)` against `response`, stubbed
+        as in `MulticornerModeExitsOneOnUnreportedSlack._run`, with `records`
+        -- existing or not -- as the record directory. Returns (exit code,
+        stderr, the record's text afterwards)."""
+        mod = self.mod
+        with tempfile.TemporaryDirectory() as tmp:
+            reports = Path(tmp) / "reports"
+            reports.mkdir()
+            err = io.StringIO()
+            with (
+                mock.patch.object(mod, "REPORTS_DIR", reports),
+                mock.patch.object(mod, "RECORDS_DIR", records),
+                mock.patch.object(mod, "run_klt_json", return_value=copy.deepcopy(response)),
+                mock.patch.object(mod, "klt_version", return_value=KLT_V),
+                mock.patch.object(mod, "git", return_value=SHA),
+                mock.patch.object(mod, "working_tree_dirty", return_value=False),
+                contextlib.redirect_stdout(io.StringIO()),
+                contextlib.redirect_stderr(err),
+            ):
+                rc = mod.run_multicorner_mode(pdk=_StubPdk(), rid=STA_RID, when=STA_WHEN, write_record=True)
+            return rc, err.getvalue(), (records / self.RECORD).read_text()
+
+    def test_a_fresh_record_directory_is_created_and_the_record_written(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            records = Path(tmp) / "records"
+            rc, err, text = self._run(_cited_sta_response(), records)
+        self.assertEqual((rc, err), (0, ""))
+        self.assertEqual(text, _render(self.mod, _cited_sta_response()), "the record is the renderer's text, verbatim")
+
+    def test_an_existing_record_is_refused_reported_and_left_alone(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            records = Path(tmp) / "records"
+            records.mkdir()
+            (records / self.RECORD).write_text("minted by an earlier run\n")
+            rc, err, text = self._run(_cited_sta_response(), records)
+        self.assertEqual(rc, 1)
+        self.assertEqual(err, f"ERROR: record {records / self.RECORD} already exists -- refusing to overwrite\n")
+        self.assertEqual(text, "minted by an earlier run\n")
 
 
 if __name__ == "__main__":

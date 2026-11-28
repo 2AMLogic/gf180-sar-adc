@@ -188,6 +188,7 @@ from flow_env import (  # noqa: E402
     run_klt_json,
     verdict_table,
     working_tree_dirty,
+    write_record,
 )
 
 #: This driver's own output tree, excluded from the dirty-working-tree check
@@ -465,25 +466,26 @@ def main() -> int:
         )
 
     if not args.no_record:
-        RECORDS_DIR.mkdir(parents=True, exist_ok=True)
         record_path = RECORDS_DIR / f"{rid}.{LIB_TAG}.sta.md"
-        if record_path.exists():
-            print(f"ERROR: record {record_path} already exists -- refusing to overwrite", file=sys.stderr)
-            return 1
         sha = git(REPO_ROOT, "rev-parse", "HEAD") or "unknown"
         dirty = working_tree_dirty(REPO_ROOT, OWN_OUTPUT_PREFIXES)
-        record_path.write_text(
-            render_record(
-                rid=rid,
-                when=when,
-                pdk=pdk,
-                klt_v=klt_version(REPO_ROOT),
-                results=results,
-                dirty=dirty,
-                sha=sha,
-                friction_issue=args.friction_issue,
+        try:
+            write_record(
+                record_path,
+                render_record(
+                    rid=rid,
+                    when=when,
+                    pdk=pdk,
+                    klt_v=klt_version(REPO_ROOT),
+                    results=results,
+                    dirty=dirty,
+                    sha=sha,
+                    friction_issue=args.friction_issue,
+                ),
             )
-        )
+        except FileExistsError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
         print(f"Evidence record written to {record_path}")
 
     bad = [r for r in results if not (r.setup_pass and r.hold_pass)]

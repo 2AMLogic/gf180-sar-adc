@@ -56,6 +56,7 @@ from flow_env import (  # noqa: E402
     sha256,
     sta_request,
     working_tree_dirty,
+    write_record,
 )
 
 OWN_OUTPUT_PREFIXES = ("design/sar-logic/flow/sar_ctrl/",)
@@ -246,23 +247,24 @@ def main() -> int:
         return 1
 
     if not args.no_record:
-        RECORDS_DIR.mkdir(parents=True, exist_ok=True)
         record_path = RECORDS_DIR / f"{rid}.{LIB_TAG}.sta_sdf.md"
-        if record_path.exists():
-            print(f"ERROR: record {record_path} already exists -- refusing to overwrite", file=sys.stderr)
-            return 1
-        record_path.write_text(
-            render_record(
-                rid=rid,
-                when=when,
-                pdk=pdk,
-                klt_v=klt_version(REPO_ROOT),
-                response=response,
-                sdfs=sdfs,
-                dirty=working_tree_dirty(REPO_ROOT, OWN_OUTPUT_PREFIXES),
-                sha=git(REPO_ROOT, "rev-parse", "HEAD") or "unknown",
+        try:
+            write_record(
+                record_path,
+                render_record(
+                    rid=rid,
+                    when=when,
+                    pdk=pdk,
+                    klt_v=klt_version(REPO_ROOT),
+                    response=response,
+                    sdfs=sdfs,
+                    dirty=working_tree_dirty(REPO_ROOT, OWN_OUTPUT_PREFIXES),
+                    sha=git(REPO_ROOT, "rev-parse", "HEAD") or "unknown",
+                ),
             )
-        )
+        except FileExistsError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
         print(f"Evidence record written to {record_path}")
 
     print(f"All {len(response['corners'])} corners: timing met, annotation complete, SDF committed and hash-pinned.")

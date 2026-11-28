@@ -30,6 +30,8 @@ from flow_env import (
     sha256,
     sta_request,
     working_tree_dirty,
+    # `run_spef_mode`'s `write_record: bool` parameter shadows the bare name inside it.
+    write_record as _write_record,
 )
 
 REPO_ROOT = base.REPO_ROOT
@@ -364,14 +366,14 @@ def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
     (REPORTS_DIR / f"{prefix}.sta_postroute_spef.audit.json").write_text(json.dumps(ev, indent=2, default=str) + "\n")
 
     if write_record:
-        RECORDS_DIR.mkdir(parents=True, exist_ok=True)
         rec = RECORDS_DIR / f"{prefix}.sta_postroute_spef.md"
-        if rec.exists():
-            print(f"ERROR: record {rec} already exists -- refusing to overwrite", file=sys.stderr)
-            return 1
         import sta_postroute_spef_record as render
 
-        rec.write_text(render.render(ev, when))
+        try:
+            _write_record(rec, render.render(ev, when))
+        except FileExistsError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
         print(f"Evidence record written to {rec}")
 
     if not controls_ok:

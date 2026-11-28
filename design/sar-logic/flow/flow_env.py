@@ -150,6 +150,37 @@ def record_id(repo_root: Path, when: _dt.datetime) -> str:
     return klt_env.record_id(repo_root, when)
 
 
+def write_record(
+    path: Path, text: str, *, error_cls: type[Exception] = FileExistsError
+) -> Path:
+    """Write `text` to the evidence record at `path` as a new file; return `path`.
+
+    This is the append-only guard `sim/README.md` asks every record under
+    `records/` to carry (issue #1148). It was open-coded at eight sites in
+    seven drivers as `RECORDS_DIR.mkdir(...)` + ``if path.exists(): refuse``
+    + `path.write_text(text)` -- three steps, with a window between the
+    check and the write in which a second run minting the same record ID
+    could create the file and be overwritten silently. Here the file is
+    opened with ``"x"``: exclusive creation, so the OS refuses an existing
+    `path` in the same call that would have created it.
+
+    `path` is the full path to the record, not a name under `RECORDS_DIR`,
+    so the directory is taken from it and a test can redirect a driver's
+    `RECORDS_DIR` to a temp directory. A refusal raises `error_cls` with the
+    one message every copy raised, so each driver keeps its own error type
+    (`pnr_sar_ctrl.PnrError`; the default `FileExistsError`, which the
+    remaining drivers report as their own ``ERROR:`` line) and wording. The
+    text is UTF-8 whatever the locale, as the committed records are.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(path, "x", encoding="utf-8") as fh:
+            fh.write(text)
+    except FileExistsError as exc:
+        raise error_cls(f"record {path} already exists -- refusing to overwrite") from exc
+    return path
+
+
 def sha256(path: "str | os.PathLike") -> str:
     """The SHA-256 hex digest of a file, as the evidence records stamp it.
 
