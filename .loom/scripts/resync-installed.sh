@@ -25,6 +25,15 @@
 # "Could not locate a defaults/ source tree to sync from": install or update
 # loom-daemon, or point .loom/loom-source-path at a local Loom source clone.
 #
+# An explicit `--source <dir>` (#14677) overrides that whole resolution order:
+# the defaults/ tree is read from <dir>, checked FIRST and EXCLUSIVELY — an
+# unusable <dir> is a hard error naming the path, never a fallthrough to the
+# automatic rungs or the daemon payload. That is the sanctioned form for an
+# agent working from a managed worktree in a CONSUMER repo, where the sidecar
+# lives only in the primary checkout and is gitignored besides, so it cannot
+# be written from the worktree (#4178); combined with --output it stages a
+# complete resync without reading or writing .loom/loom-source-path at all.
+#
 # It is idempotent (a no-op when already in sync), reports per-file
 # updated/created/removed/unchanged/skipped, only ever touches files that
 # either exist in the source tree or are explicitly declared retired (see
@@ -290,6 +299,16 @@
 # creates (and then auto-removes) the staging worktree, so a preview never
 # leaves any residue.
 #
+# Staging mode skips Loom's user-scope (host) provisioning steps too (#15518):
+# the two steps a real run ends with -- the #10238 dispatcher + skill/agent
+# link (re)provisioning (from whatever checkout the run synced from) and the
+# #12121 retired presence-wiring strip, which write ~/.local/bin,
+# ~/.local/share and ~/.claude -- are skipped under --output. Neither would
+# land in the staging worktree: both write the HOST, and --dry-run never
+# previewed them. This covers only those Loom steps, not every byte under
+# $HOME (tools the run invokes may create their own state). A non-staging
+# real run still does both.
+#
 # Local-override convention: list a relative path (e.g. `hooks/guard-destructive.sh`,
 # `scripts/foo.sh`, `roles/custom-role.md`, `docs/notes.md`, `bin/loom`,
 # `commands/loom/mine.md`, `package.json` to pin the #4285 stub version edit,
@@ -357,7 +376,9 @@
 #      install-metadata.json, .loom/CLAUDE.md, package.json, .gitattributes,
 #      .gitignore) is instead resolved under <dir>. defaults/ itself (the
 #      SOURCE of the sync) is still read from the primary checkout — that is
-#      a read, never a write, so it carries none of the #4563 hazard.
+#      a read, never a write, so it carries none of the #4563 hazard — unless
+#      an explicit `--source <dir>` (#14677) points it somewhere else, which
+#      is likewise read-only.
 #   3. On success the run prints the exact `cd <dir> && git add -- <paths>
 #      && git commit ... && git push` sequence to turn the staged tree into a
 #      resync commit (and PR) from a location that was never live-mid-sweep,
@@ -426,6 +447,18 @@
 #   ./.loom/scripts/resync-installed.sh --output <dir> --base <ref>
 #                                                  # ... based on <ref> instead of the
 #                                                  # invoking checkout's HEAD (#9550)
+#   ./.loom/scripts/resync-installed.sh --output <dir> --source <loom-checkout>
+#                                                  # ... taking the defaults/ SOURCE
+#                                                  # tree from <loom-checkout>
+#                                                  # explicitly (#14677) — the
+#                                                  # sanctioned form from a linked
+#                                                  # worktree in a CONSUMER repo,
+#                                                  # where the sidecar lives only
+#                                                  # in the (gitignored, guard-
+#                                                  # protected) primary checkout.
+#                                                  # Usable with or without --output;
+#                                                  # an unusable <loom-checkout> is
+#                                                  # a hard error naming the path
 #   ./.loom/scripts/resync-installed.sh --force    # also apply an update that would remove
 #                                                  # a locally-diverged installed file's own
 #                                                  # line(s) (see LOCAL-DIVERGENCE PROTECTION, #7864)
@@ -444,6 +477,13 @@
 #   LOOM_RESYNC_SYNC_LABELS=1     - same as --sync-labels (for non-interactive
 #                                   callers; the daemon's post-roll resync passes
 #                                   the flag so fleet label auto-heal, #6716, stays).
+#   LOOM_RESYNC_SKIP_USER_SCOPE=1 - skip the #10238 user-scope step of a real
+#                                   run: the (re)provisioning of ~/.local/bin/loom
+#                                   and of the ~/.claude/commands/loom +
+#                                   ~/.claude/agents/loom-*.md links from the
+#                                   source checkout (host-level paths every
+#                                   session on the machine shares). Already
+#                                   implied by --dry-run and by --output (#15518).
 #
 # Exit codes:
 #   0 - Success. Sync applied (or already in sync); or --dry-run found no drift.
@@ -451,13 +491,18 @@
 #       invoked from a linked worktree without --allow-worktree or --output, the
 #       --output directory already exists or its staging worktree could not be
 #       created, one or more files could not be synced — see the PARTIAL
-#       summary block, #4669 — or one or more files were BLOCKED by the
-#       local-divergence protection above and --force was not given, #7864).
+#       summary block, #4669).
 #   2 - --dry-run only: drift detected (one or more files WOULD be updated,
 #       created, or removed as a retired payload file, see RETIRED PAYLOAD
 #       FILES above; or one or more files WOULD be blocked by the
 #       local-divergence protection, #7864).
 #       Lets callers (e.g. the #3770 warning) use --dry-run as a cheap check.
+#   3 - Applied, but one or more files were HELD BACK by the local-divergence
+#       protection (#7864) and --force was not given (#14434). Everything else
+#       synced; install-metadata.json records the held paths under
+#       `held_back` (cleared by the next run that holds nothing back). Distinct
+#       from 1 so a caller can tell "review these files" from a real error.
+#       Exit 1 still wins when a file also FAILED to sync.
 #
 # See also: check-main-freshness.sh (#3770) — the advisory that suggests this.
 
@@ -499,6 +544,13 @@ OUTPUT_DIR="${LOOM_RESYNC_OUTPUT:-}"
 # #9550: the commit the --output staging worktree is based on. Empty means the
 # default: the INVOKING checkout's HEAD (see OUTPUT-DIR STAGING MODE above).
 BASE_REF="${LOOM_RESYNC_BASE:-}"
+# #14677: explicit defaults/ SOURCE checkout, checked first and exclusively in
+# resolve_defaults() below. Empty means "resolve automatically". Deliberately
+# NOT mirrored by a LOOM_RESYNC_SOURCE env var — a silent environment override
+# of which tree thousands of files are copied FROM is exactly the kind of
+# ambient state this script refuses (contrast --output/--base, which only
+# steer where the output lands and what it is based on).
+SOURCE_OVERRIDE=""
 
 err()  { printf '%b\n' "${RED}ERROR: $*${NC}" >&2; }
 warn() { printf '%b\n' "${YELLOW}WARN: $*${NC}" >&2; }
@@ -549,6 +601,22 @@ while [[ $# -gt 0 ]]; do
             fi
             shift
             ;;
+        --source)
+            if [[ $# -lt 2 || -z "$2" ]]; then
+                err "--source requires a directory argument (try --help)"
+                exit 1
+            fi
+            SOURCE_OVERRIDE="$2"
+            shift 2
+            ;;
+        --source=*)
+            SOURCE_OVERRIDE="${1#--source=}"
+            if [[ -z "$SOURCE_OVERRIDE" ]]; then
+                err "--source requires a directory argument (try --help)"
+                exit 1
+            fi
+            shift
+            ;;
         --help|-h)
             # Print the whole leading comment block (line 2 through the last
             # consecutive `#` line). Derived, not a hard-coded line range — the
@@ -573,6 +641,15 @@ if [[ -n "$OUTPUT_DIR" ]]; then
     case "$OUTPUT_DIR" in
         /*) ;;
         *)  OUTPUT_DIR="$PWD/$OUTPUT_DIR" ;;
+    esac
+fi
+
+# #14677: --source likewise, so a relative `--source ../loom-clone` keeps
+# pointing at the same tree after the script moves on to other directories.
+if [[ -n "$SOURCE_OVERRIDE" ]]; then
+    case "$SOURCE_OVERRIDE" in
+        /*) ;;
+        *)  SOURCE_OVERRIDE="$PWD/$SOURCE_OVERRIDE" ;;
     esac
 fi
 
@@ -794,6 +871,9 @@ fi
 #
 # Mirrors the resolution order lib/repo-root.sh's find_loom_tools() used before
 # epic #4081 Phase 4 (#4557) retired it with the Python package:
+#   0. Explicit --source <dir> (#14677): the caller-named checkout — checked
+#      FIRST and EXCLUSIVELY; an unusable one is a hard error naming the path,
+#      never a fallthrough to the rungs below
 #   1. Loom source repo (dogfood): $REPO_ROOT/defaults/
 #   2. Recorded loom-source-path (target repo install)
 #   3. install-metadata.json "loom_source"
@@ -834,6 +914,19 @@ is_usable_defaults_root() {
 DEFAULTS_DIR=""
 SOURCE_ROOT=""
 resolve_defaults() {
+    # #14677: an explicit --source is the FIRST rung and, when given, the ONLY
+    # one: the caller named exactly where the defaults/ tree lives, so an
+    # unusable value is a loud refusal (rc 2, turned into the named-path error
+    # at the call site) — never a fallthrough to the dogfood/sidecar/metadata
+    # rungs or the daemon-payload fallback, which would silently sync the
+    # consumer from somewhere the caller did not point at.
+    if [[ -n "$SOURCE_OVERRIDE" ]]; then
+        if is_usable_defaults_root "$SOURCE_OVERRIDE"; then
+            DEFAULTS_DIR="$SOURCE_OVERRIDE/defaults"
+            return 0
+        fi
+        return 2
+    fi
     if is_usable_defaults_root "$REPO_ROOT"; then
         DEFAULTS_DIR="$REPO_ROOT/defaults"
         return 0
@@ -858,10 +951,19 @@ resolve_defaults() {
 }
 
 # requires-daemon: resync-payload optional   #8961 no source tree: resync from the daemon's embedded payload; an absent/older binary (no such verb) or a refusal (exit 1) keeps the failure below.
-if ! resolve_defaults; then
+resolve_defaults
+_RD_RC=$?
+if [[ "$_RD_RC" -eq 2 ]]; then
+    err "--source is not a usable Loom source checkout: $SOURCE_OVERRIDE"
+    err "A usable source root carries a populated defaults/hooks or defaults/scripts directory (#6780)."
+    err "Point --source at a clone of the Loom source repo, or drop --source to use the automatic resolution order."
+    exit 1
+fi
+if [[ "$_RD_RC" -ne 0 ]]; then
     _rp="${LOOM_DAEMON_BIN:-$(command -v loom-daemon || echo "${LOOM_DAEMON_BIN_DIR:-$HOME/.local/bin}/loom-daemon")}"; _rpa=(--workspace "$REPO_ROOT"); [[ "$DRY_RUN" -eq 1 ]] && _rpa+=(--dry-run); _rpw="found no loom-daemon that has it (looked at $_rp: missing or too old)"; _rpfix=" Install or update loom-daemon, or set .loom/loom-source-path to a local clone of the Loom source repo."
     if [[ -z "$OUTPUT_DIR" ]] && "$_rp" resync-payload --help >/dev/null 2>&1; then "$_rp" resync-payload "${_rpa[@]}"; _rprc=$?; [[ "$_rprc" -eq 1 ]] || exit "$_rprc"; _rpw="$_rp refused or failed (see above; it also exits 1 when it applied everything but could not refresh a labels block with malformed markers)"; _rpfix=" Its own output above names the cause and the fix."; fi
     err "Could not locate a defaults/ source tree to sync from: no \$REPO_ROOT/defaults, no usable path in the gitignored .loom/loom-source-path sidecar (missing on a fresh clone), no loom_source in .loom/install-metadata.json."
+    err "From a linked worktree in a consumer repo, name the source explicitly instead: --source <loom-checkout> (#14677)."
     err "Fallback \`loom-daemon resync-payload\` (the daemon's embedded payload, #8961): $_rpw.$_rpfix"; exit 1
 fi
 SOURCE_ROOT="$(dirname "$DEFAULTS_DIR")"
@@ -880,7 +982,8 @@ SOURCE_ROOT="$(dirname "$DEFAULTS_DIR")"
 # the `.loom/docs/*.md -> ../../defaults/docs/*.md` symlinks in the first place.
 #
 # In every CONSUMER repo defaults/ is resolved through the sidecar/metadata
-# rungs above, so SOURCE_ROOT is some other directory entirely, this stays 0,
+# rungs above (or an explicit foreign --source, #14677 — same story: SOURCE_ROOT
+# is then some other directory entirely), this stays 0,
 # and the install stays what it has always been: real file copies, never
 # symlinks. Nothing below may make a consumer's install depend on a path
 # outside its own repository.
@@ -1229,8 +1332,16 @@ is_loom_internal() {
 N_UPDATED=0
 N_UNCHANGED=0
 N_SKIPPED=0
-# #5981: retired payload files removed this run (see remove_retired_files()).
+# #5981: retired payload files removed this run (see remove_retired_files()),
+# plus stale install-metadata.json manifest entries pruned this run
+# (#14012, prune_stale_manifest_entries()) -- both count as changes for
+# restamp_metadata()'s #11680 no-op logic.
 N_REMOVED=0
+# #15519: the repo-relative paths remove_retired_files() actually deleted
+# this run. A tracked file the run retires has no defaults/ counterpart, so
+# collect_resync_dirt() cannot tell its deletion from a stray it must never
+# commit (#6613) by looking at defaults/ alone -- it asks this list instead.
+RESYNC_REMOVED_PATHS=()
 # #4669: files that could not be staged/renamed into place. A non-empty list
 # means the refresh is PARTIAL and must be reported as such (exit 1), never
 # swallowed into a "success" summary.
@@ -1336,7 +1447,7 @@ removed_line_count() {
 #
 #     tooling: install Repo Skills and Loom into the map repo
 #     Upgrade Loom to 0.18.0 (resync installed surfaces + role prompts)
-#     Install Loom orchestration (quick install from rjwalters/loom@cd4ab46e)
+#     Install Loom orchestration (quick install from 2AMLogic/loom@cd4ab46e)
 #
 # So the first time upstream EDITED such a file, the old upstream text being
 # replaced was read as "lines unique to the installed copy" and the update was
@@ -2206,6 +2317,10 @@ remove_retired_files() {
         if rm -f "$dst" 2>/dev/null; then
             printf '%b\n' "  ${GREEN}removed${NC}   $rel ${YELLOW}(retired from defaults/, #5981)${NC}"
             N_REMOVED=$((N_REMOVED + 1))
+            # #15519: remember the deletion in the form `git status` reports
+            # it, so collect_resync_dirt() can stage it. A pinned or
+            # symlink-skipped entry never gets here, so it has nothing to stage.
+            RESYNC_REMOVED_PATHS+=("${dst#"$WRITE_ROOT"/}")
         else
             err "failed to remove retired file $rel"
             record_failure "$rel"
@@ -2763,10 +2878,204 @@ resync_workspace_stub_version() {
 
 resync_workspace_stub_version
 
+# ---------- shared: pure-copy-surface path classifier (#5983, #6173, #14012) ----------
+#
+# audit_untracked_loom_paths() and suggest_commit_if_resync_only_dirt()
+# (both further down) and prune_stale_manifest_entries() (just below) need to
+# tell shipped-payload paths -- pure copies of
+# defaults/{hooks,scripts,roles,docs,runtimes,bin}/, plus the individual
+# single-file payloads synced verbatim by the "single-file nested Biome
+# configs (#6031)" step above -- apart from genuine runtime state living
+# elsewhere under .loom/. Single-source the list here so the call sites
+# can never drift out of sync with each other.
+#
+# `.loom/biome.jsonc` is shipped payload (a verbatim copy of
+# defaults/.loom/biome.jsonc, applied by sync_one above), not Loom runtime
+# state -- on a consumer's first resync to a version that ships it, the file
+# lands on disk untracked-and-unignored and would otherwise trip
+# audit_untracked_loom_paths()'s "add this to EPHEMERAL_PATTERNS" warning
+# even though it is a tracked-payload file the consumer should simply commit
+# (#6173). `.claude/biome.jsonc` is the same kind of payload but lives
+# outside `.loom/`, so it never reaches audit_untracked_loom_paths() (which
+# only scans paths under `.loom/`) -- it is classified here anyway so
+# suggest_commit_if_resync_only_dirt() (which scans the whole tree) also
+# recognizes it as resync-only dirt safe to suggest committing.
+#
+# (This section lives before restamp_metadata() rather than with its other
+# consumers further down because prune_stale_manifest_entries() runs earlier
+# in the script's straight-line flow and needs these helpers defined first,
+# #14012.)
+_is_loom_pure_copy_surface_path() {
+    case "$1" in
+        .loom/hooks/*|.loom/scripts/*|.loom/roles/*|.loom/docs/*|.loom/runtimes/*|.loom/bin/*|.loom/biome.jsonc|.claude/biome.jsonc)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+# Maps a target-relative path that has already matched
+# _is_loom_pure_copy_surface_path() to the defaults/ source path resync would
+# have copied it from, and echoes it. Callers only invoke this after that
+# match, so the default case below is defensive, not a normal return path
+# (#6613 -- audit_untracked_loom_paths() needs this to tell "still-shipped
+# payload" apart from "matches the pure-copy-surface path pattern but was
+# removed from defaults/ without ever being added to defaults/.loom-retired.list").
+_loom_pure_copy_surface_source_path() {
+    case "$1" in
+        .loom/hooks/*)
+            printf '%s\n' "$DEFAULTS_DIR/hooks/${1#.loom/hooks/}"
+            ;;
+        .loom/scripts/*)
+            printf '%s\n' "$DEFAULTS_DIR/scripts/${1#.loom/scripts/}"
+            ;;
+        .loom/roles/*)
+            printf '%s\n' "$DEFAULTS_DIR/roles/${1#.loom/roles/}"
+            ;;
+        .loom/docs/*)
+            printf '%s\n' "$DEFAULTS_DIR/docs/${1#.loom/docs/}"
+            ;;
+        .loom/runtimes/*)
+            printf '%s\n' "$DEFAULTS_DIR/runtimes/${1#.loom/runtimes/}"
+            ;;
+        .loom/bin/*)
+            printf '%s\n' "$DEFAULTS_DIR/.loom/bin/${1#.loom/bin/}"
+            ;;
+        .loom/biome.jsonc)
+            printf '%s\n' "$DEFAULTS_DIR/.loom/biome.jsonc"
+            ;;
+        .claude/biome.jsonc)
+            printf '%s\n' "$DEFAULTS_DIR/.claude/biome.jsonc"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+# ---------- prune stale install-metadata.json manifest entries (#14012) ----------
+#
+# install-metadata.json's installed_files array over-claims after an upstream
+# retirement: remove_retired_files() (or a manual deletion) removes the
+# installed copy, but the manifest entry the installer wrote stays behind, so
+# anything that iterates installed_files to verify an install either silently
+# skips the gap or errors on a file it was told to expect (16 stale entries
+# observed in one consumer repo, stable across two commits). This is the
+# missing reconcile: for every entry that satisfies ALL of
+#   1. it matches _is_loom_pure_copy_surface_path() -- entries outside the
+#      pure-copy surfaces (install-once files such as .github/workflows/*,
+#      .codex/config.toml, .claude/settings.json) are never touched here;
+#   2. it is absent on disk under $WRITE_ROOT -- a pinned fork, or a locally
+#      deleted file this same run just restored from defaults/, still exists
+#      and is never pruned; and
+#   3. its _loom_pure_copy_surface_source_path() counterpart is also absent
+#      under $DEFAULTS_DIR -- i.e. genuinely retired upstream. A locally
+#      deleted file that is STILL shipped is a copy gap, not a retirement,
+#      and its entry stays so a later run can restore the file.
+# the entry is dropped from the manifest and logged.
+#
+# Reconciling against the live source tree rather than
+# defaults/.loom-retired.list is deliberate: the list already trails reality
+# (#6613), and the consumer evidence included retirements that were never
+# listed on it. This is a prune of entries Loom itself wrote -- it never adds
+# or re-verifies entries; that remains the installer's job.
+#
+# Each prune increments N_REMOVED, so restamp_metadata()'s #11680 no-op logic
+# treats a pruned manifest as a changed install and re-stamps it; a run with
+# nothing to prune leaves the file byte-identical. --dry-run only previews
+# ("would prune"), never writes.
+prune_stale_manifest_entries() {
+    local meta="$WRITE_ROOT/.loom/install-metadata.json"
+    [[ -f "$meta" ]] || return 0
+    if ! command -v jq >/dev/null 2>&1 && ! command -v python3 >/dev/null 2>&1; then
+        warn "Skipped the install-metadata.json manifest prune (need jq or python3)."
+        return 0
+    fi
+
+    # Classify every entry first, edit second -- one write, only when needed.
+    local p src entries
+    local -a prunable=()
+    if command -v jq >/dev/null 2>&1; then
+        entries="$(jq -r '.installed_files // [] | .[]' "$meta" 2>/dev/null)" || entries=""
+    else
+        entries="$(META="$meta" python3 -c 'import json, os
+data = json.load(open(os.environ["META"]))
+arr = data.get("installed_files")
+if isinstance(arr, list):
+    print("\n".join(e for e in arr if isinstance(e, str)))' 2>/dev/null)" || entries=""
+    fi
+    while IFS= read -r p; do
+        [[ -z "$p" ]] && continue
+        _is_loom_pure_copy_surface_path "$p" || continue
+        [[ -e "$WRITE_ROOT/$p" || -L "$WRITE_ROOT/$p" ]] && continue
+        src="$(_loom_pure_copy_surface_source_path "$p" 2>/dev/null)"
+        [[ -n "$src" && ! -e "$src" && ! -L "$src" ]] || continue
+        prunable+=("$p")
+    done <<<"$entries"
+    [[ "${#prunable[@]}" -gt 0 ]] || return 0
+
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+        for p in ${prunable[@]+"${prunable[@]}"}; do
+            printf '%b\n' "  ${BOLD}would prune${NC} manifest entry $p ${YELLOW}(retired upstream, #14012)${NC}"
+            N_REMOVED=$((N_REMOVED + 1))
+        done
+        return 0
+    fi
+
+    local tmp="${meta}.tmp.$$"
+    if command -v jq >/dev/null 2>&1; then
+        local pruned_json
+        pruned_json="$(printf '%s\n' ${prunable[@]+"${prunable[@]}"} | jq -R . | jq -s .)" || pruned_json='[]'
+        if jq --argjson rm "$pruned_json" \
+              '.installed_files |= (if type == "array" then map(select(. as $e | ($rm | index($e)) | not)) else . end)' \
+              "$meta" > "$tmp" 2>/dev/null && [[ -s "$tmp" ]]; then
+            mv "$tmp" "$meta"
+        else
+            rm -f "$tmp"
+            err "failed to prune install-metadata.json manifest entries (jq edit failed)"
+            record_failure ".loom/install-metadata.json"
+            return 0
+        fi
+    else
+        local py_rc=0
+        META="$meta" PRUNE_LIST="$(printf '%s\n' ${prunable[@]+"${prunable[@]}"})" \
+            python3 - "$tmp" <<'PY' 2>/dev/null || py_rc=$?
+import json, os, sys
+with open(os.environ["META"]) as f:
+    data = json.load(f)
+removed = set(os.environ["PRUNE_LIST"].splitlines())
+arr = data.get("installed_files")
+if isinstance(arr, list):
+    data["installed_files"] = [e for e in arr if e not in removed]
+with open(sys.argv[1], "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PY
+        if [[ "$py_rc" -eq 0 && -s "$tmp" ]]; then
+            mv "$tmp" "$meta"
+        else
+            rm -f "$tmp"
+            err "failed to prune install-metadata.json manifest entries (python3 edit failed)"
+            record_failure ".loom/install-metadata.json"
+            return 0
+        fi
+    fi
+
+    for p in ${prunable[@]+"${prunable[@]}"}; do
+        printf '%b\n' "  ${GREEN}pruned${NC}    manifest entry $p ${YELLOW}(retired upstream, #14012)${NC}"
+        N_REMOVED=$((N_REMOVED + 1))
+    done
+}
+
 # ---------- re-stamp install-metadata.json (#4239, non-dry-run only) ----------
 #
 # Refresh loom_version + loom_commit (from the resolved source tree) and record a
-# last_resync date. install_date and installed_files are left to the installer.
+# last_resync date. install_date is left to the installer; installed_files is
+# too, with one #14012 exception: prune_stale_manifest_entries() above first
+# drops pure-copy-surface entries whose file is gone on disk AND retired
+# upstream, so the manifest stops over-claiming removed payload.
 # jq or python3 is required for a safe in-place JSON edit; if neither is present
 # we warn and skip — the surface sync above still succeeded.
 #
@@ -2947,6 +3256,53 @@ normalize_source_remote() {
     printf 'https://%s/%s.git' "$host" "$path"
 }
 
+# canonicalize_source_remote <normalized-url>
+#   After the org transfer (#14170) a clone whose `origin` still names the old
+#   owner stamped that stale URL into every consumer's tracked
+#   loom_source_remote. Git never rewrites the remote, so only the forge knows
+#   the current name: the REST `repos/<o>/<r>` endpoint follows the transfer
+#   redirect and reports the canonical `full_name` (#14222).
+#   Only `https://github.com/<o>/<r>.git` is looked up. Everything else -- other
+#   hosts, local paths, `gh` missing, offline, a timeout, an odd answer -- is
+#   returned unchanged and silently: this is fail-open, it never fails the
+#   resync. When the canonical name differs (case-insensitively) the rebuilt
+#   URL is printed and ONE warning goes to stderr.
+canonicalize_source_remote() {
+    local url="$1" slug owner repo canonical canonical_lc slug_lc
+    if [[ "$url" != https://github.com/*/*.git ]]; then
+        printf '%s' "$url"
+        return 0
+    fi
+    slug="${url#https://github.com/}"
+    slug="${slug%.git}"
+    if [[ ! "$slug" =~ ^[^/]+/[^/]+$ ]] || ! command -v gh >/dev/null 2>&1; then
+        printf '%s' "$url"
+        return 0
+    fi
+    owner="${slug%%/*}"
+    repo="${slug#*/}"
+    # A non-zero exit discards whatever was printed: only a clean answer counts.
+    canonical="$(
+        {
+            # shellcheck source=lib/bounded-run.sh
+            source "$(dirname "${BASH_SOURCE[0]}")/lib/bounded-run.sh" &&
+                bounded_run 10 gh api "repos/$owner/$repo" --jq .full_name
+        } 2>/dev/null </dev/null
+    )" || canonical=""
+    # Lower-case via tr, not ${var,,}: the script must also run under stock
+    # macOS /bin/bash 3.2 (#7749), which has no case-modifier expansion and
+    # aborts the helper (writing an empty loom_source_remote) on one.
+    canonical_lc="$(printf '%s' "$canonical" | tr '[:upper:]' '[:lower:]')"
+    slug_lc="$(printf '%s' "$slug" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$canonical" =~ ^[^/[:space:]]+/[^/[:space:]]+$ ]] \
+        && [[ "$canonical_lc" != "$slug_lc" ]]; then
+        warn "The Loom source clone's origin remote is stale: it names $slug but GitHub now reports $canonical. Stamping the canonical URL into loom_source_remote; update the clone with: git -C \"$SOURCE_ROOT\" remote set-url origin https://github.com/$canonical.git"
+        printf 'https://github.com/%s.git' "$canonical"
+        return 0
+    fi
+    printf '%s' "$url"
+}
+
 restamp_metadata() {
     local meta="$WRITE_ROOT/.loom/install-metadata.json"
     [[ -f "$meta" ]] || return 0
@@ -3021,6 +3377,20 @@ restamp_metadata() {
     # requires_daemon) still apply; and in every case a result that is
     # semantically identical to the current file is not written, so a no-op
     # run leaves the file byte-identical and git sees no diff.
+    # #14434: record the paths the local-divergence protection held back (and
+    # clear the key when there are none) so the stamp no longer claims a version
+    # whose bytes a held-back file does not match. The stamp still advances --
+    # the local-fix guard's lineage rung relies on that -- so this is an
+    # annotation, not a replacement for the restamp. It is written even on a
+    # "noop" run: a clean rerun must be able to clear it.
+    local held_json="[]" held_nl
+    if [[ "${#BLOCKED_RELS[@]}" -gt 0 ]]; then
+        held_nl="$(printf '%s\n' "${BLOCKED_RELS[@]}")"
+        if command -v jq >/dev/null 2>&1; then
+            held_json="$(printf '%s' "$held_nl" | jq -R . | jq -s -c . 2>/dev/null || echo '[]')"
+        fi
+    fi
+    local held_lines="${held_nl:-}"
     local prev_version prev_commit noop=0
     prev_version="$(sed -n 's/.*"loom_version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$meta" 2>/dev/null | head -1)"
     prev_commit="$(sed -n 's/.*"loom_commit"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$meta" 2>/dev/null | head -1)"
@@ -3028,6 +3398,10 @@ restamp_metadata() {
           && "$prev_version" == "$version" \
           && "$prev_commit" =~ ^[0-9a-f]{40}$ ]]; then
         noop=1
+    else
+        # #14222: resolve a transferred origin only when refreshing the stamp.
+        # The no-op path preserves loom_source_remote and needs no forge lookup.
+        remote="$(canonicalize_source_remote "$remote")"
     fi
 
     local stamped_note="${GREEN}re-stamped${NC} install-metadata.json (loom_version=$version, loom_commit=$commit, last_resync=$today)"
@@ -3039,8 +3413,8 @@ restamp_metadata() {
     tmp="${meta}.tmp.$$"
 
     if command -v jq >/dev/null 2>&1; then
-        if jq --arg v "$version" --arg c "$commit" --arg r "$today" --arg src "$remote" --arg q "$req" --arg n "$noop" \
-              '(if $n == "1" then . else .loom_version=$v | .loom_commit=$c | .last_resync=$r | .loom_source_remote=$src end) | del(.loom_source) | if $q == "" then del(.requires_daemon) else .requires_daemon=$q end' \
+        if jq --arg v "$version" --arg c "$commit" --arg r "$today" --arg src "$remote" --arg q "$req" --arg n "$noop" --argjson h "$held_json" \
+              '(if $n == "1" then . else .loom_version=$v | .loom_commit=$c | .last_resync=$r | .loom_source_remote=$src end) | del(.loom_source) | if $q == "" then del(.requires_daemon) else .requires_daemon=$q end | if ($h | length) == 0 then del(.held_back) else .held_back=$h end' \
               "$meta" > "$tmp" 2>/dev/null && [[ -s "$tmp" ]]; then
             if jq -n -e --slurpfile a "$meta" --slurpfile b "$tmp" '$a == $b' >/dev/null 2>&1; then
                 rm -f "$tmp"
@@ -3056,7 +3430,7 @@ restamp_metadata() {
 
     if command -v python3 >/dev/null 2>&1; then
         local py_rc=0
-        META="$meta" VERSION="$version" COMMIT="$commit" TODAY="$today" REMOTE="$remote" REQ="$req" NOOP="$noop" \
+        META="$meta" VERSION="$version" COMMIT="$commit" TODAY="$today" REMOTE="$remote" REQ="$req" NOOP="$noop" HELD="$held_lines" \
            python3 - "$tmp" <<'PY' 2>/dev/null || py_rc=$?
 import json, os, sys
 with open(os.environ["META"]) as f:
@@ -3071,6 +3445,10 @@ data.pop("loom_source", None)
 data.pop("requires_daemon", None)
 if os.environ["REQ"]:
     data["requires_daemon"] = os.environ["REQ"]
+held = [l for l in os.environ.get("HELD", "").split("\n") if l]
+data.pop("held_back", None)
+if held:
+    data["held_back"] = held
 if data == orig:
     sys.exit(10)
 with open(sys.argv[1], "w") as f:
@@ -3094,6 +3472,7 @@ PY
     return 0
 }
 
+prune_stale_manifest_entries
 if [[ "$DRY_RUN" -ne 1 ]]; then
     restamp_metadata
 fi
@@ -3191,6 +3570,54 @@ _gitignore_source_ephemeral_patterns() {
         | sed -n -E 's/^[[:space:]]*"([^"]*)",?[[:space:]]*(\/\/.*)?$/\1/p'
 }
 
+# #13898: the stub-conditional companion list (STUB_WORKSPACE_PATTERNS in the
+# same post_init.rs) — pnpm-artifact entries the managed block carries ONLY in
+# a workspace whose root package.json is the loom-workspace stub. Parsed from
+# source for the same ground-truth reason as _gitignore_source_ephemeral_patterns;
+# same best-effort contract (echoes nothing without a full checkout).
+_gitignore_source_stub_patterns() {
+    local post_init="$SOURCE_ROOT/loom-daemon/src/init/post_init.rs"
+    [[ -f "$post_init" ]] || return 0
+    awk '/pub const STUB_WORKSPACE_PATTERNS/ { flag=1; next } flag && /^\];/ { exit } flag' "$post_init" \
+        | sed -n -E 's/^[[:space:]]*"([^"]*)",?[[:space:]]*(\/\/.*)?$/\1/p'
+}
+
+# #13898: is $WRITE_ROOT's root package.json the loom-workspace stub? Uses the
+# same "name" marker as resync_workspace_stub_version. Echoes "yes"/"no"; echoes
+# "unknown" (which callers must treat as stand-down, never as "no") only when
+# jq is absent from PATH -- the one case where the answer cannot be determined
+# at all. Every shape the tool can reach is answered determinatively, matching
+# the binary's workspace_uses_package_stub() (unwrap_or(false), post_init.rs):
+# a missing package.json, one with no "name", and one jq fails to parse are
+# all "no" (#14586: the unparseable case used to stand down as "unknown",
+# disabling the whole #5294/#5991/#11323 stale-binary guard on a case the
+# binary itself answers definitively as "not a stub"). Standing down on a
+# genuine "unknown" remains right: stripping the stub entries without knowing
+# would undo what a correct binary just wrote, while tolerating them costs at
+# most one stale-extra pattern surviving until jq is available.
+#
+# #14586: the stub marker this reads must be TRACKED (committed) in
+# $WRITE_ROOT for the other stub-detection sites to agree: the fleet export
+# (workspace_resync.rs) and this script's --output detached-worktree checkout
+# both see only tracked paths, so a stub repo whose package.json was never
+# committed reads "no" there and regenerates the block without the stub
+# entries on every cycle. The install writes and commits both files, so an
+# untracked stub is not a state Loom produces -- and if you are ever tempted
+# to read the marker from a tree other than the one that owns the .gitignore
+# being written, that divergence is the failure mode you are reintroducing.
+_gitignore_workspace_is_stub() {
+    local pj="$WRITE_ROOT/package.json"
+    [[ -f "$pj" ]] || { echo "no"; return 0; }
+    if ! command -v jq >/dev/null 2>&1; then
+        echo "unknown"
+        return 0
+    fi
+    local name
+    name="$(jq -r '.name // empty' "$pj" 2>/dev/null)" || { echo "no"; return 0; }
+    [[ -z "$name" ]] && { echo "no"; return 0; }
+    [[ "$name" == "loom-workspace" ]] && echo "yes" || echo "no"
+}
+
 # #5991: rewrite the Loom-managed `.gitignore` block in place from the given
 # SOURCE pattern list (ground truth, independent of whichever loom-daemon
 # binary wrote the block), preserving everything outside the block untouched.
@@ -3252,18 +3679,34 @@ _gitignore_restore_managed_block() {
 # gitlink hazard that way, #5985) or re-ADDS one removed since (febfc4335
 # re-added `.loom/concierge/`, #11323). Restore the block from source (else
 # revert the file) so neither lands; no source list = cannot verify, no-op.
+#
+# #13898: the expected list is the source base list PLUS the stub-conditional
+# patterns when $WRITE_ROOT is a loom-workspace stub repo -- without that, this
+# check would classify the stub entries a correct binary just wrote as "extra"
+# and strip them out of every stub repo on every resync. When stub detection is
+# "unknown" (no jq) the whole check stands down instead of guessing: a wrong
+# guess in either direction either strips correct entries or force-adds
+# `/pnpm-lock.yaml` to a real Node repo's block (hiding its committed lockfile).
 _gitignore_warn_if_stale() {
     local bin="$1" post_init="$SOURCE_ROOT/loom-daemon/src/init/post_init.rs" pattern block current wanted
-    local -a missing=() extra=() source_patterns=()
+    local -a missing=() extra=() source_patterns=() stub_patterns=()
 
     while IFS= read -r pattern; do [[ -n "$pattern" ]] && source_patterns+=("$pattern"); done < <(_gitignore_source_ephemeral_patterns)
     [[ "${#source_patterns[@]}" -gt 0 && -f "$WRITE_ROOT/.gitignore" ]] || return 0
+    while IFS= read -r pattern; do [[ -n "$pattern" ]] && stub_patterns+=("$pattern"); done < <(_gitignore_source_stub_patterns)
+    local stub_state
+    stub_state="$(_gitignore_workspace_is_stub)"
+    [[ "$stub_state" != "unknown" ]] || { note "  .gitignore stale-check skipped: jq not on PATH to read the workspace stub marker (#13898)"; return 0; }
+    local -a expected=("${source_patterns[@]}")
+    if [[ "$stub_state" == "yes" ]]; then
+        expected+=("${stub_patterns[@]+"${stub_patterns[@]}"}")
+    fi
     block="$(sed -n '/# >>> loom-managed/,/# <<< loom-managed/p' "$WRITE_ROOT/.gitignore")"
     [[ -n "$block" ]] || return 0
     current="$(sed '1,2d;$d' <<<"$block")"
-    wanted="$(printf '%s\n' "${source_patterns[@]}")"
+    wanted="$(printf '%s\n' "${expected[@]}")"
     [[ "$current" != "$wanted" ]] || return 0
-    for pattern in "${source_patterns[@]}"; do grep -qxF -- "$pattern" <<<"$current" || missing+=("$pattern"); done
+    for pattern in "${expected[@]}"; do grep -qxF -- "$pattern" <<<"$current" || missing+=("$pattern"); done
     while IFS= read -r pattern; do [[ -z "$pattern" ]] || grep -qxF -- "$pattern" <<<"$wanted" || extra+=("$pattern"); done <<<"$current"
     [[ "${#missing[@]}" -eq 0 ]] || warn "The resolved loom-daemon binary ($bin) regenerated .gitignore WITHOUT ${#missing[@]} pattern(s) that $post_init currently declares:"
     for pattern in ${missing[@]+"${missing[@]}"}; do warn "    $pattern"; done
@@ -3273,7 +3716,7 @@ _gitignore_warn_if_stale() {
     warn "  '$bin' is likely older than the source just synced (#5294) — rebuild loom-daemon"
     warn "  (cargo build --release -p loom-daemon under $SOURCE_ROOT) and re-run resync-installed.sh."
 
-    if _gitignore_restore_managed_block "$block" "${source_patterns[@]}"; then
+    if _gitignore_restore_managed_block "$block" "${expected[@]}"; then
         warn "  ${GREEN}restored${NC} the missing pattern(s) and dropped the extra ones directly from $post_init so the regression cannot land (#5991, #11323)."
     elif git -C "$WRITE_ROOT" checkout -- .gitignore 2>/dev/null; then
         warn "  Could not rewrite the block in place — ${GREEN}reverted${NC} .gitignore to its last-committed state instead (#5991)."
@@ -3337,77 +3780,6 @@ refresh_gitignore_block() {
     _gitignore_warn_if_stale "$bin"
 }
 refresh_gitignore_block
-
-# ---------- shared: pure-copy-surface path classifier (#5983, #6173) ----------
-#
-# Both audit_untracked_loom_paths() (below) and suggest_commit_if_resync_only_dirt()
-# (further down) need to tell shipped-payload paths -- pure copies of
-# defaults/{hooks,scripts,roles,docs,runtimes,bin}/, plus the individual
-# single-file payloads synced verbatim by the "single-file nested Biome
-# configs (#6031)" step above -- apart from genuine runtime state living
-# elsewhere under .loom/. Single-source the list here so the two call sites
-# can never drift out of sync with each other.
-#
-# `.loom/biome.jsonc` is shipped payload (a verbatim copy of
-# defaults/.loom/biome.jsonc, applied by sync_one above), not Loom runtime
-# state -- on a consumer's first resync to a version that ships it, the file
-# lands on disk untracked-and-unignored and would otherwise trip
-# audit_untracked_loom_paths()'s "add this to EPHEMERAL_PATTERNS" warning
-# even though it is a tracked-payload file the consumer should simply commit
-# (#6173). `.claude/biome.jsonc` is the same kind of payload but lives
-# outside `.loom/`, so it never reaches audit_untracked_loom_paths() (which
-# only scans paths under `.loom/`) -- it is classified here anyway so
-# suggest_commit_if_resync_only_dirt() (which scans the whole tree) also
-# recognizes it as resync-only dirt safe to suggest committing.
-_is_loom_pure_copy_surface_path() {
-    case "$1" in
-        .loom/hooks/*|.loom/scripts/*|.loom/roles/*|.loom/docs/*|.loom/runtimes/*|.loom/bin/*|.loom/biome.jsonc|.claude/biome.jsonc)
-            return 0
-            ;;
-        *)
-            return 1
-            ;;
-    esac
-}
-
-# Maps a target-relative path that has already matched
-# _is_loom_pure_copy_surface_path() to the defaults/ source path resync would
-# have copied it from, and echoes it. Callers only invoke this after that
-# match, so the default case below is defensive, not a normal return path
-# (#6613 -- audit_untracked_loom_paths() needs this to tell "still-shipped
-# payload" apart from "matches the pure-copy-surface path pattern but was
-# removed from defaults/ without ever being added to defaults/.loom-retired.list").
-_loom_pure_copy_surface_source_path() {
-    case "$1" in
-        .loom/hooks/*)
-            printf '%s\n' "$DEFAULTS_DIR/hooks/${1#.loom/hooks/}"
-            ;;
-        .loom/scripts/*)
-            printf '%s\n' "$DEFAULTS_DIR/scripts/${1#.loom/scripts/}"
-            ;;
-        .loom/roles/*)
-            printf '%s\n' "$DEFAULTS_DIR/roles/${1#.loom/roles/}"
-            ;;
-        .loom/docs/*)
-            printf '%s\n' "$DEFAULTS_DIR/docs/${1#.loom/docs/}"
-            ;;
-        .loom/runtimes/*)
-            printf '%s\n' "$DEFAULTS_DIR/runtimes/${1#.loom/runtimes/}"
-            ;;
-        .loom/bin/*)
-            printf '%s\n' "$DEFAULTS_DIR/.loom/bin/${1#.loom/bin/}"
-            ;;
-        .loom/biome.jsonc)
-            printf '%s\n' "$DEFAULTS_DIR/.loom/biome.jsonc"
-            ;;
-        .claude/biome.jsonc)
-            printf '%s\n' "$DEFAULTS_DIR/.claude/biome.jsonc"
-            ;;
-        *)
-            return 1
-            ;;
-    esac
-}
 
 # ---------- audit: untracked-and-unignored paths under .loom/ (#4280, #5983) ----------
 #
@@ -3748,7 +4120,11 @@ fi
 #                        cover (plus the re-stamped install-metadata.json).
 #                        The ONLY thing any printed `git add` may name.
 #   RESYNC_RETIRED_PATHS pure-copy-surface-shaped paths with no defaults/
-#                        counterpart today (#6613): never committed.
+#                        counterpart today (#6613) that this run did not
+#                        delete itself: never committed. A tracked file the
+#                        retirement pass removed this run has no counterpart
+#                        either, but its deletion IS this run's output, so it
+#                        goes to RESYNC_DIRT_PATHS instead (#15519).
 #   RESYNC_FOREIGN_DIRT  1 when anything else is dirty — a genuine operator
 #                        edit, or (the case this exists for) a credential
 #                        path such as a token-pool copy at
@@ -3774,6 +4150,18 @@ RESYNC_RETIRED_PATHS=()
 RESYNC_FOREIGN_DIRT=0
 RESYNC_DIRT_COLLECTED=0
 
+# _resync_removed_this_run <repo-relative-path> -> succeeds when the
+# retirement pass deleted that path in THIS run (#15519). Indexed array +
+# linear membership test rather than `declare -A`, for bash 3.2 (#7749), and
+# the empty array is expanded the `set -u`-safe way (see _pin_was_hit()).
+_resync_removed_this_run() {
+    local needle="$1" e
+    for e in ${RESYNC_REMOVED_PATHS[@]+"${RESYNC_REMOVED_PATHS[@]}"}; do
+        [[ "$e" == "$needle" ]] && return 0
+    done
+    return 1
+}
+
 collect_resync_dirt() {
     [[ "$RESYNC_DIRT_COLLECTED" -eq 1 ]] && return 0
     RESYNC_DIRT_COLLECTED=1
@@ -3781,16 +4169,31 @@ collect_resync_dirt() {
     RESYNC_RETIRED_PATHS=()
     RESYNC_FOREIGN_DIRT=0
 
-    local status line path src
-    status="$(git -C "$WRITE_ROOT" status --porcelain 2>/dev/null)"
-    [[ -z "$status" ]] && return 0
+    # NUL-delimited status (#15519 review): the default porcelain form
+    # C-quotes a path with a non-ASCII byte
+    # (`".loom/docs/caf\303\251.md"`), which no longer equals the literal
+    # path `remove_retired_files()` recorded. `-z` emits every path verbatim.
+    local line path src
+    local -a status_records=()
+    while IFS= read -r -d '' line; do
+        status_records+=("$line")
+    done < <(git -C "$WRITE_ROOT" status --porcelain=v1 -z 2>/dev/null)
+    [[ "${#status_records[@]}" -eq 0 ]] && return 0
 
-    while IFS= read -r line; do
+    local i=0
+    while [[ "$i" -lt "${#status_records[@]}" ]]; do
+        line="${status_records[$i]}"
+        i=$((i + 1))
         [[ -z "$line" ]] && continue
         path="${line:3}"
-        [[ "$path" == *" -> "* ]] && path="${path##* -> }"
-        path="${path%\"}"
-        path="${path#\"}"
+        # A rename/copy record is followed by its source path as its own
+        # NUL-terminated record; the destination (the record's own path) is
+        # what the recipe stages, as before.
+        # (A `[[ ]]` test, not a `case`: loom-daemon's surface-parity test
+        # reads the FIRST `case` in this function as the managed-path list.)
+        if [[ "${line:0:2}" == *R* || "${line:0:2}" == *C* ]]; then
+            i=$((i + 1))
+        fi
         if _is_loom_pure_copy_surface_path "$path"; then
             # #6613 (mirrored from audit_untracked_loom_paths() above): a path
             # matching the pure-copy-surface *pattern* with no defaults/
@@ -3799,6 +4202,14 @@ collect_resync_dirt() {
             # is excluded from the commit suggestion below instead.
             src="$(_loom_pure_copy_surface_source_path "$path" 2>/dev/null)"
             if [[ -n "$src" && -e "$src" ]]; then
+                RESYNC_DIRT_PATHS+=("$path")
+            elif _resync_removed_this_run "$path"; then
+                # #15519: no counterpart because THIS run just retired it.
+                # The line is the deletion of a tracked file the run itself
+                # deleted, i.e. this run's output: a recipe that leaves it out
+                # commits the resync with the retired file still in it. A
+                # stray, or a deletion older than this run, is not in the
+                # list and stays excluded exactly as before.
                 RESYNC_DIRT_PATHS+=("$path")
             else
                 RESYNC_RETIRED_PATHS+=("$path")
@@ -3814,16 +4225,29 @@ collect_resync_dirt() {
             # touched either surface its own output was classified as foreign
             # dirt: the hint below went silent and `land-resync-commit.sh`
             # refused to land the run it was printed for. `.github/labels.yml`
-            # is refresh_labels_block()'s output (#11033).
-            .claude/commands/loom/*|.claude/agents/*|.claude/README.md|.github/CONFIGURATION.md|.github/labels.yml|.loom/install-metadata.json|.loom/CLAUDE.md|.gitattributes|.gitignore|.agents/skills/*)
+            # is refresh_labels_block()'s output (#11033). `.loom/pricing.json`
+            # is the single-file rate card (#8177): it was on no list here,
+            # so a run that changed it reported its own output as foreign
+            # dirt (#15519).
+            .claude/commands/loom/*|.claude/agents/*|.claude/README.md|.github/CONFIGURATION.md|.github/labels.yml|.loom/install-metadata.json|.loom/CLAUDE.md|.gitattributes|.gitignore|.agents/skills/*|.loom/pricing.json)
                 RESYNC_DIRT_PATHS+=("$path")
                 ;;
             *)
                 RESYNC_FOREIGN_DIRT=1
                 ;;
         esac
-    done <<< "$status"
+    done
     return 0
+}
+
+# Join paths as one shell-escaped argument each (#15519 review): a plain
+# `${arr[*]}` splits a path with a space into two pathspecs.
+_resync_quote_paths() {
+    local p out=""
+    for p in "$@"; do
+        out+="${out:+ }$(printf '%q' "$p")"
+    done
+    printf '%s' "$out"
 }
 
 # ---------- hint: stage + commit resync-only dirt (#4332) ----------
@@ -3860,9 +4284,9 @@ suggest_commit_if_resync_only_dirt() {
     echo ""
     if [[ -n "$OUTPUT_DIR" ]]; then
         note "${BLUE}[resync] The staging worktree is dirty with only resync output above — stage and commit it there:${NC}"
-        printf '%b\n' "    ${BOLD}cd $OUTPUT_DIR && git add -- ${RESYNC_DIRT_PATHS[*]} && git commit -m 'chore: resync installed Loom surfaces'${NC}"
+        printf '%b\n' "    ${BOLD}cd $OUTPUT_DIR && git add -- $(_resync_quote_paths "${RESYNC_DIRT_PATHS[@]}") && git commit -m 'chore: resync installed Loom surfaces'${NC}"
     else
-        note "${BLUE}[resync] The tree is dirty with only resync output above (would be: git add -- ${RESYNC_DIRT_PATHS[*]}) — land it so the main-health gate doesn't skip on it. This commits AND pushes (never rebasing or bypass-pushing — see .loom/docs/troubleshooting.md \"Landing a resync commit on the primary clone (#6646)\"):${NC}"
+        note "${BLUE}[resync] The tree is dirty with only resync output above (would be: git add -- $(_resync_quote_paths "${RESYNC_DIRT_PATHS[@]}")) — land it so the main-health gate doesn't skip on it. This commits AND pushes (never rebasing or bypass-pushing — see .loom/docs/troubleshooting.md \"Landing a resync commit on the primary clone (#6646)\"):${NC}"
         printf '%b\n' "    ${BOLD}./.loom/scripts/land-resync-commit.sh${NC}"
     fi
 }
@@ -3903,7 +4327,7 @@ print_output_mode_next_steps() {
     if [[ "${#RESYNC_DIRT_PATHS[@]}" -eq 0 ]]; then
         note "    (nothing to stage — this run left the staging worktree clean)"
     else
-        printf '%b\n' "    ${BOLD}git add -- ${RESYNC_DIRT_PATHS[*]}${NC}"
+        printf '%b\n' "    ${BOLD}git add -- $(_resync_quote_paths "${RESYNC_DIRT_PATHS[@]}")${NC}"
     fi
     printf '%b\n' "    ${BOLD}git commit -m 'chore: resync installed Loom surfaces'${NC}"
     printf '%b\n' "    ${BOLD}git push -u origin HEAD${NC}   # then open a PR"
@@ -3982,13 +4406,15 @@ if [[ "$N_FAILED" -gt 0 ]]; then
     exit 1
 fi
 
-# #7864: same non-zero exit as N_FAILED above, once it's confirmed clean —
-# a blocked file must never fall through into the success summary below.
+# #7864: a blocked file must never fall through into the success summary below.
+# #14434: it exits 3, not 1 -- the run applied everything else (and stamped
+# install-metadata.json with `held_back`), so a caller must be able to tell
+# "review these files" from a real error (1, the N_FAILED path above).
 if [[ "$N_BLOCKED" -gt 0 ]]; then
     if [[ -n "$OUTPUT_DIR" && "$STAGING_WORKTREE_CREATED" -eq 1 ]]; then
         printf '%b\n' "${YELLOW}The staging worktree at $OUTPUT_DIR was left in place (not removed) so you can inspect it.${NC}"
     fi
-    exit 1
+    exit 3
 fi
 
 # (the #5980 crash-detection marker was already cleared, right after N_FAILED
@@ -4001,7 +4427,14 @@ clear_resync_marker
 # not change this script's exit status. Skipped under --dry-run, when the
 # source is not a plain git checkout (e.g. a staging worktree), or with
 # LOOM_RESYNC_SKIP_USER_SCOPE=1.
-if [[ "$DRY_RUN" -eq 0 && "${LOOM_RESYNC_SKIP_USER_SCOPE:-0}" != "1" \
+# #15518: also skipped in --output staging mode. Everything this step writes
+# is user-scope (~/.local/bin/loom, ~/.local/share/loom, the
+# ~/.claude/commands/loom and ~/.claude/agents/loom-* links) -- the staging
+# worktree has no surface for it, so a real staging run used to write the HOST
+# instead, from whatever checkout --source named, and --dry-run (which skips
+# the step) never previewed it. A staging run makes no Loom user-scope write
+# at all: the #12121 strip below is skipped there for the same reason.
+if [[ "$DRY_RUN" -eq 0 && -z "$OUTPUT_DIR" && "${LOOM_RESYNC_SKIP_USER_SCOPE:-0}" != "1" \
       && -d "$SOURCE_ROOT/.git" && -r "$SOURCE_ROOT/scripts/install/provision-skills.sh" \
       && -r "$SOURCE_ROOT/scripts/install/provision-dispatcher.sh" ]]; then
     (
@@ -4038,10 +4471,11 @@ fi
 # #12121: operator presence is derived by the daemon, so resync only STRIPS the
 # retired user-scope presence-beat.sh hook entries and LOOM_OPERATOR_PRESENCE=1
 # env entry from ~/.claude/settings.json. A no-op when the machine checkout
-# lacks provision-hooks.sh and in --dry-run. Best-effort: resync never fails
-# on it.
+# lacks provision-hooks.sh and in --dry-run. Skipped in --output staging mode
+# too (#15518): a staged resync never writes user-scope paths; the next
+# non-staging run strips the wiring. Best-effort: resync never fails on it.
 _PRESENCE_LIB="${LOOM_HOME:-$HOME/.local/share/loom}/scripts/install/provision-hooks.sh"
-if [[ "${DRY_RUN:-0}" != "1" && -r "$_PRESENCE_LIB" ]]; then
+if [[ "${DRY_RUN:-0}" != "1" && -z "$OUTPUT_DIR" && -r "$_PRESENCE_LIB" ]]; then
     # shellcheck source=/dev/null
     ( source "$_PRESENCE_LIB" && provision_operator_presence ) \
         || warn "stripping the retired operator presence wiring was not fully applied (see messages above); resync itself completed."

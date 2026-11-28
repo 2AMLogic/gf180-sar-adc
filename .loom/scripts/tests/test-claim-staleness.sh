@@ -87,11 +87,22 @@ case "$path" in
   *"/timeline"*) serve timeline.json ;;
   *"/comments"*) serve comments.json ;;
   */issues/[0-9]*)
-    if [[ "${LOOM_TEST_ISSUE_READ_FAILS:-}" == "1" ]]; then
+    # Count issue reads: the #15044 guard re-reads the item live AFTER the
+    # label read at the top, so read #2+ is the guard's independent read.
+    reads=$(( $(cat "$D/issue-reads" 2>/dev/null || echo 0) + 1 ))
+    echo "$reads" >"$D/issue-reads"
+    f="issue.json"
+    if (( reads >= 2 )) && [[ -n "${LOOM_TEST_LIVE_DROP_LABEL:-}" ]]; then
+      jq --arg l "$LOOM_TEST_LIVE_DROP_LABEL" 'del(.labels[] | select(.name == $l))' \
+        "$D/issue.json" >"$D/issue-live.json"
+      f="issue-live.json"
+    fi
+    if [[ "${LOOM_TEST_ISSUE_READ_FAILS:-}" == "1" ]] || \
+       { (( reads >= 2 )) && [[ "${LOOM_TEST_LIVE_READ_FAILS:-}" == "1" ]]; }; then
       echo '{"message":"Not Found"}' >&2
       exit 1
     fi
-    serve issue.json
+    serve "$f"
     ;;
   *) echo "stub gh: unhandled path: $path" >&2; exit 3 ;;
 esac
@@ -149,9 +160,18 @@ ago() { # <minutes> -> RFC3339 UTC timestamp that many minutes in the past
         date -u -v-"$1"M +%Y-%m-%dT%H:%M:%SZ
 }
 
-set_labels() { # <label>...
-    printf '%s\n' "$*" | jq -R 'split(" ") | map(select(length > 0) | {name: .}) | {labels: .}' \
+set_labels() { # <label>...  (the issue fixture also carries the live-read
+    # updated_at the #15044 guard compares; default LOOM_TEST_UPDATED_AT,
+    # else long-idle so a verdict is never rescued by accident)
+    local u="${LOOM_TEST_UPDATED_AT:-$(ago 90)}"
+    printf '%s\n' "$*" | jq -R --arg u "$u" \
+        'split(" ") | map(select(length > 0) | {name: .}) | {labels: ., updated_at: $u}' \
         >"$STUB_DIR/issue.json"
+}
+
+set_updated_at() { # <iso-ts> — stamp the live-read updated_at on the issue fixture
+    jq --arg u "$1" '.updated_at = $u' "$STUB_DIR/issue.json" >"$STUB_DIR/issue.json.new"
+    mv "$STUB_DIR/issue.json.new" "$STUB_DIR/issue.json"
 }
 
 set_claim() { # <label> <iso-ts>  (empty ts => no claim event in the timeline)
@@ -171,6 +191,8 @@ set_comments() { # reads a JSON array on stdin; an item without `user` is the fl
 reset() {
     : >"$STUB_DIR/gh-calls.log"
     unset LOOM_TEST_MUTATION_FAILS LOOM_TEST_ISSUE_READ_FAILS LOOM_TEST_NO_TRUST_VERB LOOM_TEST_EXTRA_LIVENESS LOOM_TEST_LEASE_STATE
+    unset LOOM_TEST_UPDATED_AT LOOM_TEST_LIVE_READ_FAILS LOOM_TEST_LIVE_DROP_LABEL
+    rm -f "$STUB_DIR/issue-reads" "$STUB_DIR/issue-live.json"
     set_labels "loom:reviewing"
     echo '[]' >"$STUB_DIR/comments.json"
 }
@@ -534,6 +556,142 @@ rm -f "$STUB_DIR/lease-role"
 out="$(LOOM_TEST_LEASE_STATE=held-peer "$TARGET_SCRIPT" check --repo owner/repo --number 6513 --label loom:custom)"
 assert_eq "stale" "$(field "$out" CLAIM_STATE)" "T23h: a label with no role mapping is never downgraded"
 assert_eq "false" "$([[ -e "$STUB_DIR/lease-role" ]] && echo true || echo false)" "T23i: no lease lookup for an unmapped label"
+
+# --- T24: #15044 frozen timeline, replacement claimant active -> fresh -------
+# The timeline still reports the PRE-reclaim claim time; a trusted reclaim
+# marker for that exact timestamp exists, and the live item was updated
+# recently (the replacement claimant claimed and is working). The stale
+# verdict must be downgraded to fresh — never stomp the replacement.
+reset
+CLAIM_TS="$(ago 90)"
+set_claim loom:reviewing "$CLAIM_TS"
+set_updated_at "$(ago 5)"
+jq -n --arg t "$(ago 60)" --arg m "<!-- loom:reclaim claim=$CLAIM_TS -->" \
+    '[{id:801,created_at:$t,body:("Judge: reclaiming stale claim.\n" + $m)}]' | set_comments
+out="$("$TARGET_SCRIPT" check --repo owner/repo --number 6513 --label loom:reviewing)"
+assert_eq "fresh" "$(field "$out" CLAIM_STATE)" \
+    "T24: a lagged timeline plus a reclaim marker and an active live item reads fresh, not stale"
+
+# --- T25: #15044 frozen timeline, live item idle -> unknown -------------------
+reset
+CLAIM_TS="$(ago 90)"
+set_claim loom:reviewing "$CLAIM_TS"
+set_updated_at "$(ago 40)"
+jq -n --arg t "$(ago 60)" --arg m "<!-- loom:reclaim claim=$CLAIM_TS -->" \
+    '[{id:801,created_at:$t,body:("Judge: reclaiming stale claim.\n" + $m)}]' | set_comments
+out="$("$TARGET_SCRIPT" check --repo owner/repo --number 6513 --label loom:reviewing)"
+assert_eq "unknown" "$(field "$out" CLAIM_STATE)" \
+    "T25: a reclaim marker with the live item idle >= threshold downgrades stale to unknown (fail safe)"
+
+# --- T26: #15044 no marker -> the first reclaim of a claim is unaffected ------
+reset
+set_claim loom:reviewing "$(ago 90)"
+set_updated_at "$(ago 5)"
+jq -n --arg t "$(ago 60)" \
+    '[{id:801,created_at:$t,body:"Judge: unrelated comment."}]' | set_comments
+out="$("$TARGET_SCRIPT" check --repo owner/repo --number 6513 --label loom:reviewing)"
+assert_eq "stale" "$(field "$out" CLAIM_STATE)" \
+    "T26: with no reclaim marker a stale verdict stands even on a recently updated item"
+
+# --- T27: #15044 a failed guard live read -> unknown --------------------------
+reset
+CLAIM_TS="$(ago 90)"
+set_claim loom:reviewing "$CLAIM_TS"
+jq -n --arg t "$(ago 60)" --arg m "<!-- loom:reclaim claim=$CLAIM_TS -->" \
+    '[{id:801,created_at:$t,body:("Judge: reclaiming stale claim.\n" + $m)}]' | set_comments
+out="$(LOOM_TEST_LIVE_READ_FAILS=1 "$TARGET_SCRIPT" check --repo owner/repo --number 6513 --label loom:reviewing)"
+assert_eq "unknown" "$(field "$out" CLAIM_STATE)" \
+    "T27: a failed independent live read downgrades stale to unknown, never stomps"
+
+# --- T28: #15044 an unparseable updated_at -> unknown -------------------------
+reset
+CLAIM_TS="$(ago 90)"
+set_claim loom:reviewing "$CLAIM_TS"
+set_updated_at "not-a-timestamp"
+jq -n --arg t "$(ago 60)" --arg m "<!-- loom:reclaim claim=$CLAIM_TS -->" \
+    '[{id:801,created_at:$t,body:("Judge: reclaiming stale claim.\n" + $m)}]' | set_comments
+out="$("$TARGET_SCRIPT" check --repo owner/repo --number 6513 --label loom:reviewing)"
+assert_eq "unknown" "$(field "$out" CLAIM_STATE)" \
+    "T28: an unparseable live updated_at downgrades stale to unknown"
+
+# --- T29: #15044 the claim label absent from the live read -> unknown ---------
+reset
+CLAIM_TS="$(ago 90)"
+set_claim loom:reviewing "$CLAIM_TS"
+set_updated_at "$(ago 5)"
+jq -n --arg t "$(ago 60)" --arg m "<!-- loom:reclaim claim=$CLAIM_TS -->" \
+    '[{id:801,created_at:$t,body:("Judge: reclaiming stale claim.\n" + $m)}]' | set_comments
+out="$(LOOM_TEST_LIVE_DROP_LABEL=loom:reviewing "$TARGET_SCRIPT" check --repo owner/repo --number 6513 --label loom:reviewing)"
+assert_eq "unknown" "$(field "$out" CLAIM_STATE)" \
+    "T29: the timeline and the live read disagreeing on the label gives unknown"
+
+# --- T30: #15044 an untrusted reclaim marker is prose (#9548) -----------------
+reset
+CLAIM_TS="$(ago 90)"
+set_claim loom:reviewing "$CLAIM_TS"
+set_updated_at "$(ago 5)"
+jq -n --arg t "$(ago 60)" --arg m "<!-- loom:reclaim claim=$CLAIM_TS -->" \
+    '[{id:801,created_at:$t,body:("drive-by: reclaiming, honest.\n" + $m),user:{login:"drive-by",type:"User"},author_association:"NONE"}]' | set_comments
+out="$("$TARGET_SCRIPT" check --repo owner/repo --number 6513 --label loom:reviewing)"
+assert_eq "stale" "$(field "$out" CLAIM_STATE)" \
+    "T30: an outsider's reclaim marker is ignored — the stale verdict stands"
+
+# --- T31: #15044 a marker naming a different claim is ignored -----------------
+reset
+CLAIM_TS="$(ago 90)"
+OTHER_TS="$(ago 200)"
+set_claim loom:reviewing "$CLAIM_TS"
+set_updated_at "$(ago 5)"
+jq -n --arg t "$(ago 60)" --arg m "<!-- loom:reclaim claim=$OTHER_TS -->" \
+    '[{id:801,created_at:$t,body:("Judge: older reclaim of an older claim.\n" + $m)}]' | set_comments
+out="$("$TARGET_SCRIPT" check --repo owner/repo --number 6513 --label loom:reviewing)"
+assert_eq "stale" "$(field "$out" CLAIM_STATE)" \
+    "T31: a reclaim marker keyed to another CLAIMED_AT does not downgrade the verdict"
+
+# --- T32: #15044 recovery — once the timeline advances, the old marker misses -
+reset
+OLD_TS="$(ago 200)"
+CLAIM_TS="$(ago 40)"
+set_claim loom:reviewing "$CLAIM_TS"
+set_updated_at "$(ago 35)"
+jq -n --arg o "$(ago 100)" --arg om "<!-- loom:reclaim claim=$OLD_TS -->" \
+    --arg n "$(ago 10)" --arg nm "<!-- loom:reclaim claim=$OLD_TS -->" \
+    '[{id:811,created_at:$o,body:("Judge pass: reclaim of the old claim.\n" + $om)},
+      {id:812,created_at:$n,body:("Judge: new note, old marker.\n" + $nm)}]' | set_comments
+out="$("$TARGET_SCRIPT" check --repo owner/repo --number 6513 --label loom:reviewing)"
+assert_eq "stale" "$(field "$out" CLAIM_STATE)" \
+    "T32: a new CLAIMED_AT stops the old reclaim marker matching — evaluation resumes normally"
+
+# --- T33: #15044 the bounded fallback is guarded too --------------------------
+reset
+CLAIM_TS="$(ago 90)"
+set_claim loom:reviewing "$CLAIM_TS"
+set_updated_at "$(ago 5)"
+jq -n --arg s "$(ago 30)" --arg sm "<!-- loom:standdown claim=$CLAIM_TS seq=3 -->" \
+    --arg t "$(ago 60)" --arg m "<!-- loom:reclaim claim=$CLAIM_TS -->" \
+    '[{id:821,created_at:$t,body:("Judge: reclaiming stale claim.\n" + $m)},
+      {id:822,created_at:$s,body:("Judge pass: standing down.\n" + $sm)}]' | set_comments
+out="$("$TARGET_SCRIPT" check --repo owner/repo --number 6513 --label loom:reviewing)"
+assert_eq "fresh" "$(field "$out" CLAIM_STATE)" \
+    "T33a: stale-bounded-fallback plus a marker and an active live item reads fresh"
+set_updated_at "$(ago 40)"
+out="$("$TARGET_SCRIPT" check --repo owner/repo --number 6513 --label loom:reviewing)"
+assert_eq "unknown" "$(field "$out" CLAIM_STATE)" \
+    "T33b: stale-bounded-fallback plus a marker and an idle live item reads unknown"
+
+# --- T34: #15044 the live-lease downgrade is preserved ------------------------
+# A live lease downgrades stale to fresh FIRST; the #15044 guard then never
+# fires (it only consults stale*), so an idle live item cannot flip it to
+# unknown through the back door.
+reset
+CLAIM_TS="$(ago 90)"
+set_claim loom:reviewing "$CLAIM_TS"
+set_updated_at "$(ago 40)"
+jq -n --arg t "$(ago 60)" --arg m "<!-- loom:reclaim claim=$CLAIM_TS -->" \
+    '[{id:801,created_at:$t,body:("Judge: reclaiming stale claim.\n" + $m)}]' | set_comments
+out="$(LOOM_TEST_LEASE_STATE=held-peer "$TARGET_SCRIPT" check --repo owner/repo --number 6513 --label loom:reviewing)"
+assert_eq "fresh" "$(field "$out" CLAIM_STATE)" \
+    "T34: a live PR lease still downgrades stale to fresh — the reclaim guard does not override it"
 
 # --- Summary ---
 echo ""

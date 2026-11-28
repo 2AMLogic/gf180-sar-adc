@@ -10,7 +10,9 @@
 # open a duplicate (clear message, non-zero exit, no push, no branch
 # deletion). `Part of #N` / `Contributes to #N` partial-increment references
 # never match the closing-keyword pattern, so they are exempt by
-# construction.
+# construction. Quoted evidence (#15404) -- a body citing another PR's
+# closing line in inline code or double quotes -- supplies no candidate: the
+# extractor filters it before applying the selection rules.
 #
 # Strategy: run create-pr.sh directly as a subprocess (like
 # test-merge-pr-help.sh) with a stub `gh` on PATH and LOOM_FORGE_TYPE=github
@@ -156,6 +158,10 @@ assert_contains "$OUTPUT" "#100" "Error message names the target issue"
 assert_contains "$OUTPUT" "#555" "Error message names the superseding PR"
 assert_contains "$OUTPUT" "already CLOSED" "Error message states the issue is already closed"
 assert_contains "$OUTPUT" "do NOT" "Error message advises against pushing further / deleting the branch"
+assert_contains "$OUTPUT" "keep the branch" "Error message tells the builder to keep the branch (#15404)"
+assert_contains "$OUTPUT" "Inspect the PR body" "Error message tells the builder to inspect the matched reference (#15404)"
+assert_contains "$OUTPUT" "correct that reference" "Error message offers correct-and-retry recovery (#15404)"
+assert_not_contains "$OUTPUT" "discard" "Error message no longer suggests discarding the branch's work (#15404)"
 assert_eq "0" "$(created_count)" "No PR was created"
 
 # T2: target issue is still OPEN -> proceeds to create.
@@ -262,6 +268,299 @@ echo "888" > "$STUB_DIR/issue-111-number.txt"
 echo "feature/issue-999" > "$STUB_DIR/pr-888-head.txt"
 run_create_pr --title "fix: something" --body "Closing #111" --head "feature/issue-111"
 assert_eq "1" "$EXIT_CODE" "Closing #111 (closed) -> refused"
+
+# T13 (#13939): past-tense narration BEFORE the real closing reference must
+# not win `head -1` -- `PR #605 fixed #597` describes history, it does not
+# close #597. With #597 CLOSED and #622 OPEN the check fires on #622 only;
+# the pre-#13939 pattern refused this body as 'target #597 CLOSED by #605'.
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-597-state.txt"
+echo "605" > "$STUB_DIR/issue-597-number.txt"
+echo "https://github.com/owner/repo/pull/605" > "$STUB_DIR/issue-597-url.txt"
+echo "OPEN" > "$STUB_DIR/issue-622-state.txt"
+run_create_pr --title "fix: something" --body "PR #605 fixed #597, which unblocked this.
+
+Closes #622" --head "feature/issue-622"
+assert_eq "0" "$EXIT_CODE" "Narration 'PR #605 fixed #597' + Closes #622 (open) -> exits 0"
+assert_eq "1" "$(created_count)" "Narration body -> PR is created (target is #622, not #597)"
+assert_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 622" "Freshness check targets #622"
+assert_not_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 597" "Narrated #597 is never looked up"
+
+# T14 (#13939): `Closes #N` as the very FIRST token of the body is still
+# detected even when narration follows it later in the body.
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-113-state.txt"
+echo "605" > "$STUB_DIR/issue-113-number.txt"
+run_create_pr --title "fix: something" --body "Closes #113
+
+PR #605 fixed #597 earlier; this finishes the remainder." --head "feature/issue-113"
+assert_eq "1" "$EXIT_CODE" "Closes #113 as first token (closed) -> still refused"
+
+# T15 (#13939): narration ONLY, no closing keyword -> no check fires at all.
+reset_fixtures
+run_create_pr --title "fix: something" --body "PR #605 fixed #597, and this builds on it." --head "feature/misc"
+assert_eq "0" "$EXIT_CODE" "Narration-only body -> no supersede check, exits 0"
+assert_eq "1" "$(created_count)" "Narration-only body -> PR is still created"
+assert_not_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view" "Narration-only body -> no issue lookup"
+
+# T16 (#13939): lowercase keywords throughout.
+reset_fixtures
+echo "OPEN" > "$STUB_DIR/issue-114-state.txt"
+run_create_pr --title "fix: something" --body "PR #605 fixed #597 earlier.
+
+closes #114" --head "feature/issue-114"
+assert_eq "0" "$EXIT_CODE" "lowercase narration + closes #114 (open) -> exits 0"
+assert_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 114" "lowercase closes #114 IS the checked target"
+
+# T17 (#13939): `Fixes #N` at line start after a blank line still matches.
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-115-state.txt"
+echo "888" > "$STUB_DIR/issue-115-number.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-888-head.txt"
+run_create_pr --title "fix: something" --body "Background first.
+
+Fixes #115" --head "feature/issue-115"
+assert_eq "1" "$EXIT_CODE" "Fixes #115 at line start after blank line (closed) -> refused"
+
+# T18 (#14157): a closing keyword indented by exactly ONE space is still
+# extracted. The #13939 alternation's `^` branch required column 0 and its
+# prose branch needed a non-whitespace guard char, so a one-space prefix
+# satisfied no branch -- extraction came back empty and this check was
+# silently skipped (fail-open, #14157).
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-116-state.txt"
+echo "888" > "$STUB_DIR/issue-116-number.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-888-head.txt"
+run_create_pr --title "fix: something" --body "Scope note.
+
+ Closes #116" --head "feature/issue-116"
+assert_eq "1" "$EXIT_CODE" "One-space-indented ' Closes #116' (closed) -> refused"
+assert_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 116" "One-space-indented closing keyword IS the checked target"
+
+# T19 (#14157): same false-negative class for exactly one TAB of indent.
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-117-state.txt"
+echo "888" > "$STUB_DIR/issue-117-number.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-888-head.txt"
+run_create_pr --title "fix: something" --body $'Notes.\n\n\tCloses #117' --head "feature/issue-117"
+assert_eq "1" "$EXIT_CODE" "One-tab-indented 'Closes #117' (closed) -> refused"
+
+# T20 (#14157): a whitespace-delimited token ending in a digit before the
+# keyword (`Phase 3`) must not suppress extraction. The #13939 prose guard
+# rejected ANY digit before the whitespace run, but the narration signature
+# it exists to catch is specifically a `#N` token -- GitHub itself would
+# close #118 from `Phase 3 fixes #118`.
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-118-state.txt"
+echo "888" > "$STUB_DIR/issue-118-number.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-888-head.txt"
+run_create_pr --title "fix: something" --body "Phase 3 fixes #118" --head "feature/issue-118"
+assert_eq "1" "$EXIT_CODE" "'Phase 3 fixes #118' (closed) -> refused"
+assert_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 118" "'Phase 3 fixes' targets #118, not empty"
+
+# T21 (#14157): multi-run token (`v1.2`) ending in a digit -- the extraction
+# must take the LAST number run of the match (the trailing `#N`), never the
+# token's own digits.
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-119-state.txt"
+echo "888" > "$STUB_DIR/issue-119-number.txt"
+echo "https://github.com/owner/repo/pull/888" > "$STUB_DIR/issue-119-url.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-888-head.txt"
+run_create_pr --title "fix: something" --body "Upgrades dep v1.2 fixes #119" --head "feature/issue-119"
+assert_eq "1" "$EXIT_CODE" "'v1.2 fixes #119' (closed) -> refused"
+assert_contains "$OUTPUT" "#119" "Refusal names #119 (the trailing #N), not the token digits"
+
+# T22 (#14157): `ADR-0015` -- a digit run inside a longer token.
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-120-state.txt"
+echo "888" > "$STUB_DIR/issue-120-number.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-888-head.txt"
+run_create_pr --title "fix: something" --body "ADR-0015 fixes #120" --head "feature/issue-120"
+assert_eq "1" "$EXIT_CODE" "'ADR-0015 fixes #120' (closed) -> refused"
+
+# T23 (#14157): `Step 2 closes` -- same digit-token class, lowercase, with
+# the two-space+ guard shape excluded (the token's digit is the blocker).
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-121-state.txt"
+echo "888" > "$STUB_DIR/issue-121-number.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-888-head.txt"
+run_create_pr --title "fix: something" --body "Step 2 closes #121" --head "feature/issue-121"
+assert_eq "1" "$EXIT_CODE" "'Step 2 closes #121' (closed) -> refused"
+
+# T24 (#14157): narration is STILL rejected in a digit-token body -- a
+# `#`-containing reference token (`PR #605 fixed #597`) matches nothing,
+# so the real digit-token closing keyword later in the body wins.
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-597-state.txt"
+echo "OPEN" > "$STUB_DIR/issue-122-state.txt"
+run_create_pr --title "fix: something" --body "PR #605 fixed #597.
+
+Phase 3 fixes #122" --head "feature/issue-122"
+assert_eq "0" "$EXIT_CODE" "Narrated #597 (closed) + 'Phase 3 fixes #122' (open) -> exits 0"
+assert_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 122" "Digit-token body checks #122"
+assert_not_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 597" "Narrated #597 still never looked up"
+
+# T25 (#14255): a parenthesised narration (`PR #605 (which fixes #597)`)
+# earlier in the body must not outrank the declared trailing `Closes #623` --
+# with #597 CLOSED and #623 OPEN the check fires on #623 only (last-match).
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-597-state.txt"
+echo "605" > "$STUB_DIR/issue-597-number.txt"
+echo "OPEN" > "$STUB_DIR/issue-623-state.txt"
+run_create_pr --title "fix: something" --body "Builds on PR #605 (which fixes #597).
+
+Closes #623" --head "feature/issue-623"
+assert_eq "0" "$EXIT_CODE" "Parenthesised narration + Closes #623 (open) -> exits 0"
+assert_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 623" "Freshness check targets the declared #623"
+assert_not_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 597" "Narrated #597 is never looked up"
+
+# T26 (#14255): `Closes #A` ... `Part of #B` -> only the closing reference is
+# checked, in either order (the partial reference never reaches this check).
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-116-state.txt"
+echo "889" > "$STUB_DIR/issue-116-number.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-889-head.txt"
+run_create_pr --title "fix: something" --body "Part of #201
+
+Closes #116" --head "feature/issue-116"
+assert_eq "1" "$EXIT_CODE" "Part of #201 then Closes #116 (closed) -> refused on #116"
+assert_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 116" "Freshness check targets the closing #116"
+
+reset_fixtures
+echo "OPEN" > "$STUB_DIR/issue-117-state.txt"
+run_create_pr --title "fix: something" --body "Closes #117
+
+Part of #202" --head "feature/issue-117"
+assert_eq "0" "$EXIT_CODE" "Closes #117 (open) then Part of #202 -> exits 0"
+assert_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 117" "Freshness check targets the closing #117"
+assert_not_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 202" "Partial #202 is never looked up"
+
+# T27 (#15404): an evidence-table cell citing another PR's closing line in
+# inline code is quoted evidence, not a declaration. With the real closing
+# footer `Closes #1378` the freshness check targets the declared #1378; the
+# cited (closed) #396 is never consulted.
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-396-state.txt"
+echo "414" > "$STUB_DIR/issue-396-number.txt"
+echo "https://github.com/owner/repo/pull/414" > "$STUB_DIR/issue-396-url.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-414-head.txt"
+echo "OPEN" > "$STUB_DIR/issue-1378-state.txt"
+run_create_pr --title "fix: something" --body '| Evidence | PR #414 body says `Closes #396`. |
+| --- | --- |
+
+Closes #1378' --head "feature/issue-1378"
+assert_eq "0" "$EXIT_CODE" "Quoted citation + Closes #1378 (open) -> exits 0"
+assert_eq "1" "$(created_count)" "Quoted citation + closing footer -> PR is created"
+assert_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 1378" "Freshness check targets the declared #1378"
+assert_not_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 396" "Cited #396 is never looked up"
+
+# T28 (#15404): same citation with a PARTIAL footer -- the citation supplies
+# no closing candidate, so the freshness check must never consult the closed
+# #396 (pre-fix the quoted citation won and creation was refused on it).
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-396-state.txt"
+echo "414" > "$STUB_DIR/issue-396-number.txt"
+echo "https://github.com/owner/repo/pull/414" > "$STUB_DIR/issue-396-url.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-414-head.txt"
+run_create_pr --title "feat: slice" --body '| Evidence | PR #414 body says `Closes #396`. |
+| --- | --- |
+
+Part of #1378' --head "feature/issue-1378"
+assert_eq "0" "$EXIT_CODE" "Quoted citation + Part of #1378 -> no closing candidate, exits 0"
+assert_eq "1" "$(created_count)" "Quoted citation + partial footer -> PR is created"
+assert_not_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 396" "Cited #396 is never looked up (partial footer)"
+
+# T29 (#15404): the citation alone (no footer of any kind) supplies no
+# reference at all -- no lookup, no refusal, PR created.
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-396-state.txt"
+echo "414" > "$STUB_DIR/issue-396-number.txt"
+echo "https://github.com/owner/repo/pull/414" > "$STUB_DIR/issue-396-url.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-414-head.txt"
+run_create_pr --title "fix: something" --body '| Evidence | PR #414 body says `Closes #396`. |
+| --- | --- |' --head "feature/issue-1378"
+assert_eq "0" "$EXIT_CODE" "Quoted citation alone -> no reference, exits 0"
+assert_eq "1" "$(created_count)" "Quoted citation alone -> PR is created"
+assert_not_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 396" "Quoted citation alone -> no issue lookup"
+
+# T30 (#15404): past-tense quoted spelling (`closed #396`) -- same class.
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-396-state.txt"
+echo "414" > "$STUB_DIR/issue-396-number.txt"
+echo "https://github.com/owner/repo/pull/414" > "$STUB_DIR/issue-396-url.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-414-head.txt"
+run_create_pr --title "feat: slice" --body '| Evidence | PR #414 body says `closed #396`. |
+| --- | --- |
+
+Part of #1378' --head "feature/issue-1378"
+assert_eq "0" "$EXIT_CODE" "Quoted past-tense citation + Part of #1378 -> exits 0"
+assert_eq "1" "$(created_count)" "Quoted past-tense citation + partial footer -> PR is created"
+assert_not_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 396" "Quoted past-tense citation -> no freshness lookup"
+
+# T31 (#15404): a double-quoted citation ("Closes #396") -- the other quoted
+# shape from the original report -- is filtered the same way.
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-396-state.txt"
+echo "414" > "$STUB_DIR/issue-396-number.txt"
+echo "https://github.com/owner/repo/pull/414" > "$STUB_DIR/issue-396-url.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-414-head.txt"
+run_create_pr --title "fix: something" --body '| Evidence | PR #414 body says "Closes #396". |
+| --- | --- |' --head "feature/issue-1378"
+assert_eq "0" "$EXIT_CODE" "Double-quoted citation alone -> exits 0"
+assert_eq "1" "$(created_count)" "Double-quoted citation alone -> PR is created"
+assert_not_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 396" "Double-quoted citation -> no issue lookup"
+
+# T32 (#15404, judge round 1): a double-backtick span (``Closes #396``) is one
+# span -- matching backtick runs of the same length -- so the cited #396 is
+# never exposed, with a partial footer.
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-396-state.txt"
+echo "414" > "$STUB_DIR/issue-396-number.txt"
+echo "https://github.com/owner/repo/pull/414" > "$STUB_DIR/issue-396-url.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-414-head.txt"
+run_create_pr --title "feat: slice" --body '| Evidence | PR #414 says ``Closes #396``. |
+
+Part of #1378' --head "feature/issue-1378"
+assert_eq "0" "$EXIT_CODE" "Double-backtick citation + Part of #1378 -> exits 0"
+assert_eq "1" "$(created_count)" "Double-backtick citation -> PR is created"
+assert_not_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 396" "Double-backtick citation -> #396 never looked up"
+
+# T33 (#15404, judge round 1): deleting a span must not splice a keyword onto
+# a number across the gap (`closes `socket` #396`), for backtick and quote spans.
+for shape in 'The worker closes `socket` #396 after each request.' 'The worker closes "socket" #396 after each request.'; do
+reset_fixtures
+echo "CLOSED" > "$STUB_DIR/issue-396-state.txt"
+echo "414" > "$STUB_DIR/issue-396-number.txt"
+echo "https://github.com/owner/repo/pull/414" > "$STUB_DIR/issue-396-url.txt"
+echo "feature/issue-999" > "$STUB_DIR/pr-414-head.txt"
+  run_create_pr --title "feat: slice" --body "$shape
+
+Part of #1378" --head "feature/issue-1378"
+  assert_eq "0" "$EXIT_CODE" "Span between keyword and number ($shape) -> exits 0"
+  assert_eq "1" "$(created_count)" "Span between keyword and number -> PR is created"
+  assert_not_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 396" "Span between keyword and number -> #396 never looked up"
+done
+
+# Verify freshness lookups directly, including the no-closing-reference case.
+check_freshness_target() {
+  local description="$1" body="$2" expected="$3"
+  reset_fixtures
+  echo "CLOSED" > "$STUB_DIR/issue-396-state.txt"
+  echo "OPEN" > "$STUB_DIR/issue-1378-state.txt"
+  run_create_pr --title "fix: something" --body "$body" --head "feature/issue-1378"
+  assert_eq "$expected" "$(awk '/^issue view / {print $3}' "$STUB_DIR/gh-calls.log")" "$description: freshness lookup"
+  assert_eq "0" "$EXIT_CODE" "$description: exit status"
+  assert_eq "1" "$(created_count)" "$description: created PR"
+}
+
+for citation in $'Reproduction:\n```\nCloses #396\n```' "| Evidence | PR #414 says 'Closes #396'. |"; do
+  check_freshness_target "$citation alone" "$citation" ""
+  check_freshness_target "$citation with partial footer" "$citation"$'\nPart of #1378' ""
+  check_freshness_target "$citation with closing footer" "$citation"$'\nCloses #1378' 1378
+done
+
+check_freshness_target "word-internal apostrophes" "The worker's patch closes #1378 in today's build." 1378
+check_freshness_target "tilde fence with longer closer" $'  ~~~sh\nCloses #396\n  ~~~~  \nFixes #1378' 1378
 
 # --- Summary ---
 echo ""
