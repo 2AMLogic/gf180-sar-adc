@@ -6,8 +6,20 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-28
+
+- **PR #1136**: fix(sim): reuse the shared corner-table reader in DR-0014 deltas
+- **Issue #1130** (closed): signoff: re-run the unclosed-file warning count on main once #1126 merges
+- **Issue #1127** (closed): Reuse the shared corner-table reader in DR-0014 requalification
+
 ### 2026-11-27
 
+- **PR #1131**: fix(signoff): wrap run_signoff.py's bare open() calls in with blocks
+- **PR #1126**: refactor(signoff): scope each --selftest overlay to its own temporary directory
+- **PR #1124**: docs(adc-top): correct generator prose on Nwell taps and the comparator's substrate tie
+- **Issue #1128** (closed): signoff: close the file handle in run_signoff.py's json.load(open(...)) sites
+- **Issue #1121** (closed): Release each signoff self-test scratch directory after its case finishes
+- **Issue #1119** (closed): Generator prose still says the stand-alone comparator keeps untapped bodies and unnamed PMOS-body nets
 - **PR #1125**: docs: drop stale stand-alone comparator claim from klayout-tools#555 known-limitations row
 - **Issue #1123** (closed): README known-limitations row still says the stand-alone comparator's body is unnamed
 - **PR #1118**: fix(layout): drop stale device narrative from leaf-cell LVS reference headers
