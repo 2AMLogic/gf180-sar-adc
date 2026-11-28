@@ -1058,28 +1058,19 @@ def to_point_results(
         if timed_out:
             # klt's engine writes its own transcript (`ngspice -o`), so a
             # point it killed on timeout still reports a `log` artifact
-            # carrying the partial output (measured; issue #879). Copy it and
-            # prepend the status line so `TIMEOUT after <n>s` stays the
-            # greppable first line, ahead of the partial transcript. When no
-            # log artifact came back, say so instead of leaving a stub that
-            # reads as a transcript in the record's log column.
-            has_log = _copy_artifact(artifacts.get("log"), log_path)
-            if has_log:
-                partial = log_path.read_text(errors="replace")
-                log_path.write_text(f"TIMEOUT after {timeout_s}s\n" + partial)
-                message = f"ngspice timed out after {timeout_s}s"
-            else:
-                message = (
-                    f"ngspice timed out after {timeout_s}s; no transcript retained: "
-                    "the runner returns no log for a timed-out point"
-                )
-                log_path.write_text(
-                    f"TIMEOUT after {timeout_s}s\n"
-                    "NO TRANSCRIPT: the runner returns no log for a timed-out point\n"
-                )
-            results.append(PointResult(
-                point=point, status="error", seconds=seconds, deck=deck, log=log_name,
-                message=message,
+            # carrying the partial output (measured; issue #879). Read it in
+            # place; `TIMEOUT after <n>s` stays the greppable first line,
+            # ahead of the partial transcript. When no log artifact came
+            # back, say so instead of leaving a stub that reads as a
+            # transcript in the record's log column.
+            log_src = Path(artifacts["log"]) if artifacts.get("log") else None
+            partial = (
+                log_src.read_text(errors="replace")
+                if log_src is not None and log_src.is_file() else None
+            )
+            results.append(runner.timeout_result(
+                point, timeout_s, seconds, deck, log_name, log_path, partial,
+                missing_reason="the runner returns no log for a timed-out point",
             ))
             continue
 
@@ -1282,9 +1273,7 @@ def execution_summary(
             "error": outcome.error,
         })
     return {
-        "backend": next(
-            (b.get("provider") for b in fleet_blocks(remote) if b.get("provider")), None
-        ) or requested_backend or "klt-default",
+        "backend": _remote_provider(remote) or requested_backend or "klt-default",
         "requested_backend": requested_backend or "(KLT_SIM_BACKEND)",
         "submission": (
             "klt sim --batch-set" if requested_backend == "batch" else "klt sim per request"
@@ -1346,6 +1335,11 @@ def fleet_blocks(remote) -> list[dict]:
     return [remote] if remote else []
 
 
+def _remote_provider(remote) -> str | None:
+    """The provider behind a report's ``environment.remote``, if it named one."""
+    return next((b.get("provider") for b in fleet_blocks(remote) if b.get("provider")), None)
+
+
 def _fleet_drifts_one(report: dict, pins: dict) -> list:
     env = report.get("environment") or {}
     prov = report.get("provenance") or {}
@@ -1376,10 +1370,7 @@ def ngspice_label(reports, identity=None, *, engine_version: str | None = None) 
     first = _identity_report(reports, identity)
     env = first.get("environment") or {}
     version = engine_version or env.get("engine_version") or "unknown"
-    where = next(
-        (b.get("provider") for b in fleet_blocks(env.get("remote")) if b.get("provider")),
-        None,
-    ) or "klt sim"
+    where = _remote_provider(env.get("remote")) or "klt sim"
     jobs = [
         block.get("job_id")
         for r in reports
@@ -1513,7 +1504,7 @@ class DeckRequest:
     request_sha256: str
 
     def deck_sha256(self, corner_id: str) -> str:
-        return _sha256_raw(self.decks[corner_id].encode("utf-8"))
+        return _sha256(self.decks[corner_id])
 
 
 def build_deck_request(
@@ -1741,19 +1732,9 @@ def deck_results(
         transcript = _unit_transcript(outdir, unit)
 
         if unit.get("timed_out") or unit.get("status") == "timeout":
-            # Same wording as a local timeout (runner.run_point) and as the
-            # corner path, so the record's log column reads alike.
-            if transcript is None:
-                transcript = ("NO TRANSCRIPT: the runner returns no streams for a "
-                              "timed-out unit\n")
-                message = (f"ngspice timed out after {timeout_s}s; no transcript retained: "
-                           "the runner returns no streams for a timed-out unit")
-            else:
-                message = f"ngspice timed out after {timeout_s}s"
-            log_path.write_text(f"TIMEOUT after {timeout_s}s\n" + transcript)
-            results.append(PointResult(
-                point=point, status="error", seconds=seconds, deck=deck_name,
-                log=log_name, message=message,
+            results.append(runner.timeout_result(
+                point, timeout_s, seconds, deck_name, log_name, log_path, transcript,
+                missing_reason="the runner returns no streams for a timed-out unit",
             ))
             continue
         if transcript is None:
@@ -1826,9 +1807,7 @@ def deck_execution_summary(
     versions = _deck_engine_versions(report, results)
     return {
         "transport": "decks",
-        "backend": next(
-            (b.get("provider") for b in fleet_blocks(remote) if b.get("provider")), None
-        ) or requested_backend or "klt-default",
+        "backend": _remote_provider(remote) or requested_backend or "klt-default",
         "requested_backend": requested_backend or "(KLT_SIM_BACKEND)",
         "submission": "klt sim deck-list request, one deck per PVT point",
         "klt_status": str(report.get("status")),

@@ -431,18 +431,44 @@ def run_point(
         raise NgspiceMissing(str(exc)) from exc
     except subprocess.TimeoutExpired as exc:
         elapsed = time.monotonic() - started
-        log_path.write_text(f"TIMEOUT after {timeout_s}s\n" + _partial_output(exc))
-        return PointResult(
-            point=point,
-            status="error",
-            seconds=elapsed,
-            deck=deck_path.name,
-            log=log_path.name,
-            message=f"ngspice timed out after {timeout_s}s",
-        )
+        return timeout_result(point, timeout_s, elapsed, deck_path.name, log_path.name,
+                              log_path, _partial_output(exc))
     elapsed = time.monotonic() - started
     return score_output(tb, point, output, returncode, elapsed,
                         deck_path.name, log_path.name, log_path)
+
+
+def timeout_result(
+    point: PvtPoint,
+    timeout_s: int,
+    elapsed: float,
+    deck: str,
+    log: str,
+    log_path: Path,
+    transcript: str | None,
+    *,
+    missing_reason: str = "",
+) -> PointResult:
+    """File one timed-out point as ``log_path`` and return its ``error`` result.
+
+    The timeout counterpart of :func:`score_output`: the one recording rule
+    for a timed-out point, shared by the local runner (:func:`run_point`) and
+    by both ``klt sim`` paths of :mod:`harness.batch` -- the corner set and
+    deck transport -- so the record's log column reads alike wherever the
+    point ran. ``TIMEOUT after <n>s`` is the greppable first line, ahead of
+    the partial ``transcript``. ``None`` means no transcript came back: the
+    log then carries ``NO TRANSCRIPT: <reason>`` instead of a stub that
+    reads as a transcript.
+    """
+    if transcript is None:
+        transcript = f"NO TRANSCRIPT: {missing_reason}\n"
+        message = f"ngspice timed out after {timeout_s}s; no transcript retained: {missing_reason}"
+    else:
+        message = f"ngspice timed out after {timeout_s}s"
+    log_path.write_text(f"TIMEOUT after {timeout_s}s\n" + transcript)
+    return PointResult(
+        point=point, status="error", seconds=elapsed, deck=deck, log=log, message=message,
+    )
 
 
 def score_output(
