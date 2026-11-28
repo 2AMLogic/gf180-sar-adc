@@ -10,7 +10,6 @@ Import-only: nothing runs at import time.
 from __future__ import annotations
 
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -18,8 +17,6 @@ import spef_audit as audit
 import sta_sar_ctrl_postroute as base
 import sta_toolchain_pin as toolchain_pin
 from flow_env import (
-    CELL_LIBRARY,
-    CLOCK_PERIOD_NS,
     CLOCK_PORT,
     CORNERS,
     LIB_TAG,
@@ -31,6 +28,7 @@ from flow_env import (
     liberty_path,
     run_klt_json,
     sha256,
+    sta_request,
     working_tree_dirty,
 )
 
@@ -111,17 +109,7 @@ def build_request(corner: str, spef: Path | None) -> dict:
     """Same request as the baseline mode, but with paths relative to the
     request file's own directory (`docs/cli/sta.md`), so the committed JSON
     re-runs from any checkout rather than naming this host's paths."""
-    req = {
-        "schema": "klt.sta.request/1",
-        "def": os.path.relpath(ROUTED_DEF, REPORTS_DIR),
-        "hdl_toplevel": TOP,
-        "pdk": {"cell_library": CELL_LIBRARY, "corner": corner},
-        "constraints": {"clock_port": CLOCK_PORT, "clock_period_ns": CLOCK_PERIOD_NS},
-        "geometry_source": "routed",
-    }
-    if spef is not None:
-        req["spef"] = os.path.relpath(spef, REPORTS_DIR)
-    return req
+    return sta_request(ROUTED_DEF, corner=corner, request_dir=REPORTS_DIR, spef=spef)
 
 
 def engine_evidence(response: dict) -> tuple[str | None, str]:

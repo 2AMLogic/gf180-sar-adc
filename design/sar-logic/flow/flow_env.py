@@ -41,6 +41,7 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 # `layout/` is a plain directory, so its shared `klt_env` helper module has to
@@ -278,3 +279,86 @@ def verdict_table(results: list[CornerResult], middle_columns: list[tuple[str, o
         ]
         rows.append("| " + " | ".join(cells) + " |")
     return "\n".join(rows)
+
+
+# --- `klt sta` request, corner verdict and slack cell (issue #1133) ---------
+# Previously hand-built in four functions across three post-route STA drivers
+# (`sta_sar_ctrl_postroute.build_sta_request` / `.build_multicorner_request`,
+# `sta_postroute_spef.build_request`, `sdf_sar_ctrl.build_request`), each
+# retyping the same `klt.sta.request/1` dict, and decided by two predicates
+# that had already drifted apart on a slack `klt sta` does not report:
+# `_corner_ok` indexed it directly (TypeError on None, KeyError on an absent
+# key) while `corner_ok` guarded it. One builder and one predicate, so a
+# schema or clock-budget change lands here and an unreported slack is a FAIL
+# that renders as `n/a` in every record.
+
+
+def sta_request(
+    def_path: Path,
+    *,
+    corner: str | None = None,
+    corners: Sequence[str] | None = None,
+    request_dir: Path | None = None,
+    spef: Path | None = None,
+    sdf: bool = False,
+) -> dict:
+    """A `klt.sta.request/1` for the routed `sar_ctrl_a` DEF at `def_path`.
+
+    `corner` emits the single-corner ``pdk: {cell_library, corner}`` form and
+    `corners` the ``pdk.corners`` sweep; with neither, every `CORNERS` entry
+    is swept. Passing both is a `ValueError`. With `request_dir` -- the
+    directory the request file is written to, which is what `klt sta`
+    resolves `def` and `spef` against -- both paths are written relative to
+    it, so the committed JSON re-runs from any checkout; without it, they are
+    written as absolute paths. `spef` annotates with that SPEF; `sdf` asks
+    `klt sta` to write an SDF per corner.
+    """
+    if corner is not None and corners is not None:
+        raise ValueError("sta_request(): pass `corner` or `corners`, not both")
+    if corner is not None:
+        pdk = {"cell_library": CELL_LIBRARY, "corner": corner}
+    else:
+        swept = [c for c, _ in CORNERS] if corners is None else list(corners)
+        pdk = {"cell_library": CELL_LIBRARY, "corners": swept}
+
+    def _path(path: Path) -> str:
+        return str(path) if request_dir is None else os.path.relpath(path, request_dir)
+
+    request = {
+        "schema": "klt.sta.request/1",
+        "def": _path(def_path),
+        "hdl_toplevel": TOP,
+        "pdk": pdk,
+        "constraints": {"clock_port": CLOCK_PORT, "clock_period_ns": CLOCK_PERIOD_NS},
+        "geometry_source": "routed",
+    }
+    if spef is not None:
+        request["spef"] = _path(spef)
+    if sdf:
+        request["sdf"] = True
+    return request
+
+
+def corner_timing_ok(entry: dict, *, require_spef_annotation: bool = False) -> bool:
+    """Whether one `klt sta` corner entry meets timing: `constrained`, with a
+    reported, non-negative setup and hold slack.
+
+    A slack `klt sta` did not report (`None`, or the key absent -- an
+    `unconstrained` corner has none) is a FAIL, never a verdict error. With
+    `require_spef_annotation` the corner must also report
+    ``spef_annotation.annotation_complete: true`` (the SDF driver's rule).
+    """
+    setup, hold = entry.get("worst_slack_ns"), entry.get("worst_hold_slack_ns")
+    if entry.get("timing_status") != "constrained" or setup is None or hold is None:
+        return False
+    annotation = (entry.get("spef_annotation") or {}).get("annotation_complete")
+    if require_spef_annotation and annotation is not True:
+        return False
+    return setup >= 0 and hold >= 0
+
+
+def fmt_slack(value: object) -> str:
+    """A setup or hold slack for an evidence-record table cell: ``+1.1464``,
+    as every record has rendered it, or ``n/a`` when `klt sta` reported none
+    (`None` -- also what an absent key reads as through `dict.get`)."""
+    return "n/a" if value is None else f"{value:+.4f}"
