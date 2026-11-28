@@ -8,6 +8,7 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-28
 
+- **PR #1039**: fix: require two parsed draws for the Monte Carlo null control
 - **PR #1152**: refactor(flow): share one append-only record writer across drivers
 - **PR #1151**: refactor(signoff): share compound-citation traversal and check its shape from both sides
 - **PR #1150**: refactor(layout): share tap/tie strip drawing in geometry.draw_tap_strip
@@ -18,6 +19,7 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 - **PR #1141**: fix(flow): report unreported STA slack as FAIL instead of crashing
 - **PR #1138**: refactor: share pinned toolchain and case-report writers in klt_env
 - **PR #1120**: fix(layout): drop stale body narrative from block-level LVS reference headers
+- **Issue #1036** (closed): mc_extracted_core: a one-draw null control is vacuous but passes
 - **Issue #1148** (closed): Share append-only record writing and klt sta request/verdict helpers in design/sar-logic/flow/flow_env.py
 - **Issue #1149** (closed): Share compound-citation traversal, structure checks, and JSON I/O helpers in signoff/run_signoff.py
 - **Issue #1143** (closed): check-main-clean.sh exits 3 on the untracked token-pool file .loom/account-ranking.codex (loom-managed .gitignore block lacks the pattern)
