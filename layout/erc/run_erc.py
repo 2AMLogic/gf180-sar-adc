@@ -70,7 +70,6 @@ from __future__ import annotations
 
 import json
 import os
-import platform
 import sys
 import time
 
@@ -95,15 +94,16 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     EXIT_TOOLING,
     ToolingError,
     author_line,
-    git,
     latest_record,
     load_manifest,
+    pinned_toolchain_record,
     record_id,
     report_runner_parser,
     reserve_record_slot,
     resolve_klt as _resolve_klt,
     run_klt_report,
     sha256,
+    write_case_reports,
     write_record_text,
 )
 
@@ -329,19 +329,7 @@ def write_record(
     report_dir = reserve_record_slot(rec_id, REPORTS_DIR, RECORDS_DIR)
     record_path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
 
-    for result in results:
-        base = os.path.join(report_dir, result["name"])
-        payload = dict(result["report"])
-        payload["_klt_exit_code"] = result["exit_code"]
-        with open(f"{base}.erc.json", "w", encoding="utf-8") as fh:
-            json.dump(payload, fh, indent=2)
-            fh.write("\n")
-        with open(f"{base}.erc.txt", "w", encoding="utf-8") as fh:
-            fh.write(result["text"])
-
-    with open(os.path.join(report_dir, "toolchain.json"), "w", encoding="utf-8") as fh:
-        json.dump(toolchain, fh, indent=2)
-        fh.write("\n")
+    write_case_reports(report_dir, "erc", results, toolchain, stamp_exit_code=True)
 
     supply = next(r for r in results if r["name"] == "adc_block.supply")
     lines = [
@@ -521,20 +509,9 @@ def main() -> int:
                 "leave a report describing a GDS this repo no longer holds."
             )
 
-        toolchain = {
-            "klt_version": identity.get("version", "unknown"),
-            "klt_git_commit": identity.get("git_commit", "unknown"),
-            "klt_install": pin["klt_install"],
-            "klt_path": os.path.realpath(klt),
-            "klayout_package": identity.get("klayout_version", "unknown"),
-            "python": platform.python_version(),
-            "platform": f"{platform.system()} {platform.machine()}",
-        }
-        # The two git fields only feed the record writer, so --check (which
-        # writes no record) skips the two `git` launches.
-        if not args.check:
-            toolchain["repo_git_sha"] = git(REPO_ROOT, "rev-parse", "HEAD") or "unknown"
-            toolchain["repo_dirty"] = bool(git(REPO_ROOT, "status", "--porcelain"))
+        toolchain = (
+            None if args.check else pinned_toolchain_record(klt, pin, identity, REPO_ROOT)
+        )
 
         print(f"layout: {layout_rel}   klt: {identity.get('version', 'unknown')}")
         results = []

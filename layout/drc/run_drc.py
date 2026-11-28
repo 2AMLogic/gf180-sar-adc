@@ -107,6 +107,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     sha256,
     toolchain_record,
     verify_generators,
+    write_case_reports,
     write_record_text,
 )
 
@@ -188,17 +189,7 @@ def write_record(
     report_dir = reserve_record_slot(rec_id, REPORTS_DIR, RECORDS_DIR)
     record_path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
 
-    for result in results:
-        base = os.path.join(report_dir, result["name"])
-        with open(f"{base}.drc.json", "w", encoding="utf-8") as fh:
-            json.dump(result["report"], fh, indent=2)
-            fh.write("\n")
-        with open(f"{base}.drc.txt", "w", encoding="utf-8") as fh:
-            fh.write(result["text"])
-
-    with open(os.path.join(report_dir, "toolchain.json"), "w", encoding="utf-8") as fh:
-        json.dump(toolchain, fh, indent=2)
-        fh.write("\n")
+    write_case_reports(report_dir, "drc", results, toolchain)
 
     lines = [
         f"# DRC record {rec_id}",

@@ -41,6 +41,7 @@ import ast
 import hashlib
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -518,6 +519,50 @@ class SignoffRunnerTests(unittest.TestCase):
                 )
                 self.assertEqual(record.call_args.args[-1], "klt 1.2.3")
 
+    def test_erc_and_power_build_their_toolchain_only_when_minting(self):
+        """The pinned-build provenance dict (#1129) is built from exactly the
+        runner's resolved inputs, and not at all under `--check`: it launches
+        two `git` processes a run that writes no record has no use for."""
+        identity = {"git_commit": "abc1234", "version": "1.2.3"}
+        for name in ("erc", "power"):
+            runner = self.runners[name]
+            for argv in ([], ["--check"]):
+                with (
+                    self.subTest(runner=name, argv=argv),
+                    mock.patch.object(sys, "argv", [name, *argv]),
+                    mock.patch.object(
+                        runner, "resolve_klt",
+                        return_value=("/nonexistent/klt", identity),
+                    ),
+                    mock.patch.object(
+                        runner, "pinned_toolchain_record", side_effect=StopIteration
+                    ) as record,
+                    mock.patch.object(
+                        runner, "run_case", side_effect=RuntimeError("case loop")
+                    ) as run_case,
+                ):
+                    if argv:
+                        with self.assertRaises(RuntimeError):
+                            runner.main()
+                        record.assert_not_called()
+                    else:
+                        with self.assertRaises(StopIteration):
+                            runner.main()
+                        run_case.assert_not_called()
+                        self.assertEqual(
+                            record.call_args.args,
+                            (
+                                "/nonexistent/klt",
+                                runner.load_manifest(runner.TOOLCHAIN),
+                                identity,
+                                runner.REPO_ROOT,
+                            ),
+                        )
+                        self.assertEqual(
+                            record.call_args.kwargs,
+                            {"include_git_tag": True} if name == "power" else {},
+                        )
+
 
 class ToolchainRecordTests(unittest.TestCase):
     """`toolchain_record` is the one eight-field provenance schema (#999)."""
@@ -565,6 +610,223 @@ class ToolchainRecordTests(unittest.TestCase):
         self.assertEqual(rec["klayout_package"], "not installed")
         self.assertEqual(rec["repo_git_sha"], "unknown")
         self.assertIs(rec["repo_dirty"], False)
+
+
+class PinnedToolchainRecordTests(unittest.TestCase):
+    """`pinned_toolchain_record` is the one pinned-build provenance schema
+    `run_erc.py` (nine fields) and `run_power.py` (ten) stamp (#1129).
+
+    Unlike `toolchain_record` above it, nothing here is probed: the `klt`
+    build is identified by the `identity` its resolver already compared
+    against the pin, so the `klayout` version is read from that rather than
+    from an interpreter probe, and the only processes launched are the two
+    `git` calls that are why `--check` must not call this at all.
+    """
+
+    #: `layout/erc/run_erc.py`'s schema, in record order.
+    KEYS = [
+        "klt_version",
+        "klt_git_commit",
+        "klt_install",
+        "klt_path",
+        "klayout_package",
+        "python",
+        "platform",
+        "repo_git_sha",
+        "repo_dirty",
+    ]
+    #: `layout/power/run_power.py` adds exactly one key, right after the commit.
+    POWER_KEYS = KEYS[:2] + ["klt_git_tag"] + KEYS[2:]
+
+    PIN = {"klt_install": "klayout-tools==0.6.0", "klt_git_commit": "c622e8ad"}
+    IDENTITY = {
+        "version": "0.6.0",
+        "git_commit": "c622e8addb362491664d44ba4d717f354ca88bbd",
+        "git_tag": "v0.6.0",
+        "klayout_version": "0.30.10",
+    }
+
+    def _record(self, identity, *, sha="", status="", **kwargs):
+        if str(LAYOUT_DIR) not in sys.path:
+            sys.path.insert(0, str(LAYOUT_DIR))
+        mod = load_module("klt_env_pinned_toolchain_record", KLT_ENV)
+        with (
+            mock.patch.object(mod, "git", side_effect=[sha, status]),
+            mock.patch.object(
+                mod, "find_klayout_python",
+                side_effect=AssertionError("pinned_toolchain_record probed an interpreter"),
+            ),
+        ):
+            return mod.pinned_toolchain_record("/bin/true", self.PIN, identity, REPO, **kwargs)
+
+    def test_erc_schema_is_nine_keys_and_drops_the_tag(self):
+        """ERC's resolver verifies the commit, not the tag, so an identity
+        that carries one still mints the nine-key record."""
+        rec = self._record(self.IDENTITY, sha="abc", status=" M x")
+        self.assertEqual(list(rec), self.KEYS)
+        self.assertEqual(rec["klt_version"], "0.6.0")
+        self.assertEqual(rec["klt_git_commit"], self.IDENTITY["git_commit"])
+        self.assertEqual(rec["klt_install"], "klayout-tools==0.6.0")
+        self.assertEqual(rec["klt_path"], os.path.realpath("/bin/true"))
+        self.assertEqual(rec["klayout_package"], "0.30.10")
+        self.assertEqual(rec["repo_git_sha"], "abc")
+        self.assertIs(rec["repo_dirty"], True)
+
+    def test_power_schema_inserts_the_tag_after_the_commit(self):
+        rec = self._record(self.IDENTITY, include_git_tag=True)
+        self.assertEqual(list(rec), self.POWER_KEYS)
+        self.assertEqual(rec["klt_git_tag"], "v0.6.0")
+
+    def test_fallbacks(self):
+        """An identity with nothing resolved, and a tree without `git`."""
+        rec = self._record({})
+        self.assertEqual(list(rec), self.KEYS)
+        for key in ("klt_version", "klt_git_commit", "klayout_package", "repo_git_sha"):
+            self.assertEqual(rec[key], "unknown")
+        self.assertIs(rec["repo_dirty"], False)
+
+    def test_a_missing_tag_reads_none_not_unknown(self):
+        """The one fallback that is not `"unknown"`: an untagged build is
+        reported as `none`, which is a fact about the build rather than a
+        failure to read it."""
+        for identity in ({}, {"git_tag": None}, {"git_tag": ""}):
+            with self.subTest(identity=identity):
+                rec = self._record(identity, include_git_tag=True)
+                self.assertEqual(list(rec), self.POWER_KEYS)
+                self.assertEqual(rec["klt_git_tag"], "none")
+
+
+class WriteCaseReportsTests(unittest.TestCase):
+    """`write_case_reports` is the one per-case report serializer the four
+    signoff runners delegate to (#1129)."""
+
+    @classmethod
+    def setUpClass(cls):
+        if str(LAYOUT_DIR) not in sys.path:
+            sys.path.insert(0, str(LAYOUT_DIR))
+        cls.mod = load_module("klt_env_write_case_reports", KLT_ENV)
+
+    @staticmethod
+    def _results():
+        return [
+            {
+                "name": "a",
+                "report": {"status": "clean"},
+                "text": "A report\n",
+                "exit_code": 0,
+            },
+            {
+                "name": "b",
+                "report": {"status": "violations", "count": 2},
+                "text": "B report\n",
+                "exit_code": 3,
+            },
+        ]
+
+    def _write(self, tmp, results, **kwargs):
+        report_dir = Path(tmp) / "rec"
+        report_dir.mkdir()
+        self.mod.write_case_reports(
+            str(report_dir), "erc", results, {"klt_version": "1"}, **kwargs
+        )
+        return report_dir
+
+    def test_without_stamping_the_report_is_written_verbatim(self):
+        """DRC/LVS: the report dict as `klt` produced it, `indent=2` plus a
+        trailing newline; the courtesy text as-is; then `toolchain.json`."""
+        results = self._results()
+        with tempfile.TemporaryDirectory() as tmp:
+            out = self._write(tmp, results)
+            self.assertEqual(
+                sorted(p.name for p in out.iterdir()),
+                ["a.erc.json", "a.erc.txt", "b.erc.json", "b.erc.txt", "toolchain.json"],
+            )
+            self.assertEqual(
+                (out / "b.erc.json").read_bytes(),
+                b'{\n  "status": "violations",\n  "count": 2\n}\n',
+            )
+            self.assertEqual((out / "b.erc.txt").read_bytes(), b"B report\n")
+            self.assertEqual(
+                (out / "toolchain.json").read_bytes(), b'{\n  "klt_version": "1"\n}\n'
+            )
+            self.assertEqual(results[1]["report"], {"status": "violations", "count": 2})
+
+    def test_with_stamping_the_exit_code_is_appended_to_a_copy(self):
+        """ERC/power: `_klt_exit_code` is the last key, and the caller's
+        report dict -- which `check_case` already asserted against -- is
+        left exactly as it was."""
+        results = self._results()
+        with tempfile.TemporaryDirectory() as tmp:
+            out = self._write(tmp, results, stamp_exit_code=True)
+            self.assertEqual(
+                (out / "a.erc.json").read_bytes(),
+                b'{\n  "status": "clean",\n  "_klt_exit_code": 0\n}\n',
+            )
+            self.assertEqual(
+                (out / "b.erc.json").read_bytes(),
+                b'{\n  "status": "violations",\n  "count": 2,\n  "_klt_exit_code": 3\n}\n',
+            )
+            self.assertEqual(results[1]["report"], {"status": "violations", "count": 2})
+            self.assertNotIn("_klt_exit_code", results[1]["report"])
+
+    def test_every_committed_report_is_reproduced_byte_for_byte(self):
+        """Against the real evidence, not a synthetic fixture. Every file
+        under `layout/{drc,erc,lvs,power}/reports/` was written by one of
+        the four inlined loops this helper replaces, so re-serialising each
+        record's parsed content through it must give back the exact bytes on
+        disk -- key order, `indent=2`, the trailing newline, the stamped
+        exit code and the courtesy text alike. Committed evidence is
+        append-only, so this stays deterministic as records accumulate.
+
+        Case names contain dots (`adc_block.supply`), so only the kind
+        suffix is stripped to recover one. The stamp the inlined loop added
+        is undone first, so the helper has to put it back itself.
+        """
+        for kind, stamp in (
+            ("erc", True),
+            ("power", True),
+            ("drc", False),
+            ("lvs", False),
+        ):
+            reports_dir = LAYOUT_DIR / kind / "reports"
+            slots = sorted(p for p in reports_dir.iterdir() if p.is_dir())
+            self.assertTrue(slots, f"no report slots under {reports_dir}")
+            suffix = f".{kind}.json"
+            for committed in slots:
+                with self.subTest(runner=kind, record=committed.name):
+                    results = []
+                    for path in sorted(committed.glob(f"*{suffix}")):
+                        report = json.loads(path.read_bytes())
+                        name = path.name[: -len(suffix)]
+                        exit_code = report.pop("_klt_exit_code", None) if stamp else None
+                        text = (committed / f"{name}.{kind}.txt").read_bytes()
+                        results.append(
+                            {
+                                "name": name,
+                                "report": report,
+                                "text": text.decode("utf-8"),
+                                "exit_code": exit_code,
+                            }
+                        )
+                    toolchain = json.loads((committed / "toolchain.json").read_bytes())
+                    with tempfile.TemporaryDirectory() as tmp:
+                        out = Path(tmp) / "rec"
+                        out.mkdir()
+                        self.mod.write_case_reports(
+                            str(out), kind, results, toolchain, stamp_exit_code=stamp
+                        )
+                        self.assertEqual(
+                            sorted(p.name for p in out.iterdir()),
+                            sorted(
+                                [f"{r['name']}.{kind}.{ext}"
+                                 for r in results for ext in ("json", "txt")]
+                                + ["toolchain.json"]
+                            ),
+                        )
+                        for path in out.iterdir():
+                            self.assertEqual(
+                                path.read_bytes(), (committed / path.name).read_bytes()
+                            )
 
 
 if __name__ == "__main__":

@@ -119,6 +119,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     sha256,
     toolchain_record,
     verify_generators,
+    write_case_reports,
     write_record_text,
 )
 
@@ -562,17 +563,7 @@ def write_record(
         with open(f"{base}.extract.spice", "w", encoding="utf-8") as fh:
             fh.write(result["netlist"])
 
-    for result in lvs_results:
-        base = os.path.join(report_dir, result["name"])
-        with open(f"{base}.lvs.json", "w", encoding="utf-8") as fh:
-            json.dump(result["report"], fh, indent=2)
-            fh.write("\n")
-        with open(f"{base}.lvs.txt", "w", encoding="utf-8") as fh:
-            fh.write(result["text"])
-
-    with open(os.path.join(report_dir, "toolchain.json"), "w", encoding="utf-8") as fh:
-        json.dump(toolchain, fh, indent=2)
-        fh.write("\n")
+    write_case_reports(report_dir, "lvs", lvs_results, toolchain)
 
     lines = [
         f"# LVS record {rec_id}",

@@ -51,6 +51,16 @@ run was minted for while `run_drc.py`/`run_lvs.py` kept hard-coding the
 issue that stood their flow up -- which is exactly the drift this module
 exists to prevent.
 
+`toolchain_record`, `pinned_toolchain_record` and `write_case_reports`
+(issue #1129) are what #795 left in the runners. The first two build the
+provenance dict a record's `toolchain.json` is written from -- eight fields
+for DRC/LVS, whose `klt` is identified by capability; nine or ten for
+ERC/power, whose `klt` is identified by pinned build -- and had been two
+inline copies there, already drifted on one key. The third is the loop
+between `reserve_record_slot` and `write_record_text` that writes each
+case's report, which all four runners open-coded. All three are for a run
+that mints a record only.
+
 `control_cells`/`verify_generators` (issue #821) are the check behind the
 manifests' "byte-reproducible" claim: every other check reads the
 *committed* GDS bytes, so a generator that drifted would leave them all
@@ -395,6 +405,53 @@ def toolchain_record(klt: str, pin: dict, repo_root: "str | os.PathLike", klt_ve
     }
 
 
+def pinned_toolchain_record(
+    klt: str,
+    pin: dict,
+    identity: dict,
+    repo_root: "str | os.PathLike",
+    *,
+    include_git_tag: bool = False,
+) -> dict:
+    """The pinned-build toolchain provenance dict both `run_erc.py` and
+    `run_power.py` stamp into a record (key order is part of the record):
+    nine fields, ten with `include_git_tag`.
+
+    A second schema beside `toolchain_record`, not a variant of it. Those
+    two runners resolve `klt` by `klt version --format json` and refuse any
+    build that is not the pinned *commit*, so what their record has to say
+    is which build that was -- `identity`, as the resolver already verified
+    it, and the `klt_install` spec that reproduces it -- rather than which
+    commands it answers to. Accordingly nothing is probed here: the
+    `klayout` version is the one `klt` reported about its own environment,
+    so the only processes this launches are the two `git` calls.
+
+    Was two inline copies, which had already drifted on one key: the
+    committed power records carry `klt_git_tag` and the ERC ones do not.
+    `include_git_tag` makes that a visible argument of one call rather than
+    a difference between two dictionaries; the key goes straight after
+    `klt_git_commit`, where the committed power records have it.
+
+    Call this only on a run that writes a record, for the same reason as
+    `toolchain_record`.
+    """
+    git_tag = (
+        {"klt_git_tag": identity.get("git_tag") or "none"} if include_git_tag else {}
+    )
+    return {
+        "klt_version": identity.get("version", "unknown"),
+        "klt_git_commit": identity.get("git_commit", "unknown"),
+        **git_tag,
+        "klt_install": pin["klt_install"],
+        "klt_path": os.path.realpath(klt),
+        "klayout_package": identity.get("klayout_version", "unknown"),
+        "python": platform.python_version(),
+        "platform": f"{platform.system()} {platform.machine()}",
+        "repo_git_sha": git(repo_root, "rev-parse", "HEAD") or "unknown",
+        "repo_dirty": bool(git(repo_root, "status", "--porcelain")),
+    }
+
+
 def sha256(path: "str | os.PathLike") -> str:
     digest = hashlib.sha256()
     with open(path, "rb") as fh:
@@ -450,6 +507,56 @@ def reserve_record_slot(rec_id: str, reports_dir: str, records_dir: str) -> str:
     os.makedirs(report_dir)
     os.makedirs(records_dir, exist_ok=True)
     return report_dir
+
+
+def write_case_reports(
+    report_dir: str,
+    kind: str,
+    results: Sequence[dict],
+    toolchain: dict,
+    *,
+    stamp_exit_code: bool = False,
+) -> None:
+    """Write each case's `klt` report into `report_dir`, then the run's
+    `toolchain.json`.
+
+    This is `write_record()`'s middle step in all four of
+    `layout/{drc,erc,lvs,power}/run_*.py`: `reserve_record_slot` above has
+    claimed the directory and `write_record_text` below writes the record
+    that cites these files, and in between every runner open-coded the same
+    loop -- `<name>.<kind>.json` (`indent=2` plus a trailing newline), the
+    courtesy `<name>.<kind>.txt`, and `toolchain.json` in the same JSON
+    format. Four copies of one serialization are four chances for the bytes
+    a report is made of to drift apart between flows under the same repo
+    state.
+
+    `stamp_exit_code` is the one difference between the copies, kept as a
+    visible argument rather than as a fifth and sixth fork: ERC and power
+    add a last `_klt_exit_code` key recording the process exit status,
+    which is the runner's own note and not part of `klt`'s envelope
+    (`--verify` strips it before asserting). It goes on a shallow copy
+    because `result["report"]` is the dict the runner's check already
+    asserted against, and must stay exactly what `klt` produced.
+
+    `run_lvs.py`'s extraction files are deliberately not written here: they
+    are not case reports (a different suffix, and a netlist rather than a
+    courtesy text), so they stay beside this call in that runner.
+    """
+    for result in results:
+        base = os.path.join(report_dir, result["name"])
+        payload = result["report"]
+        if stamp_exit_code:
+            payload = dict(payload)
+            payload["_klt_exit_code"] = result["exit_code"]
+        with open(f"{base}.{kind}.json", "w", encoding="utf-8") as fh:
+            json.dump(payload, fh, indent=2)
+            fh.write("\n")
+        with open(f"{base}.{kind}.txt", "w", encoding="utf-8") as fh:
+            fh.write(result["text"])
+
+    with open(os.path.join(report_dir, "toolchain.json"), "w", encoding="utf-8") as fh:
+        json.dump(toolchain, fh, indent=2)
+        fh.write("\n")
 
 
 def write_record_text(record_path: str, lines: list[str]) -> str:
