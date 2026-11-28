@@ -534,6 +534,8 @@ class ToolchainRecordTests(unittest.TestCase):
     ]
 
     def _record(self, py, ver, sha="", status=""):
+        if str(LAYOUT_DIR) not in sys.path:
+            sys.path.insert(0, str(LAYOUT_DIR))
         mod = load_module("klt_env_toolchain_record", KLT_ENV)
         find = (
             mock.Mock(side_effect=mod.ToolingError("no klayout"))
