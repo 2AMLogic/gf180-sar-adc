@@ -33,7 +33,6 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import json
-import os
 import shutil
 import sys
 from pathlib import Path
@@ -44,20 +43,18 @@ sys.path.insert(0, str(REPO_ROOT / "design" / "sar-logic" / "flow"))
 
 from sim.harness.pdk import Pdk, PdkNotFound, find_pdk  # noqa: E402
 from flow_env import (  # noqa: E402
-    CELL_LIBRARY,
-    CLOCK_PERIOD_NS,
-    CLOCK_PORT,
-    CORNERS,
     LIB_TAG,
     RECORDS_DIR,
     REPORTS_DIR,
-    TOP,
     StaError,
+    corner_timing_ok,
+    fmt_slack,
     git,
     klt_version,
     record_id,
     run_klt_json,
     sha256,
+    sta_request,
     working_tree_dirty,
 )
 
@@ -107,28 +104,11 @@ def check_qualified_inputs() -> None:
 
 
 def build_request(request_dir: Path) -> dict:
-    return {
-        "schema": "klt.sta.request/1",
-        "def": os.path.relpath(ROUTED_DEF, request_dir),
-        "hdl_toplevel": TOP,
-        "pdk": {"cell_library": CELL_LIBRARY, "corners": [c for c, _ in CORNERS]},
-        "constraints": {"clock_port": CLOCK_PORT, "clock_period_ns": CLOCK_PERIOD_NS},
-        "geometry_source": "routed",
-        "spef": os.path.relpath(QUALIFIED_SPEF, request_dir),
-        "sdf": True,
-    }
+    return sta_request(ROUTED_DEF, request_dir=request_dir, spef=QUALIFIED_SPEF, sdf=True)
 
 
 def corner_ok(entry: dict) -> bool:
-    annotation = entry.get("spef_annotation") or {}
-    return (
-        entry.get("timing_status") == "constrained"
-        and entry.get("worst_slack_ns") is not None
-        and entry["worst_slack_ns"] >= 0
-        and entry.get("worst_hold_slack_ns") is not None
-        and entry["worst_hold_slack_ns"] >= 0
-        and annotation.get("annotation_complete") is True
-    )
+    return corner_timing_ok(entry, require_spef_annotation=True)
 
 
 def commit_sdfs(rid: str, response: dict) -> list[tuple[str, str]]:
@@ -171,8 +151,9 @@ def render_record(
     for entry in response["corners"]:
         ok = corner_ok(entry)
         sdf_hash = (entry.get("sdf") or {}).get("content_hash")
+        setup, hold = entry.get("worst_slack_ns"), entry.get("worst_hold_slack_ns")
         rows.append(
-            f"| `{entry['corner']}` | {entry['worst_slack_ns']:+.4f} | {entry['worst_hold_slack_ns']:+.4f} | "
+            f"| `{entry['corner']}` | {fmt_slack(setup)} | {fmt_slack(hold)} | "
             f"{entry.get('fmax_mhz'):.2f} | `{sdf_hash}` | {'PASS' if ok else 'FAIL'} |"
         )
     verdict = "FAIL" if failing else "PASS"

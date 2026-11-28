@@ -94,8 +94,8 @@ the committed routed DEF, 62.5 ns clock, no SPEF (the extracted-SPEF case is
 `--spef`'s, #486). Request `def` is relative to the request file, so the
 committed JSON re-runs from any checkout. The record cites the response for
 the manifest's `5.digital` row; a corner whose `timing_status` is not
-`constrained`, or whose setup or hold slack is negative, is recorded as
-failing and the driver exits 1. Writes
+`constrained`, or whose setup or hold slack is negative or was not reported
+(it renders as `n/a`), is recorded as failing and the driver exits 1. Writes
 `<rid>.mcu7t5v0.sta_postroute_multicorner.sta_{request,response}.json` and
 `records/<rid>.mcu7t5v0.sta_postroute_multicorner.md`.
 
@@ -139,7 +139,6 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -160,13 +159,15 @@ from flow_env import (  # noqa: E402
     LIB_TAG,
     RECORDS_DIR,
     REPORTS_DIR,
-    TOP,
     CornerResult as _BaseCornerResult,
     StaError,
+    corner_timing_ok,
+    fmt_slack,
     git,
     klt_version,
     record_id,
     run_klt_json,
+    sta_request,
     verdict_table,
     working_tree_dirty,
 )
@@ -188,14 +189,7 @@ TARGET = "postroute"
 
 
 def build_sta_request(corner: str) -> dict:
-    return {
-        "schema": "klt.sta.request/1",
-        "def": str(ROUTED_DEF),
-        "hdl_toplevel": TOP,
-        "pdk": {"cell_library": CELL_LIBRARY, "corner": corner},
-        "constraints": {"clock_port": CLOCK_PORT, "clock_period_ns": CLOCK_PERIOD_NS},
-        "geometry_source": "routed",
-    }
+    return sta_request(ROUTED_DEF, corner=corner)
 
 
 def run_sta(pdk: Pdk, request: dict, request_path: Path) -> dict:
@@ -349,22 +343,11 @@ convention and is not edited or deleted.
 def build_multicorner_request(request_dir: Path) -> dict:
     """One `pdk.corners` request over every CORNERS entry; `def` is relative
     to the request file's directory (what `klt sta` resolves it against)."""
-    return {
-        "schema": "klt.sta.request/1",
-        "def": os.path.relpath(ROUTED_DEF, request_dir),
-        "hdl_toplevel": TOP,
-        "pdk": {"cell_library": CELL_LIBRARY, "corners": [c for c, _ in CORNERS]},
-        "constraints": {"clock_port": CLOCK_PORT, "clock_period_ns": CLOCK_PERIOD_NS},
-        "geometry_source": "routed",
-    }
+    return sta_request(ROUTED_DEF, request_dir=request_dir)
 
 
 def _corner_ok(entry: dict) -> bool:
-    return (
-        entry.get("timing_status") == "constrained"
-        and entry["worst_slack_ns"] >= 0
-        and entry["worst_hold_slack_ns"] >= 0
-    )
+    return corner_timing_ok(entry)
 
 
 def render_multicorner_record(*, rid: str, when, pdk: Pdk, klt_v: str, response: dict, dirty: bool, sha: str) -> str:
@@ -372,10 +355,10 @@ def render_multicorner_record(*, rid: str, when, pdk: Pdk, klt_v: str, response:
     failing = [e["corner"] for e in response["corners"] if not _corner_ok(e)]
     for entry in response["corners"]:
         status = entry.get("timing_status")
-        setup, hold = entry["worst_slack_ns"], entry["worst_hold_slack_ns"]
+        setup, hold = entry.get("worst_slack_ns"), entry.get("worst_hold_slack_ns")
         ok = _corner_ok(entry)
         rows.append(
-            f"| `{entry['corner']}` | {status} | {setup:+.4f} | {hold:+.4f} | "
+            f"| `{entry['corner']}` | {status} | {fmt_slack(setup)} | {fmt_slack(hold)} | "
             f"{entry['setup_violation_count']} / {entry['hold_violation_count']} | {'PASS' if ok else 'FAIL'} |"
         )
     verdict = "FAIL" if failing else "PASS"

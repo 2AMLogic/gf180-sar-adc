@@ -7,7 +7,9 @@ the committed `sta_response.json` (mutated copies included), and the tool
 versions must come from the call arguments, not from hardcoded prose.
 `corner_ok()` gets a failing case per guarded field, and the
 `check_qualified_inputs()` hash gate is exercised against the committed tree,
-a missing input and a moved input. No `klt`, OpenROAD or PDK needed:
+a missing input and a moved input. A corner whose slack `klt sta` did not
+report must render `n/a` and FAIL rather than raise (issue #1133). No `klt`,
+OpenROAD or PDK needed:
 
     python3 -m unittest discover -s sim/tests -t sim/tests
 """
@@ -115,6 +117,14 @@ class CornerOk(unittest.TestCase):
         del self.entry["spef_annotation"]
         self.assertFalse(drv.corner_ok(self.entry))
 
+    def test_setup_slack_absent(self):
+        del self.entry["worst_slack_ns"]
+        self.assertFalse(drv.corner_ok(self.entry))
+
+    def test_hold_slack_absent(self):
+        del self.entry["worst_hold_slack_ns"]
+        self.assertFalse(drv.corner_ok(self.entry))
+
 
 class RenderTracksData(unittest.TestCase):
     def setUp(self):
@@ -209,6 +219,72 @@ class RenderTracksData(unittest.TestCase):
         row = _row(_render(response), entry["corner"])
         self.assertIn("sha256:" + "ab" * 32, row)
         self.assertNotIn(old_hash, row)
+
+
+class RenderUnreportedSlack(unittest.TestCase):
+    """Issue #1133: a corner whose setup or hold slack `klt sta` did not report
+    renders as `n/a` and FAIL, and is named on the verdict line.
+
+    `corner_ok()` already guarded `None`, but the row formatter applied
+    `:+.4f` to the raw value, so a record carrying such a corner raised
+    TypeError after the verdict had been decided. Complete corners must render
+    exactly as before: the pre-#1133 row expression, applied to the committed
+    response, is the expectation for every untouched corner."""
+
+    ABSENT = object()
+    #: The committed response's corner every unreported-slack case mutates.
+    BAD = 1
+
+    #: (case, change to the corner, expected setup cell, expected hold cell).
+    #: A cell naming a field is that field's committed value as `+x.xxxx`.
+    CASES = (
+        ("null setup slack", {"worst_slack_ns": None}, "n/a", "worst_hold_slack_ns"),
+        ("absent setup slack", {"worst_slack_ns": ABSENT}, "n/a", "worst_hold_slack_ns"),
+        ("null hold slack", {"worst_hold_slack_ns": None}, "worst_slack_ns", "n/a"),
+        ("absent hold slack", {"worst_hold_slack_ns": ABSENT}, "worst_slack_ns", "n/a"),
+        ("both slacks absent", {"worst_slack_ns": ABSENT, "worst_hold_slack_ns": ABSENT}, "n/a", "n/a"),
+    )
+
+    @staticmethod
+    def _intact_row(entry: dict) -> str:
+        return (
+            f"| `{entry['corner']}` | {entry['worst_slack_ns']:+.4f} | {entry['worst_hold_slack_ns']:+.4f} | "
+            f"{entry['fmax_mhz']:.2f} | `{entry['sdf']['content_hash']}` | PASS |"
+        )
+
+    def _render_with(self, **changes) -> tuple[dict, str]:
+        response = _load()
+        entry = response["corners"][self.BAD]
+        for field, value in changes.items():
+            if value is self.ABSENT:
+                del entry[field]
+            else:
+                entry[field] = value
+        return response, _render(response)
+
+    def test_complete_corners_render_as_they_always_did(self):
+        text = _render(_load())
+        self.assertNotIn("n/a", text)
+        for entry in _load()["corners"]:
+            self.assertEqual(_row(text, entry["corner"]), self._intact_row(entry))
+
+    def test_unreported_slack_is_na_and_fail_and_named_on_the_verdict_line(self):
+        intact = _load()["corners"][self.BAD]
+        for label, changes, setup, hold in self.CASES:
+            with self.subTest(case=label):
+                response, text = self._render_with(**changes)
+                bad = response["corners"][self.BAD]
+                cells = [c if c == "n/a" else f"{intact[c]:+.4f}" for c in (setup, hold)]
+                self.assertEqual(
+                    _row(text, bad["corner"]),
+                    f"| `{bad['corner']}` | {cells[0]} | {cells[1]} | {bad['fmax_mhz']:.2f} | "
+                    f"`{bad['sdf']['content_hash']}` | FAIL |",
+                )
+                self.assertIn(f"**FAIL** -- failing corner(s): {bad['corner']}.", text)
+                self.assertNotIn("**PASS**", text)
+                for entry in response["corners"]:
+                    if entry is not bad:
+                        self.assertEqual(_row(text, entry["corner"]), self._intact_row(entry))
 
 
 class QualifiedInputGate(unittest.TestCase):

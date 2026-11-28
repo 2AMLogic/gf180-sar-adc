@@ -33,6 +33,8 @@ from __future__ import annotations
 import ast
 import datetime as dt
 import hashlib
+import itertools
+import json
 import os
 import re
 import subprocess
@@ -55,7 +57,12 @@ flow_env = load_module("flow_env", FLOW_ENV)
 #: underscore name the pre-#352 copies used.
 SHARED_NAMES = ("run", "git", "git_status_porcelain", "klt_version", "record_id", "sha256")
 #: Added by issue #537: the `klt` runner and STA result pieces the STA drivers share.
-STA_SHARED_NAMES = ("pdk_env", "run_klt_json", "StaError", "CornerResult", "verdict_table")
+#: Extended by issue #1133: the `klt.sta.request/1` builder, the corner-pass
+#: predicate and the slack table cell the post-route STA drivers share.
+STA_SHARED_NAMES = (
+    "pdk_env", "run_klt_json", "StaError", "CornerResult", "verdict_table",
+    "sta_request", "corner_timing_ok", "fmt_slack",
+)
 #: Added by issue #569: the sar_ctrl design-point constants the drivers share.
 DESIGN_POINT_NAMES = (
     "TOP", "CELL_LIBRARY", "LIB_TAG", "CLOCK_PORT", "CLOCK_PERIOD_NS", "CORNERS",
@@ -87,6 +94,39 @@ DRIVERS = (
     "drc_pdk_cells_isolated.py",  # issue #520; migrated onto flow_env by #960
     "prove_no_net_sar_ctrl.py",  # issue #548; migrated onto flow_env by #960
     "sdf_sar_ctrl.py",  # issue #645 (T1 item 7); the per-corner SDF record
+)
+
+FLOW_REPORTS = FLOW_DIR / "sar_ctrl" / "reports"
+ROUTED_DEF = REPO / "layout" / "adc-top" / "sar_ctrl" / "sar_ctrl.def"
+QUALIFIED_SPEF = FLOW_REPORTS / "20261104-212437-9cde5a64.mcu7t5v0.sar_ctrl.spef"
+
+#: Committed `klt sta` requests (issue #1133), each written before the
+#: consolidation by one of the four per-driver builders `sta_request`
+#: replaces -- one per builder and request shape, relative-path mode only (the
+#: baseline driver writes this host's absolute DEF path, so its files are not
+#: portable oracles). They are the byte-level evidence that the shared builder
+#: emits what the inline copies emitted: same keys, same order, same values.
+COMMITTED_STA_REQUESTS = (
+    (
+        "20261027-011416-812549af.mcu7t5v0.sta_postroute_multicorner.sta_request.json",
+        "sta_sar_ctrl_postroute.build_multicorner_request",
+        {"request_dir": FLOW_REPORTS},
+    ),
+    (
+        "20261104-212437-9cde5a64.mcu7t5v0.sta_postroute_ref_tt_025C_3v30.sta_request.json",
+        "sta_postroute_spef.build_request(corner, None)",
+        {"corner": "tt_025C_3v30", "request_dir": FLOW_REPORTS},
+    ),
+    (
+        "20261104-212437-9cde5a64.mcu7t5v0.sta_postroute_spef_tt_025C_3v30.sta_request.json",
+        "sta_postroute_spef.build_request(corner, spef)",
+        {"corner": "tt_025C_3v30", "request_dir": FLOW_REPORTS, "spef": QUALIFIED_SPEF},
+    ),
+    (
+        "20261123-084121-ef8cc306.mcu7t5v0.sta_sdf.sta_request.json",
+        "sdf_sar_ctrl.build_request",
+        {"request_dir": FLOW_REPORTS, "spef": QUALIFIED_SPEF, "sdf": True},
+    ),
 )
 
 
@@ -723,7 +763,8 @@ class StaDriversImportWithoutTheSynthDriverTests(unittest.TestCase):
 
 class KltRunnerAndStaSharedPiecesTests(unittest.TestCase):
     """`pdk_env`/`run_klt_json`/`StaError`/`CornerResult`/`verdict_table`
-    (issue #537): one implementation for both STA drivers."""
+    (issue #537) and `sta_request`/`corner_timing_ok`/`fmt_slack` (issue
+    #1133): one implementation for the post-route STA drivers."""
 
     PDK = type("P", (), {"variant": "gf180mcuD", "path": Path("/pdks/gf180mcuD")})()
     RESP = {
@@ -734,6 +775,24 @@ class KltRunnerAndStaSharedPiecesTests(unittest.TestCase):
         "fmax_mhz": 70.0,
         "estimated_power_mw": 1.0,
     }
+    #: The keys every `klt.sta.request/1` carries, in the order each
+    #: per-driver builder emitted them: key order is part of what keeps the
+    #: committed request JSON byte-identical under `json.dumps(indent=2)`.
+    REQUEST_KEYS = ("schema", "def", "hdl_toplevel", "pdk", "constraints", "geometry_source")
+    REQUESTS = Path("/repo/design/sar-logic/flow/sar_ctrl/reports")
+    DEF = Path("/repo/layout/adc-top/sar_ctrl/sar_ctrl.def")
+    SPEF = REQUESTS / "x.mcu7t5v0.sar_ctrl.spef"
+    ALL_CORNERS = [c for c, _ in flow_env.CORNERS]
+
+    def entry(self, **changes) -> dict:
+        """A passing corner entry carrying every field a predicate reads."""
+        return {
+            "timing_status": "constrained",
+            "worst_slack_ns": 1.0,
+            "worst_hold_slack_ns": 0.1,
+            "spef_annotation": {"annotation_complete": True},
+            **changes,
+        }
 
     def test_pdk_env_points_at_the_pdk_install(self):
         env = flow_env.pdk_env(self.PDK)
@@ -783,13 +842,257 @@ class KltRunnerAndStaSharedPiecesTests(unittest.TestCase):
         self.assertEqual(head.count("|"), row.count("|"))
         self.assertIn("| `tt` | PASS +1.5000 | +0.0000 | 2 | 70.00 | 1.0000 |", row)
 
+    def test_sta_request_single_corner_keeps_the_absolute_def(self):
+        req = flow_env.sta_request(self.DEF, corner="tt_025C_3v30")
+        self.assertEqual(list(req), list(self.REQUEST_KEYS))
+        self.assertEqual(
+            req,
+            {
+                "schema": "klt.sta.request/1",
+                "def": str(self.DEF),
+                "hdl_toplevel": flow_env.TOP,
+                "pdk": {"cell_library": flow_env.CELL_LIBRARY, "corner": "tt_025C_3v30"},
+                "constraints": {"clock_port": flow_env.CLOCK_PORT, "clock_period_ns": flow_env.CLOCK_PERIOD_NS},
+                "geometry_source": "routed",
+            },
+        )
+
+    def test_sta_request_sweeps_every_corner_unless_told_otherwise(self):
+        self.assertEqual(len(self.ALL_CORNERS), 5)
+        for kwargs in ({}, {"corners": None}):
+            with self.subTest(kwargs=kwargs):
+                req = flow_env.sta_request(self.DEF, **kwargs)
+                self.assertEqual(list(req), list(self.REQUEST_KEYS))
+                self.assertEqual(req["pdk"], {"cell_library": flow_env.CELL_LIBRARY, "corners": self.ALL_CORNERS})
+        for corners in (["ss_n40C_3v00"], ["ff_125C_3v60", "tt_025C_3v30"]):
+            with self.subTest(corners=corners):
+                req = flow_env.sta_request(self.DEF, corners=corners)
+                self.assertEqual(req["pdk"], {"cell_library": flow_env.CELL_LIBRARY, "corners": corners})
+
+    def test_sta_request_copies_the_callers_corner_list(self):
+        mine = ["ff_125C_3v60", "tt_025C_3v30"]
+        req = flow_env.sta_request(self.DEF, corners=mine)
+        self.assertIsNot(req["pdk"]["corners"], mine)
+        mine.append("ss_125C_3v00")
+        self.assertEqual(req["pdk"]["corners"], ["ff_125C_3v60", "tt_025C_3v30"])
+
+    def test_sta_request_rejects_corner_and_corners_together(self):
+        with self.assertRaises(ValueError):
+            flow_env.sta_request(self.DEF, corner="tt_025C_3v30", corners=self.ALL_CORNERS)
+
+    def test_sta_request_relativizes_both_paths_to_request_dir_only_when_given(self):
+        relative = flow_env.sta_request(self.DEF, corner="c", request_dir=self.REQUESTS, spef=self.SPEF)
+        self.assertEqual(relative["def"], os.path.relpath(self.DEF, self.REQUESTS))
+        self.assertEqual(relative["spef"], "x.mcu7t5v0.sar_ctrl.spef")
+        absolute = flow_env.sta_request(self.DEF, corner="c", spef=self.SPEF)
+        self.assertEqual((absolute["def"], absolute["spef"]), (str(self.DEF), str(self.SPEF)))
+
+    def test_sta_request_optional_keys_follow_geometry_source_in_order(self):
+        for kwargs, keys in (
+            ({}, list(self.REQUEST_KEYS)),
+            ({"spef": self.SPEF}, [*self.REQUEST_KEYS, "spef"]),
+            ({"sdf": True}, [*self.REQUEST_KEYS, "sdf"]),
+            ({"spef": self.SPEF, "sdf": True}, [*self.REQUEST_KEYS, "spef", "sdf"]),
+        ):
+            with self.subTest(kwargs=kwargs):
+                req = flow_env.sta_request(self.DEF, **kwargs)
+                self.assertEqual(list(req), keys)
+                self.assertEqual(req.get("sdf"), True if kwargs.get("sdf") else None)
+
+    def test_sta_request_reproduces_each_committed_request_byte_for_byte(self):
+        for name, _, kwargs in COMMITTED_STA_REQUESTS:
+            with self.subTest(request=name):
+                text = json.dumps(flow_env.sta_request(ROUTED_DEF, **kwargs), indent=2) + "\n"
+                self.assertEqual(text, (FLOW_REPORTS / name).read_text())
+
+    def test_corner_timing_ok_passes_a_constrained_corner_that_meets_both_budgets(self):
+        ok = flow_env.corner_timing_ok
+        for kwargs in ({}, {"require_spef_annotation": True}):
+            with self.subTest(kwargs=kwargs):
+                self.assertTrue(ok(self.entry(), **kwargs))
+                self.assertTrue(ok(self.entry(worst_slack_ns=0, worst_hold_slack_ns=0), **kwargs), "zero slack meets the budget")
+
+    def test_corner_timing_ok_fails_a_violating_or_unconstrained_corner(self):
+        ok = flow_env.corner_timing_ok
+        for changes in (
+            {"worst_slack_ns": -0.01},
+            {"worst_hold_slack_ns": -0.01},
+            {"timing_status": "unconstrained"},
+            {"timing_status": None},
+        ):
+            for kwargs in ({}, {"require_spef_annotation": True}):
+                with self.subTest(changes=changes, kwargs=kwargs):
+                    self.assertFalse(ok(self.entry(**changes), **kwargs))
+
+    def test_corner_timing_ok_fails_unreported_slack_without_raising(self):
+        ok = flow_env.corner_timing_ok
+        unreported = [
+            {"timing_status": "constrained"},
+            self.entry(worst_slack_ns=None, worst_hold_slack_ns=None),
+            self.entry(timing_status="unconstrained", worst_slack_ns=None, worst_hold_slack_ns=None),
+        ]
+        for field in ("worst_slack_ns", "worst_hold_slack_ns"):
+            unreported.append(self.entry(**{field: None}))
+            absent = self.entry()
+            del absent[field]
+            unreported.append(absent)
+        for entry in unreported:
+            for kwargs in ({}, {"require_spef_annotation": True}):
+                with self.subTest(entry=entry, kwargs=kwargs):
+                    self.assertIs(ok(entry, **kwargs), False)
+
+    def test_corner_timing_ok_reads_the_annotation_block_only_when_asked(self):
+        ok = flow_env.corner_timing_ok
+        for annotation in ({"annotation_complete": False}, {}, None, "absent"):
+            entry = self.entry()
+            if annotation == "absent":
+                del entry["spef_annotation"]
+            else:
+                entry["spef_annotation"] = annotation
+            with self.subTest(annotation=annotation):
+                self.assertTrue(ok(entry), "the multi-corner rule does not read the annotation block")
+                self.assertFalse(ok(entry, require_spef_annotation=True))
+
+    def test_fmt_slack_keeps_the_record_format_and_marks_unreported_slack(self):
+        for value, text in ((1.14644, "+1.1464"), (0, "+0.0000"), (-0.25, "-0.2500")):
+            with self.subTest(value=value):
+                self.assertEqual(flow_env.fmt_slack(value), text)
+        self.assertEqual(flow_env.fmt_slack(None), "n/a")
+        self.assertEqual(flow_env.fmt_slack({}.get("worst_slack_ns")), "n/a", "an absent key reads as None through .get()")
+
     def test_sta_drivers_do_not_redefine_the_shared_pieces(self):
-        shared = {"StaError", "run_klt_json", "pdk_env", "verdict_table", "_env"}
+        shared = {
+            "StaError", "run_klt_json", "pdk_env", "verdict_table", "_env",
+            "sta_request", "corner_timing_ok", "fmt_slack",
+        }
         for name in DRIVERS:
             with self.subTest(driver=name):
                 tree = ast.parse((FLOW_DIR / name).read_text())
                 defined = {n.name for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.ClassDef))}
                 self.assertFalse(defined & shared, f"{name} re-defines {sorted(defined & shared)}")
+
+
+class StaDriversDelegateTheRequestAndVerdictTests(unittest.TestCase):
+    """Issue #1133, the live half: the four per-driver `klt.sta.request/1`
+    builders and the two corner predicates are one-line delegates to
+    `flow_env.sta_request` / `flow_env.corner_timing_ok`.
+
+    The AST nets above forbid a driver redefining those names, but cannot see
+    a delegate that quietly drifts -- a default swapped, a key added. So the
+    three drivers are loaded and each builder is asked to reproduce, byte for
+    byte, a request it committed before the consolidation, and each predicate
+    is compared with its pre-consolidation body (restated verbatim below)
+    over every `timing_status` x setup x hold x annotation combination.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, str(FLOW_DIR))  # `sta_postroute_spef` imports its sibling modules by bare name
+        cls.base = load_module("sta_sar_ctrl_postroute", FLOW_DIR / "sta_sar_ctrl_postroute.py")
+        cls.spef = load_module("sta_postroute_spef", FLOW_DIR / "sta_postroute_spef.py")
+        cls.sdf = load_module("sdf_sar_ctrl", FLOW_DIR / "sdf_sar_ctrl.py")
+
+    def _built(self) -> list[tuple[str, dict, dict]]:
+        """(builder, what the driver's delegate emits, what `sta_request`
+        emits for the same request): every builder, in every shape it is
+        called. `build_sta_request` has no committed oracle -- it writes this
+        host's absolute DEF path -- so it is checked against `sta_request`
+        and the literal dict in `KltRunnerAndStaSharedPiecesTests` only."""
+        reports, spef, routed = self.base.REPORTS_DIR, self.sdf.QUALIFIED_SPEF, self.base.ROUTED_DEF
+        corner = flow_env.CORNERS[0][0]
+        return [
+            ("sta_sar_ctrl_postroute.build_sta_request",
+             self.base.build_sta_request(corner), flow_env.sta_request(routed, corner=corner)),
+            ("sta_sar_ctrl_postroute.build_multicorner_request",
+             self.base.build_multicorner_request(reports), flow_env.sta_request(routed, request_dir=reports)),
+            ("sta_postroute_spef.build_request(corner, None)",
+             self.spef.build_request(corner, None), flow_env.sta_request(routed, corner=corner, request_dir=reports)),
+            ("sta_postroute_spef.build_request(corner, spef)",
+             self.spef.build_request(corner, spef),
+             flow_env.sta_request(routed, corner=corner, request_dir=reports, spef=spef)),
+            ("sdf_sar_ctrl.build_request",
+             self.sdf.build_request(reports), flow_env.sta_request(routed, request_dir=reports, spef=spef, sdf=True)),
+        ]
+
+    def test_every_builder_emits_what_sta_request_emits(self):
+        for builder, got, want in self._built():
+            with self.subTest(builder=builder):
+                self.assertEqual(list(got), list(want))
+                self.assertEqual(json.dumps(got, indent=2), json.dumps(want, indent=2))
+
+    def test_every_builder_still_writes_the_request_it_committed(self):
+        built = {builder: got for builder, got, _ in self._built()}
+        for name, builder, _ in COMMITTED_STA_REQUESTS:
+            with self.subTest(request=name):
+                self.assertEqual(json.dumps(built[builder], indent=2) + "\n", (FLOW_REPORTS / name).read_text())
+
+    @staticmethod
+    def _reported_slack_entries() -> list[dict]:
+        """Every `timing_status` x setup x hold x annotation combination a
+        `klt sta` response carries when it reports both slacks."""
+        return [
+            {"timing_status": status, "worst_slack_ns": setup, "worst_hold_slack_ns": hold, "spef_annotation": ann}
+            for status, setup, hold, ann in itertools.product(
+                ("constrained", "unconstrained", None),
+                (1.0, 0.0, -0.5),
+                (0.1, 0.0, -0.5),
+                ({"annotation_complete": True}, {"annotation_complete": False}, {}, None),
+            )
+        ]
+
+    @staticmethod
+    def _pre_1133_corner_ok(entry: dict) -> bool:
+        """`sdf_sar_ctrl.corner_ok` exactly as written before #1133."""
+        annotation = entry.get("spef_annotation") or {}
+        return (
+            entry.get("timing_status") == "constrained"
+            and entry.get("worst_slack_ns") is not None
+            and entry["worst_slack_ns"] >= 0
+            and entry.get("worst_hold_slack_ns") is not None
+            and entry["worst_hold_slack_ns"] >= 0
+            and annotation.get("annotation_complete") is True
+        )
+
+    @staticmethod
+    def _pre_1133_multicorner_corner_ok(entry: dict) -> bool:
+        """`sta_sar_ctrl_postroute._corner_ok` exactly as written before #1133."""
+        return (
+            entry.get("timing_status") == "constrained"
+            and entry["worst_slack_ns"] >= 0
+            and entry["worst_hold_slack_ns"] >= 0
+        )
+
+    def test_corner_predicates_keep_their_verdicts_on_reported_slack(self):
+        entries = self._reported_slack_entries()
+        self.assertEqual(len(entries), 3 * 3 * 3 * 4)
+        for pre_1133 in (self._pre_1133_corner_ok, self._pre_1133_multicorner_corner_ok):
+            self.assertEqual(sorted({pre_1133(e) for e in entries}), [False, True], "the oracle must not be vacuous")
+        for entry in entries:
+            with self.subTest(entry=entry):
+                self.assertEqual(self.sdf.corner_ok(entry), self._pre_1133_corner_ok(entry))
+                self.assertEqual(self.base._corner_ok(entry), self._pre_1133_multicorner_corner_ok(entry))
+
+    def test_corner_predicates_are_corner_timing_ok(self):
+        for entry in self._reported_slack_entries():
+            with self.subTest(entry=entry):
+                self.assertIs(self.sdf.corner_ok(entry), flow_env.corner_timing_ok(entry, require_spef_annotation=True))
+                self.assertIs(self.base._corner_ok(entry), flow_env.corner_timing_ok(entry))
+
+    def test_corner_predicates_fail_unreported_slack_without_raising(self):
+        passing = {
+            "timing_status": "constrained", "worst_slack_ns": 1.0, "worst_hold_slack_ns": 0.1,
+            "spef_annotation": {"annotation_complete": True},
+        }
+        unreported = [{"timing_status": "constrained"}]
+        for field in ("worst_slack_ns", "worst_hold_slack_ns"):
+            unreported.append({**passing, field: None})
+            absent = dict(passing)
+            del absent[field]
+            unreported.append(absent)
+        for entry in unreported:
+            with self.subTest(entry=entry):
+                self.assertIs(self.base._corner_ok(entry), False)
+                self.assertIs(self.sdf.corner_ok(entry), False)
 
 
 if __name__ == "__main__":
