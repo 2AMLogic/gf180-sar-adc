@@ -101,6 +101,36 @@ the `sim/characterization-summary.md` citation updates in this PR require
   landed as `20261020-235635-0bf0747`. Pairs 2, 4 and 7 were first submitted with
   the variant deck under `/tmp`, which the harness cannot record (the sims ran,
   nothing was written); they were re-submitted with the deck under `sim/.work/`.
+  - **Erratum (2026-11-28, issue #1140) to the bullet above, which is left
+    unchanged.** The record does carry a 27-row per-corner measurement table,
+    and the failed supply and the diagnostic are not the ones the bullet names.
+    Read through the shared reader (`sim/tools/corner_table.py`, `parse_record`)
+    at `0a59f1b1`, the first attempt,
+    [`20261020-231430-0bf0747`](dr0014-sampling/records/20261020-231430-0bf0747.md#L18-L48)
+    is overall **ERROR**
+    ([verdict line](dr0014-sampling/records/20261020-231430-0bf0747.md#L147))
+    and its 27 rows break down as:
+
+    | supply | corner rows | verdict | measurements per row |
+    |---|---:|---|---|
+    | 2.97 V | 9 | ERROR | 43 `n/a` |
+    | 3.30 V | 9 | PASS | 43 numeric |
+    | 3.63 V | 9 | PASS | 43 numeric |
+
+    The nine 2.97 V rows are ERROR because the `vdd0-2p97v.json` request
+    produced no report: `batch_no_capacity`, the fleet's capacity refusal
+    (see the Environment section,
+    [per-supply diagnostics](dr0014-sampling/records/20261020-231430-0bf0747.md#L164-L171)).
+    The record carries no `batch_job_interrupted` diagnostic, and its 3.30 V
+    and 3.63 V requests both completed. Still accurate in the bullet: the
+    record is overall ERROR, 9 of 27 points are ERR, and it is kept as
+    append-only evidence. The pair-5 comparison above uses the re-submission
+    [`20261020-233008-0bf0747`](dr0014-sampling/records/20261020-233008-0bf0747.md),
+    27/27 PASS (nine PASS rows at each supply, 43 numeric measurements each);
+    the first attempt is not part of that comparison. The bullet's claim that
+    the pair-1 first attempt (`...231427`) hit "the same Spot reclamation" is
+    not corrected here: that attempt left no record, so the same check cannot
+    be run against it.
 - The new extracted records (#5, #6) inherit their **Netlist provenance** prose from
   `sim/dr0014-sampling/testbench-extracted/tb.json` (`netlist_provenance`, which
   names the older 20260805 extraction); the deck they actually ran is the
