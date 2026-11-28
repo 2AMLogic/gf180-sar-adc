@@ -695,7 +695,7 @@ def _draw_substrate_tie_strip(block: PlacedBlock) -> None:
     `geo.SUBTIE_M1_GAP`) are cleared by construction.
 
     THE STRIP IS A REAL TIE, NOT A DRC COUNTERMEASURE: `Comp` marked
-    `Pplus`, tiled with CO.1 contact squares by the same `contact_array`
+    `Pplus`, tiled with CO.1 contact squares by the same `geo.draw_tap_strip`
     the well taps use, `Metal1` over it, and one Poly2 riser -- the same
     Metal1-trunk/Poly2-riser discipline every terminal in this library
     uses -- down to the `substrate_net` trunk, so `klt extract` resolves
@@ -747,17 +747,10 @@ def _draw_substrate_tie_strip(block: PlacedBlock) -> None:
         # itself (`block.subtie_metal1` says where): no riser, so the Comp
         # needs no gap and spans the whole row.
         comp = kdb.Box(block.row_x0, strip_y0, block.row_x1, strip_y1)
-        cell.shapes(layers[geo.L_COMP]).insert(comp)
-        cell.shapes(layers[geo.L_PPLUS]).insert(
-            comp.enlarged(geo.IMPLANT_MARGIN, geo.IMPLANT_MARGIN)
+        geo.draw_tap_strip(
+            cell, layers, comp, geo.L_PPLUS, strip_name="substrate tie strip"
         )
-        if geo.contact_array(cell, layers, comp, along_x=True) == 0:
-            raise RuntimeError(
-                f"substrate tie strip {comp} tiled 0 contact cuts"
-            )
-        metal = kdb.Box(block.row_x0, strip_y0, block.row_x1, strip_y1)
-        cell.shapes(layers[geo.L_METAL1]).insert(metal)
-        block.subtie_metal1 = metal
+        block.subtie_metal1 = comp
         return
     assert block.subtie_via == "trunk"  # ring mode returned above
     usable = [
@@ -776,7 +769,9 @@ def _draw_substrate_tie_strip(block: PlacedBlock) -> None:
     # inside the row; a column outside the row (the left-of-row fallback)
     # leaves ONE segment spanning the whole row. A segment shorter than one
     # contact with its enclosure would tile zero cuts; drop it rather than
-    # draw an uncontactable diffusion.
+    # draw an uncontactable diffusion. The minimum is `contact_array`'s own,
+    # so a surviving segment is never the one `draw_tap_strip` refuses.
+    min_seg_w = geo.CO_SIDE + 2 * geo.CO_ENCLOSURE
     segments = [
         seg
         for seg in (
@@ -794,7 +789,7 @@ def _draw_substrate_tie_strip(block: PlacedBlock) -> None:
                 else None
             ),
         )
-        if seg is not None
+        if seg is not None and seg.width() >= min_seg_w
     ]
     if not segments:
         raise RuntimeError(
@@ -804,15 +799,10 @@ def _draw_substrate_tie_strip(block: PlacedBlock) -> None:
             "this row"
         )
     for seg in segments:
-        cell.shapes(layers[geo.L_COMP]).insert(seg)
-        cell.shapes(layers[geo.L_PPLUS]).insert(
-            seg.enlarged(geo.IMPLANT_MARGIN, geo.IMPLANT_MARGIN)
+        geo.draw_tap_strip(
+            cell, layers, seg, geo.L_PPLUS, draw_metal1=False,
+            strip_name="substrate tie strip segment",
         )
-        cuts = geo.contact_array(cell, layers, seg, along_x=True)
-        if cuts == 0:  # unreachable behind the width check above
-            raise RuntimeError(
-                f"substrate tie strip segment {seg} tiled 0 contact cuts"
-            )
     # One Metal1 bar over BOTH segments and the riser gap, reaching `reach`
     # past the riser column when that sits outside the row (the left-of-row
     # fallback), so the stitch's bottom contact lands on drawn metal and
