@@ -51,7 +51,6 @@ sys.path.insert(0, str(REPO / "sim"))
 
 from harness import corners as C  # noqa: E402
 from harness import pdk as PDK  # noqa: E402
-from harness import runner as RUN  # noqa: E402
 
 import gen_extracted_core_tb as G  # noqa: E402 (same directory)
 import measure_extracted_gain_err as M  # noqa: E402 (same directory)
@@ -72,7 +71,8 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     diagnostic needs: without it, "the deck reads an unsettled value one
     conversion after a full-scale step" and "the EXTRACTED core settles more
     slowly than the schematic one" are indistinguishable, and only the second
-    would be a post-layout finding.
+    would be a post-layout finding. Any other value raises `ValueError`
+    rather than wiring either core.
     """
     gtop = G.gtop
     tag = G.TAG
@@ -90,14 +90,7 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
         f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}",
         f"* transition {hi} held for {hold} conversion(s) after a {hi - lo} LSB step",
     ]
-    lines += G.pvt_includes(pdk, corner, vdd)
-    # The schematic core instantiates the stable `mim_cap_2f0` alias the
-    # harness binds per PDK variant; this deck composes its own preamble, so
-    # it has to bind it too. Reused from the harness rather than restated:
-    # a second hand-written binding is a second place to get the metal stack
-    # wrong.
-    lines += RUN.mim_wrapper_subckts(pdk)
-    lines.append(G.pvt_temp_line(temp_c))
+    lines += G.pvt_preamble(pdk, corner, temp_c, vdd)
     lines.append("")
     lines += gtop._preamble("{vdd_val/1024}")
     lines.append("")
@@ -108,21 +101,12 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     lines.append(f"v{tag}vinn {tag}_vinn 0 dc {{vcm}}")
     lines.append("")
 
-    # Both branches get the same three inlined libraries `gen_adc_top._deck()`
-    # appends to every one of its testbenches; only the ARRAY differs.
-    lines.append(gtop.comparator_block())
-    lines.append(gtop.sar.library())
-    if core == "schematic":
-        # `gen_adc_top.library()` (the adc_top.spice copy) + `_core()`: the
-        # very body `inl_netlist()` emits, including its own ideal shadow DAC
-        # and `{tag}_err` node.
-        lines.append(gtop.library())
-        lines += gtop._core(tag, "0")
-    else:
-        pins, core_text = G.core_pins(top)
-        lines.append(core_text)
-        lines += G._core_extracted(tag, "0", pins, top)
-        lines += G.shadow_dac_and_error(tag)
+    # Both arms get the same comparator + controller libraries
+    # `gen_adc_top._deck()` appends to every one of its testbenches; only the
+    # ARRAY differs. `shadow=True` appends the ideal-shadow reference on the
+    # extracted arm only -- `_core()` already carries it -- and the helper
+    # binds the MiM alias wrapper the schematic library needs.
+    lines += G.conversion_chain_lines(top, tag=tag, core=core, pdk=pdk, shadow=True)
 
     trial_lo = gtop._inl_trial(lo)
     trial_hi = gtop._inl_trial(hi)

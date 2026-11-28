@@ -274,11 +274,10 @@ def pvt_includes(pdk: PDK.Pdk, corner: C.Corner, vdd: float) -> list[str]:
     need to emit their OWN content between the `.lib` loop and `.temp` --
     `mc_extracted_core.py`'s statistical-switch `.param`s (which must come
     after the model include, per that file's own comment) and
-    `probe_gain_err_settling.py` / `probe_power_cmp_anomaly.py`'s
-    `harness.runner.mim_wrapper_subckts()` bind. Splitting here lets those
-    sites keep their extra lines in the exact same position without
-    reordering anything -- see :func:`pvt_preamble` for the common case with
-    nothing to interleave.
+    `probe_power_cmp_anomaly.py`'s `harness.runner.mim_wrapper_subckts()`
+    bind. Splitting here lets those sites keep their extra lines in the
+    exact same position without reordering anything -- see
+    :func:`pvt_preamble` for the common case with nothing to interleave.
     """
     lines = [f".param vdd_val={vdd!r}", f'.include "{pdk.design_include}"']
     lines += [f'.lib "{pdk.model_lib}" {section}' for section in corner.sections]
@@ -634,8 +633,9 @@ def shadow_dac_and_error(tag: str = TAG, gated: bool = False) -> list[str]:
     gain-error CLAIM does, because the claim is defined as a difference
     against this ideal shadow -- so it lives here, next to the wiring it
     depends on, and is emitted by the callers that make such a claim
-    (`measure_extracted_gain_err.py`, `probe_gain_err_settling.py`,
-    `mc_extracted_core.py`).
+    (`measure_extracted_gain_err.py` and `probe_gain_err_settling.py`
+    through :func:`conversion_chain_lines` with `shadow=True`;
+    `mc_extracted_core.py` directly).
 
     `gen_extracted_inl_dnl_tb.py` (PR #97) used to carry its own
     `_shadow_dac_lines()` copy of the same block; issue #181 collapsed the two
@@ -806,6 +806,73 @@ def library_and_core(top: str = "ADC_TOP", tag: str = TAG) -> tuple[str, list[st
         + "\n"
     )
     return lib + "\n" + body, pins
+
+
+def conversion_chain_lines(top: str = "ADC_TOP", *, tag: str = TAG,
+                           core: str = "extracted",
+                           pdk: PDK.Pdk | None = None,
+                           shadow: bool = False) -> list[str]:
+    """The comparator + SAR-controller library and one wired conversion
+    chain, as the lines a hand-rolled `compose_deck()` in this directory
+    appends after `gtop._preamble(...)` and its stimulus -- the line-list
+    counterpart of :func:`library_and_core` (issue #1091), for the decks
+    that helper cannot serve (issue #1134).
+
+    `library_and_core()` returns one text block for the three `se`-tagged
+    #13 decks. `verify_extracted_core_conversion.py`,
+    `measure_extracted_gain_err.py` and `probe_gain_err_settling.py` build
+    their decks from a list of lines, the latter two add issue #98's
+    `--core schematic` control arm, and both gain-error decks append the
+    ideal-shadow reference. Each assembled all of that itself, and the
+    copies drifted: the settling probe bound the MiM wrapper into extracted
+    decks that never reference it, and both schematic arms fell through a
+    silent `else:` to the extracted core on an unrecognised `core`.
+
+    `core="extracted"` (the default) emits `gtop.comparator_block()`,
+    `gtop.sar.library()`, the remediated `.SUBCKT` and `_core_extracted()`
+    -- exactly :func:`library_and_core`'s SPICE lines -- plus
+    `shadow_dac_and_error(tag)` when `shadow=True`, which is what a deck
+    whose claim is defined against the ideal reference needs.
+
+    `core="schematic"` (issue #98's control) emits the same two libraries,
+    then `harness.runner.mim_wrapper_subckts(pdk)` immediately ahead of
+    `gtop.library()` and `gtop._core(tag, "0")` -- the very body the
+    schematic bench's `inl_netlist()` emits. The wrapper goes there because
+    `gtop.library()`'s `adc_cdac_cell` instantiates the stable alias
+    `mim_cap_2f0`, which the harness binds per PDK variant, and ngspice
+    needs the definition before the instance. The extracted `.SUBCKT` calls
+    the native PDK subckt directly (`remediate_extracted.py`'s `MIM_SUBCKT`),
+    so the extracted arm emits no wrapper at all. `shadow` is a no-op on
+    this arm: `_core()` already carries the ideal-shadow reference, and
+    emitting it again would double-define the same b-sources.
+
+    Raises `ValueError` on any `core` but those two, and on
+    `core="schematic"` without a `pdk` to bind the alias from.
+    """
+    if core not in ("extracted", "schematic"):
+        raise ValueError(
+            f"unrecognised core {core!r} -- expected 'extracted' or "
+            "'schematic'; refusing to guess which analog core to wire"
+        )
+    lines = [gtop.comparator_block(), gtop.sar.library()]
+    if core == "schematic":
+        if pdk is None:
+            raise ValueError(
+                "core='schematic' instantiates the mim_cap_* aliases, which "
+                "the harness binds per PDK variant -- pass pdk="
+            )
+        return [
+            *lines,
+            "",
+            *RUN.mim_wrapper_subckts(pdk),
+            gtop.library(),
+            *gtop._core(tag, "0"),
+        ]
+    pins, core_text = core_pins(top)
+    lines += [core_text, *_core_extracted(tag, "0", pins, top)]
+    if shadow:
+        lines += shadow_dac_and_error(tag)
+    return lines
 
 
 def main(argv: list[str] | None = None) -> int:
