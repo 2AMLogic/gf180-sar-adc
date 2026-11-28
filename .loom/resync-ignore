@@ -1,0 +1,8 @@
+# .loom/resync-ignore — paths Loom must not overwrite or delete
+#
+# Bash 3.2 portability pins (macOS /bin/bash; regression fixed in #1049, reintroduced
+# by the v0.20.48 resync, PR #1113). Upstream ships these tests with `declare -A`
+# (associative arrays), which Bash 3.2 rejects. Retire each pin when the upstream
+# copy is Bash 3.2-safe (upstream issue filed against 2AMLogic/loom).
+scripts/tests/test-config-resolver.sh
+scripts/tests/test-champion-pr-merge-digest-dedup.sh

@@ -83,6 +83,9 @@
 #   stale-bounded-fallback Stand-down streak >= cap AND claim age >= threshold
 #                          -> force-reclaim (livelock breaker).
 #   (Either stale state becomes `fresh` while the role's PR lease is live: #11947.)
+#   (Either stale state is also downgraded when the timeline lags a reclaim
+#    (#15044): `fresh` if a trusted `loom:reclaim` marker names this CLAIMED_AT
+#    and the live item was updated recently, else `unknown`.)
 #   unknown                Timeline unavailable/unparseable -> FAIL SAFE, treat
 #                          exactly like `fresh`. Never stomp a claim on missing
 #                          data.
@@ -102,11 +105,12 @@ SCRIPT_NAME="$(basename "$0")"
 
 STANDDOWN_PREFIX="<!-- loom:standdown claim="
 ACTIVITY_PREFIX="<!-- loom:claim-activity claim="
+RECLAIM_PREFIX="<!-- loom:reclaim claim="
 
 _usage() {
     # Keep this range in sync with the header comment block above
-    # (currently lines 50-97: "Usage:" through the gh-cached caveat).
-    sed -n '50,97p' "$0" | sed 's/^# \{0,1\}//'
+    # (currently lines 50-100: "Usage:" through the gh-cached caveat).
+    sed -n '50,100p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 _die() {
@@ -351,6 +355,50 @@ if [[ -z "$CLAIM_STATE" ]]; then
         # requires-daemon: lease optional   Without `lease pr check` (absent or older binary) the output has no PR_LEASE_STATE and the computed state stands.
         LEASE_OUT="$("${LOOM_DAEMON_BIN:-loom-daemon}" lease pr check "$NUMBER" --role "$LEASE_ROLE" 2>/dev/null || true)"
         grep -Eq '^PR_LEASE_STATE=held-(self|peer)([[:space:]]|$)' <<<"$LEASE_OUT" && CLAIM_STATE="fresh"
+    fi
+
+    # #15044: timeline-lag reclaim guard (downgrade-only). CLAIMED_AT comes
+    # from the forge timeline, which can lag a reclaim's label remove + re-add:
+    # the next pass then judges the REPLACEMENT claimant's claim against the
+    # previous claim's timestamp, reads it stale, and stomps it again — and so
+    # does every later pass. Before a stale verdict stands, re-read the item
+    # live (labels + updated_at, independent of the timeline and of the label
+    # read at the top) and scan the already trust-filtered comments (#9548)
+    # for a reclaim marker naming THIS exact CLAIMED_AT:
+    #   no marker   -> the verdict stands (a claim's FIRST reclaim is unaffected)
+    #   marker + live item updated within STALE_MINUTES -> a replacement
+    #                claimant is active -> `fresh` (stand down, do not stomp)
+    #   marker + live item idle >= STALE_MINUTES -> who holds the claim is not
+    #                provable from the lagged timeline -> `unknown` (fail safe;
+    #                "changed since" is judged by this idle comparison, not by
+    #                bare ordering against the reclaim comment — a reclaim edits
+    #                labels after posting it, so updated_at is later right after
+    #                any reclaim)
+    # A failed read, an unparseable/missing updated_at, or the claim label
+    # absent from the live read also gives `unknown`: reclaiming is then not
+    # provably safe. The guard only ever moves stale* down to fresh/unknown; it
+    # never promotes and never touches `fresh`, `unknown`, `unclaimed` or the
+    # #11947 lease downgrade above. Once the timeline advances, CLAIMED_AT
+    # changes, the old marker stops matching, and normal evaluation resumes.
+    if [[ "$CLAIM_STATE" == stale* ]]; then
+        LIVE_JSON="$(gh api "$API_BASE/issues/$NUMBER" 2>/dev/null || true)"
+        LIVE_UPDATED_AT="$(jq -r '.updated_at // empty' <<<"$LIVE_JSON" 2>/dev/null || true)"
+        if [[ ! "$LIVE_UPDATED_AT" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] ||
+            ! jq -e --arg l "$LABEL" '(.labels // [] | map(.name) | index($l)) != null' \
+                <<<"$LIVE_JSON" >/dev/null 2>&1; then
+            CLAIM_STATE="unknown"
+        else
+            RECLAIM_COUNT="$(jq --arg m "${RECLAIM_PREFIX}${CLAIMED_AT} -->" \
+                '[.[] | select(.body | contains($m))] | length' <<<"$AFTER_JSON")"
+            if ((RECLAIM_COUNT > 0)); then
+                LIVE_IDLE_MINUTES="$(_minutes_since "$LIVE_UPDATED_AT" || true)"
+                if [[ "$LIVE_IDLE_MINUTES" =~ ^[0-9]+$ ]] && ((LIVE_IDLE_MINUTES < STALE_MINUTES)); then
+                    CLAIM_STATE="fresh"
+                else
+                    CLAIM_STATE="unknown"
+                fi
+            fi
+        fi
     fi
 fi
 

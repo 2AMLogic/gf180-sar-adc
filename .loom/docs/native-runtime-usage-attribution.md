@@ -13,15 +13,32 @@ and nothing else writes that file, so work dispatched on OpenCode produced **no*
 2026-09-21 GLM-5.3 trial merged 46 PRs whose completions carried nothing
 identifying the model, the provider, or even the runtime.
 
-Two independent fixes, because they fail independently:
+Two independent fixes, because they fail independently. Both ride the run's
+telemetry record: `sweep.outcome` for a sweep, and `role_tick.outcome` for a
+role tick or a step (the same record, with `source = "step"`). The field
+reference for both is [`telemetry-schema.md`](telemetry-schema.md).
 
 1. **Labels.** `runtime` / `provider` / `profile` are now first-class fields on
-   `sweep.outcome`, `role_tick.outcome` and the `completion-v1` meta, read off
-   the launch's own `# LOOM_LAUNCH` record. They carry no token counts, so a
-   completion is identifiable **even when no usage numbers exist anywhere**.
-2. **Numbers.** The per-model token lookup is dispatched on that `runtime`
-   through `loom-daemon/src/usage_source.rs`, so an OpenCode launch reads
-   OpenCode's own session store instead of transcripts it never wrote.
+   `sweep.outcome` and `role_tick.outcome`, read off the launch's own
+   `# LOOM_LAUNCH` record. They are launch facts, not token counts, so an
+   outcome is identifiable **even when no usage numbers exist anywhere**.
+2. **Numbers.** `tokens_by_model` is a separate, **optional** field on the
+   same two records. The per-model token lookup is dispatched on that
+   `runtime` through `loom-daemon/src/usage_source.rs`, so an OpenCode launch
+   reads OpenCode's own session store instead of transcripts it never wrote.
+   When nothing attributable is found the field is omitted — never `[]`, never
+   a fabricated `0` — and the three labels, which do not depend on it, are
+   unaffected.
+
+**The Safehouse room is not a source for either.** The `completion-v1`
+envelope is **historical**: until #13946 retired the narration sink, that
+envelope's `meta` repeated the same three launch labels and its own optional
+`tokens_by_model`, so an older fleet-feed record may still carry them.
+Nothing writes it now. A merge reaches the room only as a `chat` line,
+`merged ✓ owner/repo#N · <title> · <url>`, which names the merged PR by
+repository, number, optional title (dropped when the PR has none) and URL
+and carries no runtime, provider, profile or token usage — see
+[`safehouse.md` → What gets reported](safehouse.md#what-gets-reported).
 
 ## Where each value comes from
 
@@ -63,15 +80,44 @@ caller-supplied set) plus the caller's wall-clock window:
   issue's worktree is excluded, so two concurrent sweeps in one workspace never
   fold each other in (the window alone cannot separate them).
 - **A role tick**: the workspace root alone; a tick never gets a worktree.
+- **A step** (#14048): the exact session ids the step's own log names, when it
+  names any — OpenCode's event stream carries `sessionID` on every event and
+  Codex prints a `session id: <uuid>` banner, both captured in the step's
+  per-item log. For OpenCode the id is the whole key (no directory, no window:
+  it cannot name another launch's session); the Codex arm
+  (`codex_usage::lookup_ids`) keys on id + window with no directory (#14540 —
+  deliberately no directory retry, which could fold a sibling launch's spend
+  into this one). Session IDs distinguish concurrent same-role steps
+  dispatched in one workspace. When no session id is available
+  there is no single fallback — which files and stores are consulted depends
+  on the runtime, and on whether the step log could be read at all:
+  - **Unreadable log, native runtime.** The step's log is missing or
+    unreadable, or has no `sweep_id=` header for this dispatch, and the
+    runtime the registry selected at step launch is a native store (OpenCode,
+    Kimi, Codex, Pi): the session ids are unknown, so the daemon reports
+    `no_step_log` (#14566) without opening that store. The token is the
+    `loom.usage.missing_reason` of a `loom.runtime.usage_missing` span
+    ([`telemetry-schema.md`](telemetry-schema.md)).
+  - **Readable log, no session id.** The directory-based readers (OpenCode,
+    Codex, Kimi — a Kimi launch always lands here, because no id is parsed
+    from its log) search within the step's time window. An issue-keyed step
+    (Curator, Builder, `champion_promote`) covers the workspace root *and*
+    that issue's own worktree; a PR-keyed step (Judge, Doctor,
+    `champion_merge`) covers the workspace root alone. An OpenCode or Codex
+    step that finds nothing there reports `no_session_id`.
+  - **Claude step.** The token match consults neither the step log nor a
+    directory: the daemon scans the workspace's Claude project transcripts in
+    the step's window and keeps a session only when its head names the role
+    command *and* the step's own item (`/loom:builder N`, `/loom:curator N`,
+    `/loom:champion --issue N`; `/loom:judge N`, `/loom:doctor N`,
+    `/loom:champion --pr N`), so a concurrent transcript for another item
+    does not qualify.
+  - **Pi step.** The step's own log is the only source: the daemon reads the
+    event stream captured there, within the step's window.
 
 A session row whose five counters are all zero is skipped: OpenCode writes the
 row at creation, so a launch that produced no turns would otherwise publish a
 zero-token badge for a model that was never called.
-
-The exact `sessionID`s a launch used are carried on its native JSON event
-stream and would be a more precise key than directory+window. That refinement is
-follow-up work; directory+window attributes correctly for every launch shape the
-fleet runs today (one runtime process per directory at a time).
 
 ## Reading the Kimi session store (Issue #8564)
 
@@ -223,7 +269,7 @@ the OTLP wire, which would be the only way to observe an **interactive**,
 human-launched `opencode` session (it writes a different store,
 `$XDG_DATA_HOME/opencode/opencode.db`, which `discover_opencode_dbs` does not
 scan). Issue #8670 decided that gap stays open for now, and
-[`defaults/observability/collector/README.md`](https://github.com/rjwalters/loom/blob/main/defaults/observability/collector/README.md)
+[`defaults/observability/collector/README.md`](https://github.com/2AMLogic/loom/blob/main/defaults/observability/collector/README.md)
 §"Known gap: OpenCode interactive sessions" records the evidence, the extract
 design to use if it is ever built (watermark on `session.time_updated`, dedup on
 `session.id` — the rows are mutable running totals, not append-only events), and

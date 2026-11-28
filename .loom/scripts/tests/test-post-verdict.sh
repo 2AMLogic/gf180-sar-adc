@@ -66,15 +66,33 @@ STUB_DIR_FROM_ENV="${LOOM_TEST_STUB_DIR:?stub gh: LOOM_TEST_STUB_DIR not set}"
 if [[ "$1" == "api" ]]; then
   # #10581 round 2: scenario files fail a label DELETE / a label read.
   [[ " $* " == *" -X DELETE "* && -f "$LOOM_TEST_STUB_DIR/delete-fail" ]] && { echo "HTTP 502" >&2; exit 1; }
+  # #14169: a wedged withdrawal — the file holds the sleep seconds (default 15).
+  [[ " $* " == *" -X DELETE "* && -f "$LOOM_TEST_STUB_DIR/delete-hang" ]] && { sleep "$(cat "$LOOM_TEST_STUB_DIR/delete-hang" 2>/dev/null || echo 15)"; exit 0; }
   [[ "$*" == *"/labels?"* && -f "$LOOM_TEST_STUB_DIR/labels-read-fail" ]] && { echo "HTTP 502" >&2; exit 1; }
   # #10485: the final head compare reads `repos/O/R/pulls/N --jq .head.sha`.
   if [[ "$2" =~ ^repos/[^/]+/[^/]+/pulls/[0-9]+$ ]]; then
     [[ -f "$LOOM_TEST_STUB_DIR/final-head-fail" ]] && exit 1
+    # #14169: a wedged read — the file holds the sleep seconds (default 15);
+    # after the sleep it answers normally (so budget 0 can let it finish).
+    if [[ -f "$LOOM_TEST_STUB_DIR/final-head-hang" ]]; then
+      sleep "$(cat "$LOOM_TEST_STUB_DIR/final-head-hang" 2>/dev/null || echo 15)"
+    fi
     if [[ -f "$LOOM_TEST_STUB_DIR/final-head" ]]; then cat "$LOOM_TEST_STUB_DIR/final-head"; else cat "$LOOM_TEST_STUB_DIR/cur-sha"; fi
     exit 0
   fi
   if [[ "$2" == "graphql" ]]; then
     printf '{"data":{"repository":{"pullRequest":{"reviewThreads":{"pageInfo":{"hasNextPage":false,"endCursor":null},"nodes":[]}}}}}\n'
+    exit 0
+  fi
+  # #15185: the legacy path's verify read — repos/O/R/issues/N/labels?...
+  # The stub convention answers what the --jq filter would produce, so this
+  # serves the state's label names one per line. The URL is logged so tests
+  # can assert the cache-defeating verify= component (#15185).
+  if [[ "$2" =~ ^repos/[^/]+/[^/]+/issues/[0-9]+/labels ]]; then
+    printf '%s\n' "$2" >> "$LOOM_TEST_STUB_DIR/api-labels-read.log"
+    S="$LOOM_TEST_STUB_DIR/label-state"
+    [[ -f "$S" ]] || printf 'loom:review-requested\nloom:reviewing\n' > "$S"
+    cat "$S"
     exit 0
   fi
   # A paginated list endpoint with a server-side --jq filter over an empty
@@ -90,6 +108,25 @@ fi
 if [[ "$1" == "pr" && "$2" == "edit" ]]; then
   printf '%s\n' "$*" >> "$LOOM_TEST_STUB_DIR/pr-edit.log"
   [[ -f "$LOOM_TEST_STUB_DIR/pr-edit-fail" ]] && { echo "stub gh: pr edit failed" >&2; exit 1; }
+  # #15185: a truthful forge model for the legacy path's read-back verify.
+  # label-state holds the PR's label names; pr edit applies its --add-label /
+  # --remove-label flags to it. pr-edit-lies models the half-applied
+  # transition: the command succeeds but the state does not move.
+  if [[ ! -f "$LOOM_TEST_STUB_DIR/pr-edit-lies" ]]; then
+    S="$LOOM_TEST_STUB_DIR/label-state"
+    [[ -f "$S" ]] || printf 'loom:review-requested\nloom:reviewing\n' > "$S"
+    prev=""
+    for a in "$@"; do
+      if [[ "$prev" == "--add-label" && -n "$a" ]]; then
+        grep -Fxq "$a" "$S" || printf '%s\n' "$a" >> "$S"
+      fi
+      if [[ "$prev" == "--remove-label" && -n "$a" ]]; then
+        grep -Fxv "$a" "$S" > "$S.t" || true
+        mv "$S.t" "$S"
+      fi
+      prev="$a"
+    done
+  fi
   exit 0
 fi
 if [[ "$1" == "issue" && "$2" == "comment" ]]; then
@@ -261,9 +298,9 @@ cd "$STUB_DIR/checkout"
 reset_state() {
   rm -f "$STUB_DIR"/comment-fail-* "$STUB_DIR/last-pr.txt" "$STUB_DIR/last-body.txt" \
     "$STUB_DIR"/ci-stdout "$STUB_DIR"/ci-stderr "$STUB_DIR"/ci-garbage "$STUB_DIR"/ci-absent "$STUB_DIR"/ci-empty "$STUB_DIR"/ci-required \
-    "$STUB_DIR"/final-head "$STUB_DIR"/final-head-fail "$STUB_DIR/wait-checks-calls.log" \
+    "$STUB_DIR"/final-head "$STUB_DIR"/final-head-fail "$STUB_DIR"/final-head-hang "$STUB_DIR"/delete-hang "$STUB_DIR/wait-checks-calls.log" \
     "$STUB_DIR/gate-answer" "$STUB_DIR/reconcile-answer" "$STUB_DIR"/reconcile-answer.* "$STUB_DIR/labels-fail" "$STUB_DIR/lock-fail" "$STUB_DIR/daemon-calls.log" \
-    "$STUB_DIR/lease-state" "$STUB_DIR/lease-calls.log" "$STUB_DIR/old-daemon" "$STUB_DIR/body-answer" "$STUB_DIR/body-check-missing" "$STUB_DIR/body-check-input.txt" "$STUB_DIR/delete-fail" "$STUB_DIR/labels-read-fail" "$STUB_DIR/pr-edit.log" "$STUB_DIR/pr-edit-fail"
+    "$STUB_DIR/lease-state" "$STUB_DIR/lease-calls.log" "$STUB_DIR/old-daemon" "$STUB_DIR/body-answer" "$STUB_DIR/body-check-missing" "$STUB_DIR/body-check-input.txt" "$STUB_DIR/delete-fail" "$STUB_DIR/labels-read-fail" "$STUB_DIR/pr-edit.log" "$STUB_DIR/pr-edit-fail" "$STUB_DIR/label-state" "$STUB_DIR/pr-edit-lies" "$STUB_DIR/label-state.t" "$STUB_DIR/api-labels-read.log"
 }
 
 run_pv() {
@@ -291,6 +328,21 @@ reset_state
 run_pv 101 changes-requested deadbee --body "Please fix the tests."
 assert_eq "0" "$EXIT_CODE" "valid changes-requested call -> exits 0"
 assert_contains "$LAST_BODY" "<!-- loom:verdict-sha sha=deadbee verdict=changes-requested -->" "changes-requested marker uses the right token"
+
+# T2b (#14392): --reviews-reconciled on changes-requested is appended, never
+# silently dropped; the approval path and a plain changes-requested are unchanged.
+reset_state
+RECON_TEXT="Finding 1 fixed in abc1234; finding 2 still blocking (thread 99)."
+run_pv 101 changes-requested deadbee --body "Still failing." --reviews-reconciled "$RECON_TEXT"
+assert_eq "0" "$EXIT_CODE" "changes-requested + --reviews-reconciled -> exits 0"
+assert_contains "$LAST_BODY" "Still failing." "changes-requested + flag keeps the caller's body"
+assert_contains "$LAST_BODY" "$RECON_TEXT" "changes-requested + flag appends the reconciliation text (#14392)"
+assert_contains "$LAST_BODY" "Review reconciliation (#14392)" "changes-requested + flag labels the appended note"
+assert_not_contains "$LAST_BODY" "loom:review-reconciliation" "changes-requested + flag stamps no gate marker (nothing was gated)"
+assert_contains "$LAST_BODY" "<!-- loom:verdict-sha sha=deadbee verdict=changes-requested -->" "changes-requested + flag still ends with the verdict marker"
+reset_state
+run_pv 101 changes-requested deadbee --body "Please fix the tests."
+assert_not_contains "$LAST_BODY" "Review reconciliation" "changes-requested without the flag gets no reconciliation note"
 
 # T3: --body-file with a real file.
 reset_state
@@ -619,6 +671,46 @@ run_pv 310 approved "$CI_SHA_FULL" --body "ok"
 assert_eq "5" "$EXIT_CODE" "final head read failure -> exit 5"
 no_comment "final head read failure"
 
+# a HUNG final head read is bounded (#14169): the unbounded read wedged this
+# script for 11 minutes; the read now times out into the same exit-5 refusal.
+reset_state
+echo 15 > "$STUB_DIR/final-head-hang"
+HANG_T0=$SECONDS
+set +e
+printf '%s' "$CI_SHA_FULL" > "$STUB_DIR/cur-sha"
+OUTPUT=$(LOOM_FORGE_REVIEW_READ_TIMEOUT=1 "$POST_VERDICT" 320 approved "$CI_SHA_FULL" --body "ok" 2>&1)
+EXIT_CODE=$?
+set -e
+assert_eq "5" "$EXIT_CODE" "hung final-head read -> exit 5 within the budget"
+assert_contains "$OUTPUT" "final head read" "the timeout line names the timed-out read"
+assert_contains "$OUTPUT" "#14169" "the timeout line cites the issue"
+if (( SECONDS - HANG_T0 < 10 )); then pass "hung read bounded: returned well before the stub's 15s sleep"; else fail "hung read bounded: returned well before the stub's 15s sleep"; fi
+no_comment "hung final-head read"
+
+# ... bounded the same way on the portable (no timeout(1)) fallback — the
+# macOS shape (LOOM_FORCE_PORTABLE_TIMEOUT=1).
+reset_state
+echo 15 > "$STUB_DIR/final-head-hang"
+set +e
+printf '%s' "$CI_SHA_FULL" > "$STUB_DIR/cur-sha"
+OUTPUT=$(LOOM_FORGE_REVIEW_READ_TIMEOUT=1 LOOM_FORCE_PORTABLE_TIMEOUT=1 "$POST_VERDICT" 321 approved "$CI_SHA_FULL" --body "ok" 2>&1)
+EXIT_CODE=$?
+set -e
+assert_eq "5" "$EXIT_CODE" "portable fallback: hung final-head read -> exit 5"
+no_comment "portable fallback (hung final-head read)"
+
+# budget 0 restores the unbounded read (the documented disable): a slow-but-
+# finishing read succeeds instead of timing out.
+reset_state
+echo 2 > "$STUB_DIR/final-head-hang"
+set +e
+printf '%s' "$CI_SHA_FULL" > "$STUB_DIR/cur-sha"
+OUTPUT=$(LOOM_FORGE_REVIEW_READ_TIMEOUT=0 "$POST_VERDICT" 322 approved "$CI_SHA_FULL" --body "ok" 2>&1)
+EXIT_CODE=$?
+set -e
+assert_eq "0" "$EXIT_CODE" "budget 0 disables the bound: slow read succeeds -> posted"
+assert_eq "322" "$(cat "$STUB_DIR/last-pr.txt" 2>/dev/null || true)" "budget 0: approval posted"
+
 # status read failure: older daemon (no wait-checks), garbage output, no binary
 reset_state
 touch "$STUB_DIR/ci-absent"
@@ -823,6 +915,24 @@ assert_not_contains "$OUTPUT" "loom:pr was withdrawn" "a failed DELETE is never 
 assert_contains "$OUTPUT" "could NOT be withdrawn" "the failed withdrawal is announced"
 assert_contains "$OUTPUT" "gh pr edit 328 --repo owner/repo --remove-label loom:pr" "the manual removal command is printed"
 
+# a HUNG withdrawal DELETE is bounded too (#14169): it times out into the same
+# NOT-withdrawn announcement, never a claimed withdrawal.
+reset_state
+echo "0 LOOM-VERDICT-RECONCILE STABLE" > "$STUB_DIR/reconcile-answer.1"
+echo "1 LOOM-VERDICT-RECONCILE UNREAD x" > "$STUB_DIR/reconcile-answer.2"
+echo 15 > "$STUB_DIR/delete-hang"
+DEL_T0=$SECONDS
+set +e
+printf '%s' "abc1234" > "$STUB_DIR/cur-sha"
+OUTPUT=$(LOOM_FORGE_REVIEW_READ_TIMEOUT=1 "$POST_VERDICT" 328 approved abc1234 --body "ok" 2>&1)
+EXIT_CODE=$?
+set -e
+assert_eq "8" "$EXIT_CODE" "hung withdrawal DELETE -> exit 8"
+assert_not_contains "$OUTPUT" "loom:pr was withdrawn" "a timed-out DELETE is never reported as a withdrawal"
+assert_contains "$OUTPUT" "could NOT be withdrawn" "the timed-out withdrawal falls to the NOT-withdrawn announcement"
+assert_contains "$OUTPUT" "#14169" "the timeout line names the timed-out DELETE"
+if (( SECONDS - DEL_T0 < 10 )); then pass "hung DELETE bounded: returned well before the stub's 15s sleep"; else fail "hung DELETE bounded: returned well before the stub's 15s sleep"; fi
+
 # --- T17: a daemon without the #10581 verbs (capability probe, round 2) -----
 
 # An approval posts on the legacy path (round 4, so a script roll ahead of the
@@ -871,6 +981,37 @@ run_pv 332 changes-requested abc1234 --body "please fix"
 assert_eq "8" "$EXIT_CODE" "legacy path label failure -> exit 8"
 assert_eq "332" "$(cat "$STUB_DIR/last-pr.txt" 2>/dev/null || true)" "the comment itself was posted"
 assert_contains "$OUTPUT" "Repair: gh pr edit 332 --repo owner/repo --add-label loom:changes-requested" "repair command is printed"
+
+# --- #15185: the legacy path's label edit is verified by a read-back ---------
+
+# A truthful forge: the edit applied, the read-back agrees -> exit 0, and the
+# verifying read carried a cache-defeating verify= component.
+reset_state
+touch "$STUB_DIR/old-daemon"
+run_pv 334 approved abc1234 --body "ok"
+assert_eq "0" "$EXIT_CODE" "legacy approval with a verified transition -> exit 0"
+assert_eq "loom:pr" "$(cat "$STUB_DIR/label-state" 2>/dev/null || true)" "the stub forge holds only the verdict label"
+assert_contains "$OUTPUT" "legacy path" "still the degraded path"
+assert_contains "$(cat "$STUB_DIR/api-labels-read.log" 2>/dev/null || true)" "labels?per_page=100&verify=" "the verifying read cannot be served from a URL-keyed cache (#15185)"
+
+# The #15185 shape: the edit exits 0 but a removal was silently lost — the
+# state still holds loom:review-requested beside the verdict label. The
+# read-back must catch it: exit 8, the still-present label named, the repair
+# command printed.
+reset_state
+touch "$STUB_DIR/old-daemon" "$STUB_DIR/pr-edit-lies"
+run_pv 335 approved abc1234 --body "ok"
+assert_eq "8" "$EXIT_CODE" "half-applied legacy transition -> exit 8"
+assert_eq "335" "$(cat "$STUB_DIR/last-pr.txt" 2>/dev/null || true)" "the comment itself was posted"
+assert_contains "$OUTPUT" "loom:review-requested is still present" "the contradicting label is named"
+assert_contains "$OUTPUT" "Repair: gh pr edit 335 --repo owner/repo --add-label loom:pr --remove-label loom:review-requested" "repair command is printed"
+
+# An unreadable label set is an unverified transition, never a pass.
+reset_state
+touch "$STUB_DIR/old-daemon" "$STUB_DIR/labels-read-fail"
+run_pv 336 approved abc1234 --body "ok"
+assert_eq "8" "$EXIT_CODE" "unreadable verify read -> exit 8"
+assert_contains "$OUTPUT" "could not be read back" "the unreadable read-back is named"
 
 # --- Judge lease gate (#13055) ------------------------------------------------
 for case_ in "0 PR_LEASE_STATE=free" "4 PR_LEASE_STATE=held-peer" "5 PR_LEASE_STATE=unknown" "5 garbage-no-state-line" "0 "; do

@@ -117,6 +117,16 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/worktree-forge-pr-chec
 # the call site's own `|| true` swallows the resulting 127.
 # shellcheck source=lib/locate-daemon-bin.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/locate-daemon-bin.sh" 2>/dev/null || true
+# Atomic mkdir for the no-daemon lock fallback (#15287): plain `mkdir` is not
+# mutual exclusion on uutils coreutils (Ubuntu 26.04 CI runners).
+# Defensive like the daemon-bin source above: a partially-resynced .loom/ with no
+# lib/atomic-mkdir.sh degrades to plain mkdir (today's behaviour), never breaks
+# worktree creation.
+# shellcheck source=lib/atomic-mkdir.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/atomic-mkdir.sh" 2>/dev/null || true
+if ! declare -F loom_atomic_mkdir >/dev/null; then
+    loom_atomic_mkdir() { mkdir "$1" 2>/dev/null; }
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -312,7 +322,7 @@ acquire_worktree_lock() {
     local stale_retry_done=0
 
     while true; do
-        if mkdir "$lock" 2>/dev/null; then
+        if loom_atomic_mkdir "$lock"; then
             # Lock acquired; record owner metadata for debugging plus a
             # one-shot token so release can verify it still owns this lock
             # (issue #6014 — see "Ownership verification" above).
@@ -1111,8 +1121,18 @@ Project-Specific Hooks:
 
   The hook receives three arguments:
     \$1 - Absolute path to the new worktree
-    \$2 - Branch name (e.g., feature/issue-42)
-    \$3 - Issue number
+    \$2 - Branch name (e.g., feature/issue-42); may be HEAD for a detached
+          PR checkout, and may be a custom name for a Builder checkout
+    \$3 - Issue number (worktree.sh) or PR number (pr-worktree.sh)
+
+  Both worktree.sh (issue checkouts, \$1 ends in issue-<N>) and pr-worktree.sh
+  (Judge/Doctor PR checkouts, \$1 ends in pr-<N>) run this hook. Issues and PRs
+  share one number space, so \$3 alone cannot tell them apart; neither can \$2
+  (both may use the same branch). Use the last component of \$1 instead:
+    case "\$(basename "\$1")" in
+      issue-*) ;;  # \$3 is an issue number
+      pr-*)    ;;  # \$3 is a PR number
+    esac
 
   Example hook (.loom/hooks/post-worktree.sh):
     #!/bin/bash
