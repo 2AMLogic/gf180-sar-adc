@@ -8,6 +8,25 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-28
 
+- **PR #1151**: refactor(signoff): share compound-citation traversal and check its shape from both sides
+- **PR #1150**: refactor(layout): share tap/tie strip drawing in geometry.draw_tap_strip
+- **PR #1147**: docs(sim): add dated erratum for the DR-0014 pair-5 first-attempt record
+- **PR #1145**: test(sim): add layout/ to sys.path in ToolchainRecordTests so it passes in isolation
+- **PR #1144**: refactor(harness): deduplicate timeout recording, provider lookup and klt CLI setup
+- **PR #1142**: refactor: share one conversion-chain emitter for the ex-tagged decks
+- **PR #1141**: fix(flow): report unreported STA slack as FAIL instead of crashing
+- **PR #1138**: refactor: share pinned toolchain and case-report writers in klt_env
+- **PR #1120**: fix(layout): drop stale body narrative from block-level LVS reference headers
+- **Issue #1149** (closed): Share compound-citation traversal, structure checks, and JSON I/O helpers in signoff/run_signoff.py
+- **Issue #1143** (closed): check-main-clean.sh exits 3 on an untracked loom-managed token-pool file (loom-managed .gitignore block lacks the pattern)
+- **Issue #1140** (closed): Requalification note 595 says a record carries no measurement table; it carries a 27-row table
+- **Issue #1139** (closed): Share contacted tap/tie strip drawing in layout/adc-top/lib/geometry.py and filter uncontactable tie slivers
+- **Issue #1137** (closed): ToolchainRecordTests fails when run in isolation: relies on an earlier class for layout/ on sys.path
+- **Issue #1135** (closed): Share timeout point recording, fleet-provider lookup, and klt CLI setup in sim/harness/
+- **Issue #1134** (closed): Share conversion-chain and schematic-control assembly in gen_extracted_core_tb.py
+- **Issue #1133** (closed): Share klt.sta.request/1 builders and the corner-pass predicate in design/sar-logic/flow/flow_env.py
+- **Issue #1129** (closed): Share pinned toolchain provenance and case-report writers in layout/klt_env.py
+- **Issue #1117** (closed): Block-level LVS reference headers still claim PMOS bodies are off vdd and NMOS bodies on vsubs
 - **PR #1136**: fix(sim): reuse the shared corner-table reader in DR-0014 deltas
 - **Issue #1130** (closed): signoff: re-run the unclosed-file warning count on main once #1126 merges
 - **Issue #1127** (closed): Reuse the shared corner-table reader in DR-0014 requalification
