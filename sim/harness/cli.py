@@ -473,9 +473,31 @@ def merge_extensions(
     return merged
 
 
+def _klt_batch_and_backend(args):
+    """The request's ``batch`` block and the resolved off-host backend name.
+
+    Shared by the corner-set and the deck-transport submits, so a batch-block
+    flag or a backend rule has one place to land. Raises
+    :class:`batch.BatchError` when no off-host backend resolved.
+    """
+    block = batch_mod.batch_block(
+        runner_version_check=args.runner_version_check,
+        max_units_per_job=args.max_units_per_job,
+        max_concurrent_jobs=args.max_concurrent_jobs,
+    )
+    requested = batch_mod.klt_backend_name(args.backend)
+    if requested not in batch_mod.OFFHOST_BACKENDS:
+        raise batch_mod.BatchError("no off-host backend resolved; refusing to call klt sim without one")
+    return block, requested
+
+
+def _write_json(path: Path, payload) -> None:
+    path.write_text(json.dumps(payload, indent=2) + "\n")
+
+
 def _run_through_klt(
     args, tb, pdk, plan, corner_list, temperatures, supplies, points,
-    workdir, log_dir, experiment_dir, record_id, no_write, progress, pins,
+    workdir, log_dir, stage_exp, record_id, no_write, progress, pins,
 ):
     """Submit the grid as a ``klt sim`` request and read the report back.
 
@@ -484,6 +506,7 @@ def _run_through_klt(
     is no local fallback (see ``harness/batch.py``).
     """
     save_vectors = runner.measured_vectors(tb) if args.save_measured_vectors else None
+    block, requested = _klt_batch_and_backend(args)
     # One request per supply value, each body binding `.param vdd_val=<V>`
     # (issue #505): klt's corners.supply_v axis can only alter a source, and
     # vdd_val also sets the clocks, references and thresholds at parse time.
@@ -492,11 +515,7 @@ def _run_through_klt(
         timeout_s=args.timeout,
         num_threads=args.ngspice_threads,
         save_vectors=save_vectors,
-        batch=batch_mod.batch_block(
-            runner_version_check=args.runner_version_check,
-            max_units_per_job=args.max_units_per_job,
-            max_concurrent_jobs=args.max_concurrent_jobs,
-        ),
+        batch=block,
     )
     klt_dir = workdir / "klt"
     klt_dir.mkdir(parents=True, exist_ok=True)
@@ -504,21 +523,16 @@ def _run_through_klt(
         (klt_dir / member.body_name).write_text(member.body)
         (klt_dir / member.request_name).write_text(batch_mod.request_text(member.request))
 
-    requested = batch_mod.klt_backend_name(args.backend)
-    if requested not in batch_mod.OFFHOST_BACKENDS:
-        raise batch_mod.BatchError("no off-host backend resolved; refusing to call klt sim without one")
     outcomes, envelope = batch_mod.submit_set(
         members, klt_dir, klt_dir / "out", requested, klt_cmd=args.klt_cmd,
         max_in_flight=args.max_in_flight,
         capacity_retries=args.capacity_retries,
     )
     if envelope is not None:
-        (klt_dir / "set-report.json").write_text(json.dumps(envelope, indent=2) + "\n")
+        _write_json(klt_dir / "set-report.json", envelope)
     for member, outcome in zip(members, outcomes):
         if outcome.report is not None:
-            (klt_dir / f"{member.stem}.report.json").write_text(
-                json.dumps(outcome.report, indent=2) + "\n"
-            )
+            _write_json(klt_dir / f"{member.stem}.report.json", outcome.report)
 
     results = batch_mod.to_point_results(
         tb, plan, points, outcomes, workdir, log_dir or workdir, args.timeout
@@ -533,7 +547,7 @@ def _run_through_klt(
         outcomes, members, requested, identity=scored
     )
     if not no_write:
-        snap_dir = experiment_dir / report.SNAPSHOT_DIR
+        snap_dir = stage_exp / report.SNAPSHOT_DIR
         snap_dir.mkdir(parents=True, exist_ok=True)
         for member, outcome in zip(members, outcomes):
             (snap_dir / f"{record_id}.batch-body.{member.stem}.spice").write_text(member.body)
@@ -541,11 +555,9 @@ def _run_through_klt(
                 batch_mod.request_text(member.request)
             )
             if outcome.report is not None:
-                (log_dir / f"klt-report.{member.stem}.json").write_text(
-                    json.dumps(outcome.report, indent=2) + "\n"
-                )
+                _write_json(log_dir / f"klt-report.{member.stem}.json", outcome.report)
         if envelope is not None:
-            (log_dir / "klt-set-report.json").write_text(json.dumps(envelope, indent=2) + "\n")
+            _write_json(log_dir / "klt-set-report.json", envelope)
     batch_mod.apply_runner_caveats(
         execution, outcomes,
         needs_honored_options=bool(args.ngspice_threads or save_vectors),
@@ -572,20 +584,14 @@ def _run_decks_through_klt(args, tb, pdk, points, workdir, log_dir, stage_exp, r
     :class:`batch.BatchError` on any failure to submit; there is no local
     fallback.
     """
+    block, requested = _klt_batch_and_backend(args)
     build = batch_mod.build_deck_request(
         tb, pdk, points, timeout_s=args.timeout,
         num_threads=args.ngspice_threads, save_measured=bool(args.save_measured_vectors),
-        batch=batch_mod.batch_block(
-            runner_version_check=args.runner_version_check,
-            max_units_per_job=args.max_units_per_job,
-            max_concurrent_jobs=args.max_concurrent_jobs,
-        ),
+        batch=block,
     )
     deck_dir = workdir / "klt-decks"
     request_path = batch_mod.write_deck_request(build, deck_dir)
-    requested = batch_mod.klt_backend_name(args.backend)
-    if requested not in batch_mod.OFFHOST_BACKENDS:
-        raise batch_mod.BatchError("no off-host backend resolved; refusing to call klt sim without one")
     outdir = deck_dir / "out"
     klt_report = batch_mod.submit_decks(request_path, outdir, requested, klt_cmd=args.klt_cmd)
     results = batch_mod.deck_results(
@@ -602,7 +608,7 @@ def _run_decks_through_klt(args, tb, pdk, points, workdir, log_dir, stage_exp, r
         for corner_id, deck in build.decks.items():
             (snap_dir / f"{record_id}.deck.{corner_id}.spice").write_text(deck)
         (log_dir / "klt-request.json").write_text(batch_mod.request_text(build.request))
-        (log_dir / "klt-report.json").write_text(json.dumps(klt_report, indent=2) + "\n")
+        _write_json(log_dir / "klt-report.json", klt_report)
     execution = batch_mod.deck_execution_summary(build, klt_report, outdir, pdk, requested, results)
     batch_mod.apply_runner_caveats(
         execution, klt_report,

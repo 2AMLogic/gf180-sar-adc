@@ -1311,6 +1311,30 @@ class DeckTransportTests(unittest.TestCase):
         self.assertTrue(log.startswith("TIMEOUT after 60s\n"))
         self.assertIn("partial transcript", log)
 
+    def test_a_timed_out_unit_with_no_streams_says_so_instead_of_a_stub(self):
+        """The deck-transport counterpart of the corner path's no-log timeout
+        (issue #879): neither engine stream came back, so the log is the
+        status line plus a note that says so -- never a stub that reads as a
+        transcript in the record's log column -- and the message agrees."""
+        build = self._build()
+        point = self.points[0]
+        unit = self._unit(point, "never read", build=build, status="timeout", timed_out=True,
+                          exit_code=None)
+        (self.root / "out" / point.corner_id / "stdout.bin").unlink()
+        results = self._deck_results(build, [unit])[0]
+        self.assertEqual(results[0].status, "error")
+        self.assertEqual(
+            results[0].message,
+            "ngspice timed out after 60s; no transcript retained: "
+            "the runner returns no streams for a timed-out unit",
+        )
+        self.assertEqual(results[0].log, "tt_-40c_3.30v.log")
+        self.assertEqual(
+            (self.logs / "tt_-40c_3.30v.log").read_text(),
+            "TIMEOUT after 60s\n"
+            "NO TRANSCRIPT: the runner returns no streams for a timed-out unit\n",
+        )
+
     def test_a_point_klt_reported_no_unit_for_is_an_error_not_dropped(self):
         results = self._deck_results(self._build(), [])[0]
         self.assertEqual([r.status for r in results], ["error", "error"])
