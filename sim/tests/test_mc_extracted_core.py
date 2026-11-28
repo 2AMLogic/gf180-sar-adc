@@ -111,6 +111,29 @@ class NullControlVerdict(unittest.TestCase):
                 self.assertNotIn("PASS", out)
                 self.assertIn("FAIL: no null-control samples were parsed", err)
 
+    def test_single_control_draw_fails(self):
+        for requested in (1, 6):
+            with self.subTest(control_samples=requested):
+                code, out, err, res = self.run_main(
+                    VARYING, [RECORDED_OFF_DRAW], control_samples=requested
+                )
+                self.assertEqual(res["populations_complete"], requested == 1)
+                self.assertFalse(res["null_control_passed"])
+                self.assertTrue(math.isnan(res["sigma_ratio_on_off"]))
+                self.assertEqual(code, 1)
+                self.assertNotIn("PASS", out)
+                self.assertIn("FAIL: only one null-control sample was parsed", err)
+                self.assertIn("at least two", err)
+
+    def test_two_identical_control_draws_can_pass(self):
+        code, out, err, res = self.run_main(VARYING, [RECORDED_OFF_DRAW] * 2)
+        self.assertTrue(res["populations_complete"])
+        self.assertTrue(res["null_control_passed"])
+        self.assertEqual(res["sigma_ratio_on_off"], float("inf"))
+        self.assertEqual(code, 0)
+        self.assertIn("PASS", out)
+        self.assertEqual(err, "")
+
     def test_two_frozen_populations_fail(self):
         """The reported failure: both sigmas exactly 0, the ratio reported as
         unbounded, PASS, exit 0."""
