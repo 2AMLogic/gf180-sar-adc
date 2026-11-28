@@ -65,6 +65,20 @@
 # PDK; it lives here, not in ci.yml, because the PR path must stay klt-free.
 # Own dedup marker (`<!-- nightly-pdk-klt-layout -->`), never loom:urgent,
 # never writes evidence.
+#
+# A FOURTH, SEPARATE JOB (klt-parasitics, issue #958) runs the one layout/
+# runner `klt-layout` cannot: layout/adc-top/parasitics/run_extract_parasitics.py
+# --check. It cannot run PDK-free, even under --check: the runner binds every
+# extracted MOS device to the real PDK subcircuit, which means an unconditional
+# `klt pdk find --pdk gf180mcuD` that exits 1 when no gf180mcuD install at the
+# pinned open_pdks hash exists (measured, not inferred). So it gets the one
+# thing `klt-layout` is kept free of -- the cached gf180mcuD PDK `selftest`
+# and `xschem-smoke` already share, same key and same fetch recipe -- and
+# stays out of both: `klt-layout`'s PDK-free, cache-free isolation and
+# `selftest`'s stage-4 signal are untouched. It runs under `klt-layout`'s
+# pinned klt build, in the same throwaway venv. Own dedup marker
+# (`<!-- nightly-pdk-klt-parasitics -->`), never loom:urgent, never writes
+# evidence.
 
 name: Nightly PDK checks
 
@@ -821,7 +835,8 @@ jobs:
     # `--check` mints no record, and the last step asserts the tree is
     # still clean. `signoff/run_signoff.py --regen`
     # stays local and reviewed; layout/adc-top/parasitics/ needs the PDK and
-    # is not run here.
+    # runs in the `klt-parasitics` job below (issue #958), not here -- adding
+    # the PDK cache to THIS job would couple its signal to ciel availability.
     #
     # Known host sensitivity (layout/toolchain.json, "CAVEAT ... PR #195"):
     # `klt extract`'s anonymous net labels were not stable across host
@@ -969,3 +984,327 @@ jobs:
               labels: ['loom:triage'],
             });
             core.notice(`nightly klt layout failure filed as #${created.data.number}`);
+
+  klt-parasitics:
+    name: layout/adc-top/parasitics/ runner (pinned klt + real PDK)
+    # Issue #958. Re-runs `layout/adc-top/parasitics/run_extract_parasitics.py
+    # --check` -- `klt extract --parasitics` on the adc-top blocks and leaf
+    # cells, every summary asserted against
+    # layout/adc-top/parasitics/cells.json -- so the committed parasitics
+    # evidence is noticed when it stops being reproducible, exactly as
+    # `klt-layout` does for DRC/LVS/ERC/power (#426's rationale).
+    #
+    # Why it is NOT a step in `klt-layout`: that job is deliberately PDK-free
+    # and cache-free, and this runner cannot run PDK-free even under --check.
+    # `run()` unconditionally calls `klt_env.resolve_pdk()`, i.e. `klt pdk find
+    # --pdk gf180mcuD`, because `--pdk`/`--pdk-root` bind every extracted MOS
+    # device to the real PDK subcircuit (`X ... nfet_03v3`) instead of a bare
+    # `M ... nfet` card -- the whole point of this extraction. Measured on the
+    # pinned klt with no gf180mcuD install on any search root: `klt pdk find`
+    # exits 1 and the runner exits 1 (EXIT_TOOLING) before extracting
+    # anything. Giving `klt-layout` the PDK cache instead would tie the
+    # DRC/LVS/power/ERC nightly signal to ciel/cache availability, and putting
+    # a klt install inside `selftest` would blur its stage-4 signal -- so this
+    # is its own job, independent of the other three (deliberately NOT
+    # `needs:`), with its own red job and its own dedup'd issue.
+    #
+    # Same cached gf180mcuD PDK (identical key AND fetch recipe) as `selftest`
+    # and `xschem-smoke` -- GitHub Actions cache entries are shared across the
+    # repo's jobs, so whichever of the three misses first saves the others the
+    # download -- and the same `klt-a` throwaway venv as `klt-layout`
+    # (layout/toolchain.json's `klt_install` + layout/power/toolchain.json's
+    # `klayout_package`; no `klt-b`, ERC stays in `klt-layout`). Every pin is
+    # READ from those files, never restated here.
+    #
+    # Nothing is written: `--check` stages every netlist into a
+    # tempfile.TemporaryDirectory() and returns before the append-only record
+    # slot is reserved, and a late step asserts the tree is still clean.
+    if: >-
+      github.repository == '2AMLogic/gf180-sar-adc' &&
+      (github.event_name != 'pull_request' || github.event.label.name == 'ci:pdk')
+    runs-on: ubuntu-latest
+    # Cold path: PDK download (cache-shared with `selftest`/`xschem-smoke`) +
+    # a two-wheel pip install + three extractions (the --check itself measured
+    # ~11 s warm on an ubuntu x86_64 dev host). Same bound as `klt-layout`.
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+      # Only used by the "Notify on failure" step below, and only on
+      # scheduled runs.
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Resolve pins from sim/ and layout/toolchain.json
+        id: pins
+        # Every pin is READ from its source-of-truth file, never restated
+        # here, so a pin bump in any of the three files below can never be
+        # served a cache or a klt build made for the previous pin. Same
+        # sources, and the same "a missing pin is fatal, not a default" rule,
+        # as `selftest`'s equivalent step (open_pdks, variant) and
+        # `klt-layout`'s install step (the three klt/klayout pins).
+        run: |
+          set -euo pipefail
+          open_pdks="$(python3 -c '
+          import json, sys
+          value = json.load(open("sim/toolchain.json")).get("open_pdks")
+          if not value:
+              sys.exit("sim/toolchain.json does not pin open_pdks")
+          print(value)
+          ')"
+          # The variant comes from the harness itself (harness.pdk.DEFAULT_VARIANT)
+          # rather than being retyped here. klt_env.PDK_VARIANT -- what the runner
+          # passes to `klt pdk find` -- restates that same variant.
+          variant="$(python3 -c 'import sys; sys.path.insert(0, "sim"); from harness import pdk; print(pdk.DEFAULT_VARIANT)')"
+          read_pin() { python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$1" "$2"; }
+          klt_install="$(read_pin layout/toolchain.json klt_install)"
+          klt_commit="$(read_pin layout/toolchain.json klt_last_verified_commit)"
+          klayout_pkg="$(read_pin layout/power/toolchain.json klayout_package)"
+          for v in "$klt_install" "$klt_commit" "$klayout_pkg"; do
+            test -n "$v" || { echo "::error::a klt/klayout pin is empty"; exit 1; }
+          done
+          {
+            echo "open_pdks=${open_pdks}"
+            echo "variant=${variant}"
+            echo "klt_install=${klt_install}"
+            echo "klt_last_verified_commit=${klt_commit}"
+            echo "klayout_package=${klayout_pkg}"
+          } >> "$GITHUB_OUTPUT"
+          echo "pinned open_pdks : ${open_pdks}"
+          echo "pdk variant      : ${variant}"
+          echo "pinned klt       : ${klt_install} (expect commit ${klt_commit})"
+          echo "pinned klayout   : ${klayout_pkg}"
+
+      # -------------------------------------------------------------------- PDK
+      - name: Restore gf180mcu PDK
+        id: pdk-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ciel
+          # Same key (and shared cache entry) as `selftest`'s and
+          # `xschem-smoke`'s equivalent steps -- see `selftest`'s comment for
+          # what shape -v4 records. The fetch step below is that recipe
+          # VERBATIM for the same reason: whichever of the three jobs misses
+          # first writes the entry the other two restore, so a narrower fetch
+          # here would hand `selftest` a cache missing the libs.ref files its
+          # gate-level replay testbenches read.
+          key: gf180mcu-ciel-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v4
+
+      - name: Fetch gf180mcu PDK (ciel)
+        if: steps.pdk-cache.outputs.cache-hit != 'true'
+        # `selftest`'s fetch recipe verbatim -- see that step's comment for why
+        # libs.ref is kept rather than pruned, and the cache key above for why
+        # this job must not narrow it. (This job itself reads only gf180mcuD's
+        # libs.tech and its primitive-device library; the pruned single-variant
+        # shape is verified sufficient for `klt extract --parasitics --pdk`.)
+        run: |
+          set -euo pipefail
+          open_pdks='${{ steps.pins.outputs.open_pdks }}'
+          variant='${{ steps.pins.outputs.variant }}'
+          python3 -m pip install --disable-pip-version-check --quiet 'ciel==2.6.1'
+          ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr -l gf180mcu_fd_sc_mcu7t5v0 "${open_pdks}"
+          store="${HOME}/.ciel/ciel/gf180mcu/versions/${open_pdks}"
+          test -d "${store}/${variant}" \
+            || { echo "::error::ciel did not install ${variant} under ${store}"; exit 1; }
+          # -l REPLACES ciel's default library set, so confirm the standard-cell
+          # SPICE the gate-level replay testbenches read actually came down.
+          test -f "${store}/${variant}/libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice/gf180mcu_fd_sc_mcu7t5v0.spice" \
+            || { echo "::error::ciel did not install gf180mcu_fd_sc_mcu7t5v0 SPICE under ${store}/${variant}/libs.ref"; exit 1; }
+          for dir in "${store}"/*/; do
+            name="$(basename "${dir}")"
+            if [ "${name}" != "${variant}" ]; then
+              rm -rf "${dir}"
+              rm -f "${HOME}/.ciel/${name}"
+            fi
+          done
+          echo "PDK size (other variants pruned): $(du -sh "${HOME}/.ciel" | cut -f1)"
+
+      - name: Export PDK environment
+        # `klt pdk find` would also find ~/.ciel on its own (it is a built-in
+        # search root), but exporting the conventional pair makes the resolved
+        # install explicit in the log (`resolved_via: PDK_ROOT environment
+        # variable`) and matches `selftest`/`xschem-smoke` and
+        # docs/environment-setup.md §4.
+        run: |
+          {
+            echo "PDK_ROOT=${HOME}/.ciel"
+            echo "PDK=${{ steps.pins.outputs.variant }}"
+          } >> "$GITHUB_ENV"
+
+      # -------------------------------------------------------------------- klt
+      - name: Install the pinned klt + klayout into a throwaway venv
+        run: |
+          set -euo pipefail
+          klt_install='${{ steps.pins.outputs.klt_install }}'
+          klayout_pkg='${{ steps.pins.outputs.klayout_package }}'
+          python3 -m venv "$RUNNER_TEMP/klt-a"
+          "$RUNNER_TEMP/klt-a/bin/pip" install --quiet "$klt_install" "klayout==$klayout_pkg"
+
+          # Provenance, in the log and the step summary -- the same block
+          # `klt-layout` prints for its klt-a venv. The runner's --check does
+          # not assert this identity itself (it probes capabilities, see
+          # layout/toolchain.json's _comment); it is printed so a bump that
+          # moved `klt_install` without `klt_last_verified_commit` is visible.
+          {
+            echo '### klt build under test'
+            echo '```'
+            echo "A (parasitics): $klt_install  (expect commit ${{ steps.pins.outputs.klt_last_verified_commit }})"
+            "$RUNNER_TEMP/klt-a/bin/klt" version --format json
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # ------------------------------------------------------------ the check
+      - name: Parasitic extraction runner (klt A + real PDK)
+        id: parasitics
+        # --check is load-bearing, not cosmetic: the runner stages every
+        # netlist into a tempfile.TemporaryDirectory() and returns as soon as
+        # every assertion in cells.json has matched, before the append-only
+        # record slot is reserved. Without it this step would mint a record
+        # under layout/adc-top/parasitics/{records,reports}/ on every run.
+        run: |
+          set -uo pipefail
+          export PATH="$RUNNER_TEMP/klt-a/bin:$PATH"
+          # Log lands outside the checkout so the tree-clean assertion below is
+          # checking the runner, not this workflow's own scratch file.
+          log="${RUNNER_TEMP}/klt-parasitics.log"
+          status=0
+          python3 layout/adc-top/parasitics/run_extract_parasitics.py --check 2>&1 | tee "${log}" || status=$?
+          exit "${status}"
+
+      - name: Assert nothing wrote evidence
+        if: always()
+        # Same structural guard as the sibling jobs: --check must mean --check,
+        # not "check unless something upstream forgot a flag". Runs even when
+        # the step above failed -- a half-written record is most likely then.
+        run: |
+          set -euo pipefail
+          dirty="$(git status --porcelain)"
+          if [ -n "${dirty}" ]; then
+            echo "::error::layout --check runs modified or created files"
+            echo "${dirty}"
+            exit 1
+          fi
+          echo "ok: working tree clean, no evidence written"
+
+      - name: Upload parasitics check log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          # A CI artifact, deliberately NOT committed: parasitics records are
+          # minted by a developer running run_extract_parasitics.py locally.
+          name: klt-parasitics-log-${{ github.run_id }}
+          path: ${{ runner.temp }}/klt-parasitics.log
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## klt parasitics extraction runner"
+            echo
+            echo "| item | value |"
+            echo "| --- | --- |"
+            echo "| result | ${{ job.status }} |"
+            echo "| klt | ${{ steps.pins.outputs.klt_install }} (expect commit \`${{ steps.pins.outputs.klt_last_verified_commit }}\`) |"
+            echo "| klayout | ${{ steps.pins.outputs.klayout_package }} |"
+            echo "| open_pdks | \`${{ steps.pins.outputs.open_pdks }}\` |"
+            echo "| variant | ${{ steps.pins.outputs.variant }} |"
+            echo "| PDK cache | ${{ steps.pdk-cache.outputs.cache-hit == 'true' && 'hit' || 'miss (refetched)' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify on failure
+        # Same shape as the sibling jobs' notifiers, with its own dedup marker.
+        # Scheduled runs only; never loom:urgent -- a drifted parasitics
+        # extraction is triage work (re-extract, re-baseline in a reviewed
+        # change), not a broken safety net: nothing here re-runs the
+        # sabotage/negative-control check that tier is reserved for.
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- nightly-pdk-klt-parasitics -->';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}` +
+                           `/actions/runs/${context.runId}`;
+
+            let excerpt = '(no parasitics log was produced -- the failure is upstream of ' +
+                          'run_extract_parasitics.py --check; see the run log)';
+            try {
+              const logPath = `${process.env.RUNNER_TEMP}/klt-parasitics.log`;
+              const lines = fs.readFileSync(logPath, 'utf8').split('\n');
+              // The runner reports every failed cells.json assertion as a
+              // `  - <block>: <field> = got, expected want` line under
+              // ASSERTION FAILURES, and environment problems as ERROR (tooling).
+              const failing = lines.filter((l) => /^ASSERTION FAILURES|^\s+- |ERROR|::error/.test(l)).slice(0, 30);
+              if (failing.length) excerpt = failing.join('\n');
+            } catch (err) {
+              core.info(`no klt-parasitics.log to excerpt: ${err.message}`);
+            }
+
+            const body = [
+              marker,
+              'The nightly klt parasitics check failed: ' +
+                '`layout/adc-top/parasitics/run_extract_parasitics.py --check` no ' +
+                'longer reproduces the counts, parasitic totals or GDS hashes committed ' +
+                'in `layout/adc-top/parasitics/cells.json` under the pinned klt and ' +
+                'gf180mcuD PDK, or its toolchain/PDK resolution failed. **This run ' +
+                'itself minted nothing** (it only runs `--check`), but the committed ' +
+                'parasitics records under `layout/adc-top/parasitics/records/` describe ' +
+                'a geometry/deck this run could not reproduce -- treat them as ' +
+                'unverified until the mismatch is understood and re-baselined.',
+              '',
+              `- run: ${runUrl}`,
+              `- commit: ${context.sha}`,
+              '',
+              '```',
+              excerpt,
+              '```',
+              '',
+              'Reproduce locally: install `layout/toolchain.json`\'s `klt_install` and ' +
+                '`layout/power/toolchain.json`\'s `klayout_package` into a venv and put ' +
+                'it on PATH, point `PDK_ROOT` at the pinned gf180mcuD install ' +
+                '(docs/environment-setup.md §3), then from the repo root:',
+              '',
+              '```bash',
+              'python3 layout/adc-top/parasitics/run_extract_parasitics.py --check',
+              '```',
+              '',
+              'Exit 1 is a tooling/PDK problem; exit 2 is a cells.json assertion mismatch.',
+            ].join('\n');
+
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = open.find(
+              (i) => !i.pull_request && (i.body || '').includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body,
+              });
+              core.notice(`nightly klt parasitics failure appended to #${existing.number}`);
+              return;
+            }
+            const created = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Nightly check: klt parasitics extraction drifted from cells.json',
+              body,
+              labels: ['loom:triage'],
+            });
+            core.notice(`nightly klt parasitics failure filed as #${created.data.number}`);

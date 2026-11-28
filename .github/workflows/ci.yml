@@ -23,7 +23,8 @@
 #          It runs for real wherever those are present -- a contributor's
 #          machine today, and this same discovery command in nightly-pdk.yml
 #          once the synthesis klt/yosys pin is CI-installable (the layout/
-#          runners below are already nightly: the `klt-layout` job).
+#          runners below are already nightly: the `klt-layout` job, plus
+#          `klt-parasitics` for the one runner that needs the PDK).
 #
 #   sim/selftest.sh stage 2  (`run_corners.py --check-env`)
 #       -> NOT HERE, but covered: runs in nightly-pdk.yml, which installs the
@@ -119,6 +120,23 @@
 #                                     DR-0034 budget verdict)
 #       -> RUNS HERE, on every push and pull request, for exactly the reason the
 #          ERC --verify lane above does.
+#
+#   layout/adc-top/parasitics/run_extract_parasitics.py
+#                                     (parasitic extraction, issue #17 Scope
+#                                     item 1: `klt extract --parasitics` on the
+#                                     adc-top blocks and leaf cells, every
+#                                     summary asserted against
+#                                     layout/adc-top/parasitics/cells.json)
+#       -> EXCLUDED from execution on the PR path, same reason as the runners
+#          above -- and, unlike them, it cannot run PDK-free either, so it is
+#          not in the PDK-free `klt-layout` job: even under `--check` it calls
+#          `klt pdk find --pdk gf180mcuD` to bind every extracted MOS device
+#          to the real PDK subcircuit, and that exits 1 when gf180mcuD is
+#          absent at the pinned open_pdks hash (measured). It runs nightly in
+#          nightly-pdk.yml's own `klt-parasitics` job instead, which restores
+#          the same cached gf180mcuD PDK as `selftest` and runs `--check`
+#          under the pinned klt. Byte-compiled here via the "python syntax"
+#          step.
 #
 #   signoff/run_signoff.py --check   (T1 verdict freshness: re-derives every
 #                                     input behind the committed
