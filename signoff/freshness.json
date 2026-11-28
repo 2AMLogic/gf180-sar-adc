@@ -248,7 +248,12 @@
         "A corner that is not `constrained` or has negative setup/hold slack makes the row `unmet`; nothing is dropped.",
         "(functional) the cocotb bit-exact suite design/sar-logic/tb/test_sar_ctrl.py on design/sar-logic/rtl/sar_ctrl.v, run by",
         "`klt functional-verification` (design/sar-logic/tb/run_functional.py); mutation testing of the same request kills every",
-        "mutant (mutation_response.json beside the cited envelope), so the suite demonstrably can fail."
+        "mutant (mutation_response.json beside the cited envelope), so the suite demonstrably can fail.",
+        "Issue #1028 (closing #486): the SPEF-annotated timing that signoff/README.md's item5dig footnote now reports",
+        "(receipts 20261104-195336-b4950aa2 and 20261104-212437-9cde5a64 under design/sar-logic/flow/sar_ctrl/records/)",
+        "is NOT a graded input of this row and adds no citation or artifact pin here: the graded STA part stays the",
+        "no-SPEF request above. signoff/README.md and layout/adc-top/sar_ctrl/README.md are prose, not artifact pins of any",
+        "citation, so editing them moves no pinned hash."
       ],
       "parts": [
         {

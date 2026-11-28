@@ -2,9 +2,93 @@
 `.audit.json` that `sta_postroute_spef.py` writes (issue #481). Pure
 formatting: every number comes from that JSON, so the record and the JSON
 cannot disagree. Import-only.
+
+The summary block states the exit status the driver returns for the evidence
+being rendered (issue #1028): before that, "exits 1" and "every corner is
+rejected" were printed unconditionally, including for an accepted run.
 """
 
 from __future__ import annotations
+
+#: The corner whose gate reasons lead the "Why rejected" bullet.
+TT = "tt_025C_3v30"
+
+_NO_REASON = "(no gate reason recorded)"
+
+
+def exit_status(ev: dict) -> int:
+    """The status `sta_postroute_spef.run_spef_mode` exits with for this
+    evidence, re-derived from the two decisions its tail makes, in its order:
+    a negative control that was not rejected for its own defect is 2 and
+    outranks the corners; otherwise a rejected corner is 1; otherwise 0."""
+    if not all(c["meaningful"] for c in ev["negative_controls"]):
+        return 2
+    if not all(c["accepted"] for c in ev["corners"]):
+        return 1
+    return 0
+
+
+def _why_rejected(cs: list) -> str:
+    """The "Why rejected" bullet. `TT`'s reasons lead whenever it is rejected;
+    every other rejected corner's own reasons follow when they differ, so no
+    rejected corner is left undescribed (issue #1028)."""
+    tt = next(c for c in cs if c["corner"] == TT)
+    rejected = [c for c in cs if not c["accepted"]]
+    if not rejected:
+        return f"- **Why rejected**: no corner is rejected; `{TT}` recorded no gate reasons."
+    groups: dict[tuple, list] = {}
+    for c in rejected:
+        groups.setdefault(tuple(c["gate_reasons"]), []).append(c["corner"])
+    # Flat (unlabelled) reasons only when one group covers every rejected corner.
+    flat: set[tuple] = set()
+    if tt["accepted"]:
+        head = f"- **Why rejected**: `{TT}` is accepted and recorded no gate reasons. The rejected corners' own gate reasons:"
+    else:
+        if len(groups) == 1:
+            flat.add(tuple(tt["gate_reasons"]))
+            same = (
+                "every corner is rejected for these same reasons"
+                if len(rejected) == len(cs)
+                else "every rejected corner is rejected for these same reasons"
+            )
+        else:
+            same = "rejected corners' reasons differ; each group of corners follows"
+        head = f"- **Why rejected** (`{TT}`; {same}):"
+    lines = []
+    for key, names in groups.items():
+        reasons = list(key) or [_NO_REASON]
+        if key in flat:
+            lines += [f"  - {r}" for r in reasons]
+        else:
+            lines.append("  - " + ", ".join(f"`{n}`" for n in names) + ":")
+            lines += [f"    - {r}" for r in reasons]
+    return "\n".join([head] + lines)
+
+
+def _supersedes(ev: dict, code: int) -> str:
+    """The baseline bullet. Only a run that passed the gate from a clean tree
+    takes over from the no-SPEF baseline as the cited bounded evidence."""
+    base = f"`{_baseline(ev)}`"
+    # This run only establishes its own outcome; which record is currently cited
+    # is stated by the live README, never by a later run's receipt.
+    if code != 0:
+        return (
+            f"- **This record does not supersede** {base}: this run's gate rejected at\n"
+            "  least one corner, so it does not qualify as bounded timing evidence. The\n"
+            "  record currently cited is named by the README, not by this run."
+        )
+    if ev["working_tree_dirty"]:
+        return (
+            f"- **This record does not supersede** {base} on its own: every corner passed this\n"
+            "  gate, but the working tree was DIRTY at run time, so this run is a\n"
+            "  qualification run only. The record currently cited is named by the README,\n"
+            "  not by this run."
+        )
+    return (
+        f"- **This record supersedes** {base} as the cited bounded timing evidence, within\n"
+        "  the limits stated here: SPEF-annotated, ideal clock, one nominal lumped no-R\n"
+        "  extraction. It is not propagated-clock or RC closure."
+    )
 
 
 def _f(x, fmt="+.4f"):
@@ -70,12 +154,8 @@ def render(ev: dict, when) -> str:
     st = ev["static_audit"]
     accepted = [c for c in cs if c["accepted"]]
     rejected = [c for c in cs if not c["accepted"]]
-    reasons_tt = next(c for c in cs if c["corner"] == "tt_025C_3v30")["gate_reasons"]
-    same_reasons = (
-        "every corner is rejected for these same reasons"
-        if all(c["gate_reasons"] == reasons_tt for c in cs)
-        else "other corners' reasons differ: see the audit JSON"
-    )
+    code = exit_status(ev)
+    why = _why_rejected(cs)
     # The rejected-nets failure mode (klayout-tools#2880 gap 1) is narrated only
     # when this run's own static audit found something to narrate.
     has_findings = bool(st["nets_with_errors"] or st["errors"])
@@ -86,7 +166,7 @@ def render(ev: dict, when) -> str:
         if st.get("conn_sets_all_match")
         else "Some DEF signal nets' `*I` sets differ from the DEF's `NETS` connections (`conn_mismatch` above)."
     )
-    tt_w = (next(c for c in cs if c["corner"] == "tt_025C_3v30")["reader_warnings"]) or {}
+    tt_w = (next(c for c in cs if c["corner"] == TT)["reader_warnings"]) or {}
     ctl_rows = "\n".join(
         f"| `{c['name']}` | {c['derivation']} | `{c['spef_sha256'][:16]}...` "
         f"| {(c['spef_annotation'] or {}).get('design_nets_annotated')}/{(c['spef_annotation'] or {}).get('design_nets_total')}, "
@@ -161,9 +241,8 @@ ideal-clock and nominal-extraction limits above still apply, so this is not a si
 - **Verdict**: **{ev['verdict']}**. {len(accepted)} of {len(cs)} corners passed the annotation
   gate ({', '.join(c['corner'] for c in rejected) or 'none'} rejected). A rejected corner's slack is
   **not** a real-parasitics measurement and is not quoted as one. The driver
-  does not fall back to the unannotated timing, and exits 1.
-- **Why rejected** (`tt_025C_3v30`; {same_reasons}):
-{chr(10).join('  - ' + r for r in reasons_tt) or '  - (accepted)'}
+  does not fall back to the unannotated timing, and exits {code}.
+{why}
 - **Negative controls**: {ev['controls_verdict']}.
 - **Clock mode (every run, both SPEF and reference)**: ideal SDC clock, read from
   each retained generated script (hash-matched to `engine_log.script_sha256`).
@@ -172,9 +251,7 @@ ideal-clock and nominal-extraction limits above still apply, so this is not a si
   #481 was **not run**.
 - **Interconnect corner**: one nominal extraction, used at all five Liberty
   corners. No RC-corner sweep is claimed (klayout-tools#2858, open).
-- **This record does not supersede** `{_baseline(ev)}`. That record stays the
-  cited bounded timing evidence (no SPEF, ideal clock) until a SPEF run passes
-  this gate.
+{_supersedes(ev, code)}
 
 ## Provenance
 

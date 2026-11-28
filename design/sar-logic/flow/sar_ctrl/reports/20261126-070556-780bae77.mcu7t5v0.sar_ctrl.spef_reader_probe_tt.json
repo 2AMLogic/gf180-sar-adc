@@ -1,0 +1,327 @@
+{
+  "schema": "gf180-sar-adc.spef-reader-probe/1",
+  "record_id": "20261126-070556-780bae77.mcu7t5v0.sar_ctrl.spef_reader_probe_tt",
+  "issue": 1028,
+  "_comment": [
+    "Single-corner READER PROBE for issue #1028's AC 2 reconciliation (part of #486). It is not a",
+    "qualification receipt and changes no gate: it prints, verbatim, what OpenSTA's reader kept for the",
+    "eleven aliased timed nets when it reads the qualified SPEF, because the November receipts retain",
+    "only a 20-entry sample of the reader's partially-unannotated-driver listing (klt caps the sample),",
+    "which cuts the eleventh driver.",
+    "'780bae77' in the record id names the main commit whose committed DEF, SPEF and TT request were read;",
+    "the probe ran on host tools, not the pinned klt 0.8.0, and its numbers are cited only where they are",
+    "reader accounting, never as timing evidence. Timing evidence stays the two November receipts.",
+    "",
+    "openroad: run from the repo root with the PDK installed (docs/environment-setup.md),",
+    "  PDK_ROOT=$HOME/.ciel OPENROAD_PDK_ROOT=$HOME/.ciel OPENROAD_PDK=gf180mcuD \\",
+    "    openroad -no_init -exit design/sar-logic/flow/sar_ctrl/reports/<record_id>.tcl",
+    "  The OPENROAD_* names pass through the Docker wrapper; the script mirrors the design-loading",
+    "  steps of the klt-generated sta_sar_ctrl.tcl (LEF, DEF, Liberty, create_clock 62.5 ns, read_spef),",
+    "  then reports parasitic annotation and each net.",
+    "klt_sta_rerun: the committed TT SPEF request, run unchanged through the host klt, to confirm the",
+    "  hand-written script leaves the reader in the state klt's own generated script does."
+  ],
+  "inputs_sha256": {
+    "layout/adc-top/sar_ctrl/sar_ctrl.def": "96c8e30acde436cbcbf6f700f057f3eba68983b16acce69611ccc970cd87e53f",
+    "layout/adc-top/sar_ctrl/sar_ctrl.v": "6d32ab0ed1cd1ccb4b1d2c953060afbe3e5947bf634398661c2a04423023304b",
+    "design/sar-logic/flow/sar_ctrl/reports/20261104-212437-9cde5a64.mcu7t5v0.sar_ctrl.spef": "9167446e52f74f398fd5a22852d51857ded80aab4aed5a812a97af91559da9af",
+    "design/sar-logic/flow/sar_ctrl/reports/20261126-070556-780bae77.mcu7t5v0.sar_ctrl.spef_reader_probe_tt.tcl": "b7d17da3f3c204aa42ac33d9e9bfeee0ebf998f0a5c03b1fc6463b6b39c05936",
+    "design/sar-logic/flow/sar_ctrl/reports/20261104-212437-9cde5a64.mcu7t5v0.sta_postroute_spef_tt_025C_3v30.sta_request.json": "b0330cb393b6298a93efec17ec6485844ddd7b5f200c7421739e9dfc58c7953a"
+  },
+  "liberty_sha256": "sha256:f9dee07cf158324934b0c59144d970a2e8313f43533ede6283ec3c136f82fe53",
+  "toolchain": {
+    "openroad": "26Q3-1510-g6cb3f2b704",
+    "openroad_image": "openroad/orfs@sha256:bb7f31697fb8466ab61852fc796376cc16d9df38f762ccb733218b8a5e55824b",
+    "klt_sta_rerun": "0.9.3.dev5631+gd18ed7a2411d",
+    "pdk": {
+      "name": "gf180mcuD",
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+    }
+  },
+  "corner": "tt_025C_3v30",
+  "run_at_utc": {
+    "openroad": "2026-11-26T07:07:40Z",
+    "klt_sta_rerun": "2026-11-26T07:02:11Z"
+  },
+  "parasitic_annotation": {
+    "unannotated_drivers": [
+      "clkload0/Z",
+      "clkload1/ZN"
+    ],
+    "partially_unannotated_drivers": [
+      [
+        "_211_/Q",
+        [
+          "c0"
+        ]
+      ],
+      [
+        "_212_/Q",
+        [
+          "c1"
+        ]
+      ],
+      [
+        "_213_/Q",
+        [
+          "c2"
+        ]
+      ],
+      [
+        "_214_/Q",
+        [
+          "c3"
+        ]
+      ],
+      [
+        "_215_/Q",
+        [
+          "c4"
+        ]
+      ],
+      [
+        "_216_/Q",
+        [
+          "c5"
+        ]
+      ],
+      [
+        "_217_/Q",
+        [
+          "c6"
+        ]
+      ],
+      [
+        "_218_/Q",
+        [
+          "c7"
+        ]
+      ],
+      [
+        "_219_/Q",
+        [
+          "c8"
+        ]
+      ],
+      [
+        "_220_/Q",
+        [
+          "c9"
+        ]
+      ],
+      [
+        "_245_/Q",
+        [
+          "drdy"
+        ]
+      ]
+    ],
+    "listing_identical_in_klt_sta_rerun": true
+  },
+  "report_net": {
+    "c0_r": {
+      "pin_capacitance_ff": 3.13,
+      "wire_capacitance_ff": 4.3,
+      "total_capacitance_ff": 7.43,
+      "driver": "_211_/Q",
+      "driver_cell": "gf180mcu_fd_sc_mcu7t5v0__dffq_1",
+      "load": {
+        "pin": "_175_/I0",
+        "cell": "gf180mcu_fd_sc_mcu7t5v0__mux2_1",
+        "pin_capacitance_ff": 3.13
+      },
+      "port": "c0"
+    },
+    "c1_r": {
+      "pin_capacitance_ff": 3.13,
+      "wire_capacitance_ff": 3.58,
+      "total_capacitance_ff": 6.71,
+      "driver": "_212_/Q",
+      "driver_cell": "gf180mcu_fd_sc_mcu7t5v0__dffq_1",
+      "load": {
+        "pin": "_178_/I0",
+        "cell": "gf180mcu_fd_sc_mcu7t5v0__mux2_1",
+        "pin_capacitance_ff": 3.13
+      },
+      "port": "c1"
+    },
+    "c2_r": {
+      "pin_capacitance_ff": 3.13,
+      "wire_capacitance_ff": 4.08,
+      "total_capacitance_ff": 7.22,
+      "driver": "_213_/Q",
+      "driver_cell": "gf180mcu_fd_sc_mcu7t5v0__dffq_1",
+      "load": {
+        "pin": "_179_/I0",
+        "cell": "gf180mcu_fd_sc_mcu7t5v0__mux2_1",
+        "pin_capacitance_ff": 3.13
+      },
+      "port": "c2"
+    },
+    "c3_r": {
+      "pin_capacitance_ff": 3.13,
+      "wire_capacitance_ff": 6.22,
+      "total_capacitance_ff": 9.35,
+      "driver": "_214_/Q",
+      "driver_cell": "gf180mcu_fd_sc_mcu7t5v0__dffq_1",
+      "load": {
+        "pin": "_188_/I0",
+        "cell": "gf180mcu_fd_sc_mcu7t5v0__mux2_1",
+        "pin_capacitance_ff": 3.13
+      },
+      "port": "c3"
+    },
+    "c4_r": {
+      "pin_capacitance_ff": 3.13,
+      "wire_capacitance_ff": 5.27,
+      "total_capacitance_ff": 8.4,
+      "driver": "_215_/Q",
+      "driver_cell": "gf180mcu_fd_sc_mcu7t5v0__dffq_1",
+      "load": {
+        "pin": "_191_/I0",
+        "cell": "gf180mcu_fd_sc_mcu7t5v0__mux2_1",
+        "pin_capacitance_ff": 3.13
+      },
+      "port": "c4"
+    },
+    "c5_r": {
+      "pin_capacitance_ff": 3.13,
+      "wire_capacitance_ff": 3.76,
+      "total_capacitance_ff": 6.89,
+      "driver": "_216_/Q",
+      "driver_cell": "gf180mcu_fd_sc_mcu7t5v0__dffq_1",
+      "load": {
+        "pin": "_192_/I0",
+        "cell": "gf180mcu_fd_sc_mcu7t5v0__mux2_1",
+        "pin_capacitance_ff": 3.13
+      },
+      "port": "c5"
+    },
+    "c6_r": {
+      "pin_capacitance_ff": 3.13,
+      "wire_capacitance_ff": 4.06,
+      "total_capacitance_ff": 7.19,
+      "driver": "_217_/Q",
+      "driver_cell": "gf180mcu_fd_sc_mcu7t5v0__dffq_1",
+      "load": {
+        "pin": "_197_/I0",
+        "cell": "gf180mcu_fd_sc_mcu7t5v0__mux2_1",
+        "pin_capacitance_ff": 3.13
+      },
+      "port": "c6"
+    },
+    "c7_r": {
+      "pin_capacitance_ff": 3.13,
+      "wire_capacitance_ff": 4.72,
+      "total_capacitance_ff": 7.85,
+      "driver": "_218_/Q",
+      "driver_cell": "gf180mcu_fd_sc_mcu7t5v0__dffq_1",
+      "load": {
+        "pin": "_198_/I0",
+        "cell": "gf180mcu_fd_sc_mcu7t5v0__mux2_1",
+        "pin_capacitance_ff": 3.13
+      },
+      "port": "c7"
+    },
+    "c8_r": {
+      "pin_capacitance_ff": 3.13,
+      "wire_capacitance_ff": 4.32,
+      "total_capacitance_ff": 7.46,
+      "driver": "_219_/Q",
+      "driver_cell": "gf180mcu_fd_sc_mcu7t5v0__dffq_1",
+      "load": {
+        "pin": "_171_/I0",
+        "cell": "gf180mcu_fd_sc_mcu7t5v0__mux2_1",
+        "pin_capacitance_ff": 3.13
+      },
+      "port": "c8"
+    },
+    "c9_r": {
+      "pin_capacitance_ff": 3.13,
+      "wire_capacitance_ff": 3.91,
+      "total_capacitance_ff": 7.05,
+      "driver": "_220_/Q",
+      "driver_cell": "gf180mcu_fd_sc_mcu7t5v0__dffq_1",
+      "load": {
+        "pin": "_172_/I0",
+        "cell": "gf180mcu_fd_sc_mcu7t5v0__mux2_1",
+        "pin_capacitance_ff": 3.13
+      },
+      "port": "c9"
+    },
+    "ph[15]": {
+      "pin_capacitance_ff": 2.73,
+      "wire_capacitance_ff": 7.8,
+      "total_capacitance_ff": 10.53,
+      "driver": "_245_/Q",
+      "driver_cell": "gf180mcu_fd_sc_mcu7t5v0__dffq_1",
+      "load": {
+        "pin": "_170_/A2",
+        "cell": "gf180mcu_fd_sc_mcu7t5v0__or2_1",
+        "pin_capacitance_ff": 2.73
+      },
+      "port": "drdy"
+    }
+  },
+  "klt_sta_rerun": {
+    "request": "design/sar-logic/flow/sar_ctrl/reports/20261104-212437-9cde5a64.mcu7t5v0.sta_postroute_spef_tt_025C_3v30.sta_request.json",
+    "command": "PDK_ROOT=$HOME/.ciel PDK=gf180mcuD klt sta <request> --pdk gf180mcuD --format json",
+    "generated_script_sha256": "a66a7c3b04ed2f34af5543261a329c21d9bd3fc8f96d1482cd0cb1f1ea286a22",
+    "spef_annotation": {
+      "nets_annotated": 192,
+      "nets_total": 192,
+      "design_nets_annotated": 192,
+      "design_nets_total": 192,
+      "design_nets_missing_sample": [],
+      "reader_warning_count": 0,
+      "reader_warning_sample": [],
+      "unannotated_driver_count": 2,
+      "partially_unannotated_driver_count": 11,
+      "floating_driver_count": 2,
+      "floating_driver_sample": [
+        "clkload0/Z",
+        "clkload1/ZN"
+      ],
+      "unannotated_driver_sample": [],
+      "unannotated_driver_detail": [],
+      "partially_unannotated_driver_sample": [
+        "_211_/Q",
+        "c0",
+        "_212_/Q",
+        "c1",
+        "_213_/Q",
+        "c2",
+        "_214_/Q",
+        "c3",
+        "_215_/Q",
+        "c4",
+        "_216_/Q",
+        "c5",
+        "_217_/Q",
+        "c6",
+        "_218_/Q",
+        "c7",
+        "_219_/Q",
+        "c8",
+        "_220_/Q",
+        "c9"
+      ],
+      "delay_changed": true,
+      "annotation_complete": true,
+      "annotation_warning": null
+    },
+    "timing": {
+      "worst_slack_ns": 59.1114,
+      "worst_hold_slack_ns": 1.26646,
+      "setup_violation_count": 0,
+      "hold_violation_count": 0,
+      "fmax_mhz": 295.11,
+      "timing_status": "constrained",
+      "clock_mode": "ideal"
+    }
+  },
+  "openroad_stdout_sha256": "2381bba36162d171b815161e0ca78c42e45dbe86d5910d38e0daf255d53ad3e9",
+  "openroad_stdout": "OpenROAD 26Q3-1510-g6cb3f2b704 \nFeatures included (+) or not (-): +GPU +GUI +Python\nThis program is licensed under the BSD-3 license. See the LICENSE file for details.\nComponents of this program may be licensed under more restrictive licenses which must be honored.\n[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :\"\n  \tEOLENCLOSURE 0.34 0.06 ;\"\n[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :\" EOLENCLOSURE 0.34 0.06 ; \"\n[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :\" EOLENCLOSURE 0.34 0.06 ; \"\n[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :\" EOLENCLOSURE 0.34 0.06 ; \"\n[INFO ODB-0227] LEF file: /home/ubuntu/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu7t5v0/techlef/gf180mcu_fd_sc_mcu7t5v0__nom.tlef, created 15 layers, 56 vias\n[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.\nThe NOWIREEXTENSIONATPIN statement will be ignored. See file /home/ubuntu/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu7t5v0/lef/gf180mcu_fd_sc_mcu7t5v0.lef at line 2.\n\n[INFO ODB-0227] LEF file: /home/ubuntu/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu7t5v0/lef/gf180mcu_fd_sc_mcu7t5v0.lef, created 229 library cells\n[INFO ODB-0127] Reading DEF file: layout/adc-top/sar_ctrl/sar_ctrl.def\n[INFO ODB-0128] Design: sar_ctrl_a\n[INFO ODB-0130]     Created 73 pins.\n[INFO ODB-0131]     Created 460 components and 2370 component-terminals.\n[INFO ODB-0132]     Created 2 special nets and 1788 connections.\n[INFO ODB-0133]     Created 190 nets and 580 connections.\n[INFO ODB-0134] Finished DEF file: layout/adc-top/sar_ctrl/sar_ctrl.def\n===PROBE_PARASITIC_ANNOTATION_BEGIN===\nFound 2 unannotated drivers.\n clkload0/Z\n clkload1/ZN\nFound 11 partially unannotated drivers.\n _211_/Q\n  c0\n _212_/Q\n  c1\n _213_/Q\n  c2\n _214_/Q\n  c3\n _215_/Q\n  c4\n _216_/Q\n  c5\n _217_/Q\n  c6\n _218_/Q\n  c7\n _219_/Q\n  c8\n _220_/Q\n  c9\n _245_/Q\n  drdy\n===PROBE_PARASITIC_ANNOTATION_END===\n===PROBE_REPORT_NET_BEGIN===\nNet c0_r\n Pin capacitance: 3.13\n Wire capacitance: 4.30\n Total capacitance: 7.43\n Number of drivers: 1\n Number of loads: 2\n Number of pins: 3\n\nDriver pins\n _211_/Q output (gf180mcu_fd_sc_mcu7t5v0__dffq_1) (66, 33)\n\nLoad pins\n _175_/I0 input (gf180mcu_fd_sc_mcu7t5v0__mux2_1) 3.13 (60, 18)\n c0 output port (60, 0)\n\nNet c1_r\n Pin capacitance: 3.13\n Wire capacitance: 3.58\n Total capacitance: 6.71\n Number of drivers: 1\n Number of loads: 2\n Number of pins: 3\n\nDriver pins\n _212_/Q output (gf180mcu_fd_sc_mcu7t5v0__dffq_1) (119, 18)\n\nLoad pins\n _178_/I0 input (gf180mcu_fd_sc_mcu7t5v0__mux2_1) 3.13 (114, 29)\n c1 output port (119, 0)\n\nNet c2_r\n Pin capacitance: 3.13\n Wire capacitance: 4.08\n Total capacitance: 7.22\n Number of drivers: 1\n Number of loads: 2\n Number of pins: 3\n\nDriver pins\n _213_/Q output (gf180mcu_fd_sc_mcu7t5v0__dffq_1) (98, 26)\n\nLoad pins\n _179_/I0 input (gf180mcu_fd_sc_mcu7t5v0__mux2_1) 3.13 (93, 18)\n c2 output port (98, 0)\n\nNet c3_r\n Pin capacitance: 3.13\n Wire capacitance: 6.22\n Total capacitance: 9.35\n Number of drivers: 1\n Number of loads: 2\n Number of pins: 3\n\nDriver pins\n _214_/Q output (gf180mcu_fd_sc_mcu7t5v0__dffq_1) (70, 26)\n\nLoad pins\n _188_/I0 input (gf180mcu_fd_sc_mcu7t5v0__mux2_1) 3.13 (68, 37)\n c3 output port (108, 0)\n\nNet c4_r\n Pin capacitance: 3.13\n Wire capacitance: 5.27\n Total capacitance: 8.40\n Number of drivers: 1\n Number of loads: 2\n Number of pins: 3\n\nDriver pins\n _215_/Q output (gf180mcu_fd_sc_mcu7t5v0__dffq_1) (71, 21)\n\nLoad pins\n _191_/I0 input (gf180mcu_fd_sc_mcu7t5v0__mux2_1) 3.13 (64, 29)\n c4 output port (97, 0)\n\nNet c5_r\n Pin capacitance: 3.13\n Wire capacitance: 3.76\n Total capacitance: 6.89\n Number of drivers: 1\n Number of loads: 2\n Number of pins: 3\n\nDriver pins\n _216_/Q output (gf180mcu_fd_sc_mcu7t5v0__dffq_1) (102, 14)\n\nLoad pins\n _192_/I0 input (gf180mcu_fd_sc_mcu7t5v0__mux2_1) 3.13 (96, 29)\n c5 output port (96, 0)\n\nNet c6_r\n Pin capacitance: 3.13\n Wire capacitance: 4.06\n Total capacitance: 7.19\n Number of drivers: 1\n Number of loads: 2\n Number of pins: 3\n\nDriver pins\n _217_/Q output (gf180mcu_fd_sc_mcu7t5v0__dffq_1) (124, 21)\n\nLoad pins\n _197_/I0 input (gf180mcu_fd_sc_mcu7t5v0__mux2_1) 3.13 (116, 25)\n c6 output port (135, 0)\n\nNet c7_r\n Pin capacitance: 3.13\n Wire capacitance: 4.72\n Total capacitance: 7.85\n Number of drivers: 1\n Number of loads: 2\n Number of pins: 3\n\nDriver pins\n _218_/Q output (gf180mcu_fd_sc_mcu7t5v0__dffq_1) (122, 37)\n\nLoad pins\n _198_/I0 input (gf180mcu_fd_sc_mcu7t5v0__mux2_1) 3.13 (114, 33)\n c7 output port (130, 0)\n\nNet c8_r\n Pin capacitance: 3.13\n Wire capacitance: 4.32\n Total capacitance: 7.46\n Number of drivers: 1\n Number of loads: 2\n Number of pins: 3\n\nDriver pins\n _219_/Q output (gf180mcu_fd_sc_mcu7t5v0__dffq_1) (88, 37)\n\nLoad pins\n _171_/I0 input (gf180mcu_fd_sc_mcu7t5v0__mux2_1) 3.13 (82, 29)\n c8 output port (94, 0)\n\nNet c9_r\n Pin capacitance: 3.13\n Wire capacitance: 3.91\n Total capacitance: 7.05\n Number of drivers: 1\n Number of loads: 2\n Number of pins: 3\n\nDriver pins\n _220_/Q output (gf180mcu_fd_sc_mcu7t5v0__dffq_1) (91, 33)\n\nLoad pins\n _172_/I0 input (gf180mcu_fd_sc_mcu7t5v0__mux2_1) 3.13 (86, 18)\n c9 output port (92, 0)\n\nNet ph[15]\n Pin capacitance: 2.73\n Wire capacitance: 7.80\n Total capacitance: 10.53\n Number of drivers: 1\n Number of loads: 2\n Number of pins: 3\n\nDriver pins\n _245_/Q output (gf180mcu_fd_sc_mcu7t5v0__dffq_1) (133, 33)\n\nLoad pins\n _170_/A2 input (gf180mcu_fd_sc_mcu7t5v0__or2_1) 2.73 (155, 10)\n drdy output port (89, 0)\n\n===PROBE_REPORT_NET_END===\n",
+  "klt_sta_rerun_stdout_sha256": "40ce2675ddb4c591c126492dcad764a2113340a9f06e4c47733d92611f2d2d95",
+  "klt_sta_rerun_stdout": "OpenROAD 26Q3-1510-g6cb3f2b704 \nFeatures included (+) or not (-): +GPU +GUI +Python\nThis program is licensed under the BSD-3 license. See the LICENSE file for details.\nComponents of this program may be licensed under more restrictive licenses which must be honored.\n[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :\"\n  \tEOLENCLOSURE 0.34 0.06 ;\"\n[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :\" EOLENCLOSURE 0.34 0.06 ; \"\n[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :\" EOLENCLOSURE 0.34 0.06 ; \"\n[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :\" EOLENCLOSURE 0.34 0.06 ; \"\n[INFO ODB-0227] LEF file: /home/ubuntu/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu7t5v0/techlef/gf180mcu_fd_sc_mcu7t5v0__nom.tlef, created 15 layers, 56 vias\n[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.\nThe NOWIREEXTENSIONATPIN statement will be ignored. See file /home/ubuntu/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu7t5v0/lef/gf180mcu_fd_sc_mcu7t5v0.lef at line 2.\n\n[INFO ODB-0227] LEF file: /home/ubuntu/.ciel/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu7t5v0/lef/gf180mcu_fd_sc_mcu7t5v0.lef, created 229 library cells\n[INFO ODB-0127] Reading DEF file: /tmp/loom1028/probe/layout/adc-top/sar_ctrl/sar_ctrl.def\n[INFO ODB-0128] Design: sar_ctrl_a\n[INFO ODB-0130]     Created 73 pins.\n[INFO ODB-0131]     Created 460 components and 2370 component-terminals.\n[INFO ODB-0132]     Created 2 special nets and 1788 connections.\n[INFO ODB-0133]     Created 190 nets and 580 connections.\n[INFO ODB-0134] Finished DEF file: /tmp/loom1028/probe/layout/adc-top/sar_ctrl/sar_ctrl.def\n===KLT_STA_SPEF_NET_CHECK_BEGIN===\n192 192\n192 192\n===KLT_STA_SPEF_NET_CHECK_END===\n===KLT_STA_SPEF_MISSING_NETS_BEGIN===\n===KLT_STA_SPEF_MISSING_NETS_END===\n===KLT_STA_DELAY_PRE_BEGIN===\nStartpoint: _233_ (rising edge-triggered flip-flop clocked by clk)\nEndpoint: _234_ (rising edge-triggered flip-flop clocked by clk)\nPath Group: clk\nPath Type: min\n\n      Delay        Time   Description\n-----------------------------------------------------------------\n   0.000000    0.000000   clock clk (rise edge)\n   0.000000    0.000000   clock network delay (ideal)\n   0.000000    0.000000 ^ _233_/CLK (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n   0.919843    0.919843 v _233_/Q (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n   0.157886    1.077730 ^ _070_/ZN (gf180mcu_fd_sc_mcu7t5v0__clkinv_1)\n   0.116083    1.193813 v _165_/ZN (gf180mcu_fd_sc_mcu7t5v0__nor2_1)\n   0.000000    1.193813 v _234_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n               1.193813   data arrival time\n\n   0.000000    0.000000   clock clk (rise edge)\n   0.000000    0.000000   clock network delay (ideal)\n   0.000000    0.000000   clock reconvergence pessimism\n               0.000000 ^ _234_/CLK (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n   0.047371    0.047371   library hold time\n               0.047371   data required time\n-----------------------------------------------------------------\n               0.047371   data required time\n              -1.193813   data arrival time\n-----------------------------------------------------------------\n               1.146442   slack (MET)\n\n\nStartpoint: _244_ (rising edge-triggered flip-flop clocked by clk)\nEndpoint: _211_ (rising edge-triggered flip-flop clocked by clk)\nPath Group: clk\nPath Type: max\n\n      Delay        Time   Description\n-----------------------------------------------------------------\n   0.000000    0.000000   clock clk (rise edge)\n   0.000000    0.000000   clock network delay (ideal)\n   0.000000    0.000000 ^ _244_/CLK (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n   1.859376    1.859376 ^ _244_/Q (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n   0.731963    2.591340 v _175_/Z (gf180mcu_fd_sc_mcu7t5v0__mux2_1)\n   0.000000    2.591340 v _211_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n               2.591340   data arrival time\n\n  62.500000   62.500000   clock clk (rise edge)\n   0.000000   62.500000   clock network delay (ideal)\n   0.000000   62.500000   clock reconvergence pessimism\n              62.500000 ^ _211_/CLK (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n  -0.429595   62.070408   library setup time\n              62.070408   data required time\n-----------------------------------------------------------------\n              62.070408   data required time\n              -2.591340   data arrival time\n-----------------------------------------------------------------\n              59.479069   slack (MET)\n\n\n===KLT_STA_DELAY_PRE_END===\n===KLT_STA_SPEF_READ_BEGIN===\n===KLT_STA_SPEF_READ_END===\n===KLT_STA_DELAY_POST_BEGIN===\nStartpoint: _233_ (rising edge-triggered flip-flop clocked by clk)\nEndpoint: _234_ (rising edge-triggered flip-flop clocked by clk)\nPath Group: clk\nPath Type: min\n\n      Delay        Time   Description\n-----------------------------------------------------------------\n   0.000000    0.000000   clock clk (rise edge)\n   0.000000    0.000000   clock network delay (ideal)\n   0.000000    0.000000 ^ _233_/CLK (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n   0.961954    0.961954 v _233_/Q (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n   0.195747    1.157700 ^ _070_/ZN (gf180mcu_fd_sc_mcu7t5v0__clkinv_1)\n   0.148088    1.305789 v _165_/ZN (gf180mcu_fd_sc_mcu7t5v0__nor2_1)\n   0.000000    1.305789 v _234_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n               1.305789   data arrival time\n\n   0.000000    0.000000   clock clk (rise edge)\n   0.000000    0.000000   clock network delay (ideal)\n   0.000000    0.000000   clock reconvergence pessimism\n               0.000000 ^ _234_/CLK (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n   0.039332    0.039332   library hold time\n               0.039332   data required time\n-----------------------------------------------------------------\n               0.039332   data required time\n              -1.305789   data arrival time\n-----------------------------------------------------------------\n               1.266457   slack (MET)\n\n\nStartpoint: _244_ (rising edge-triggered flip-flop clocked by clk)\nEndpoint: _220_ (rising edge-triggered flip-flop clocked by clk)\nPath Group: clk\nPath Type: max\n\n      Delay        Time   Description\n-----------------------------------------------------------------\n   0.000000    0.000000   clock clk (rise edge)\n   0.000000    0.000000   clock network delay (ideal)\n   0.000000    0.000000 ^ _244_/CLK (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n   2.189799    2.189799 ^ _244_/Q (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n   0.758641    2.948441 v _172_/Z (gf180mcu_fd_sc_mcu7t5v0__mux2_1)\n   0.000000    2.948441 v _220_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n               2.948441   data arrival time\n\n  62.500000   62.500000   clock clk (rise edge)\n   0.000000   62.500000   clock network delay (ideal)\n   0.000000   62.500000   clock reconvergence pessimism\n              62.500000 ^ _220_/CLK (gf180mcu_fd_sc_mcu7t5v0__dffq_1)\n  -0.440130   62.059872   library setup time\n              62.059872   data required time\n-----------------------------------------------------------------\n              62.059872   data required time\n              -2.948441   data arrival time\n-----------------------------------------------------------------\n              59.111431   slack (MET)\n\n\n===KLT_STA_DELAY_POST_END===\n===KLT_STA_PARASITIC_ANNOTATION_BEGIN===\nFound 2 unannotated drivers.\n clkload0/Z\n clkload1/ZN\nFound 11 partially unannotated drivers.\n _211_/Q\n  c0\n _212_/Q\n  c1\n _213_/Q\n  c2\n _214_/Q\n  c3\n _215_/Q\n  c4\n _216_/Q\n  c5\n _217_/Q\n  c6\n _218_/Q\n  c7\n _219_/Q\n  c8\n _220_/Q\n  c9\n _245_/Q\n  drdy\n===KLT_STA_PARASITIC_ANNOTATION_END===\n===KLT_STA_FLOATING_DRIVERS_BEGIN===\n[WARNING STA-0101] object 'NULL' not found.\n[WARNING STA-0361] net 'NULL' not found.\nKLT_FLOATING_DRIVER clkload0/Z\n[WARNING STA-0101] object 'NULL' not found.\n[WARNING STA-0361] net 'NULL' not found.\nKLT_FLOATING_DRIVER clkload1/ZN\n===KLT_STA_FLOATING_DRIVERS_END===\n===KLT_STA_DRIVER_NETS_BEGIN===\nKLT_DRIVER_NET _090_/ZN 1 sel_lo_n_4p\nKLT_DRIVER_NET _091_/ZN 1 sel_hi_n_4n\nKLT_DRIVER_NET _092_/ZN 1 samp_tp_n\nKLT_DRIVER_NET _094_/ZN 1 rel_n_4p\nKLT_DRIVER_NET _095_/ZN 1 rel_n_4n\nKLT_DRIVER_NET _098_/Z 1 sel_lo_n_8n\nKLT_DRIVER_NET _099_/ZN 1 sel_lo_n_8p\nKLT_DRIVER_NET _100_/ZN 1 sel_hi_n_8n\nKLT_DRIVER_NET _101_/ZN 1 rel_n_8p\nKLT_DRIVER_NET _102_/ZN 1 rel_n_8n\nKLT_DRIVER_NET _104_/Z 1 sel_lo_n_16n\nKLT_DRIVER_NET _105_/ZN 1 sel_lo_n_16p\nKLT_DRIVER_NET _106_/ZN 1 sel_hi_n_16n\nKLT_DRIVER_NET _107_/ZN 1 rel_n_16p\nKLT_DRIVER_NET _108_/ZN 1 rel_n_16n\nKLT_DRIVER_NET _110_/Z 1 sel_lo_n_32n\nKLT_DRIVER_NET _111_/ZN 1 sel_lo_n_32p\nKLT_DRIVER_NET _112_/ZN 1 sel_hi_n_32n\nKLT_DRIVER_NET _113_/ZN 1 rel_n_32p\nKLT_DRIVER_NET _114_/ZN 1 rel_n_32n\nKLT_DRIVER_NET _116_/Z 1 sel_lo_n_64n\nKLT_DRIVER_NET _117_/ZN 1 sel_lo_n_64p\nKLT_DRIVER_NET _118_/ZN 1 sel_hi_n_64n\nKLT_DRIVER_NET _119_/ZN 1 rel_n_64p\nKLT_DRIVER_NET _120_/ZN 1 rel_n_64n\nKLT_DRIVER_NET _122_/Z 1 sel_lo_n_128n\nKLT_DRIVER_NET _123_/ZN 1 sel_lo_n_128p\nKLT_DRIVER_NET _124_/ZN 1 sel_hi_n_128n\nKLT_DRIVER_NET _125_/ZN 1 rel_n_128p\nKLT_DRIVER_NET _126_/ZN 1 rel_n_128n\nKLT_DRIVER_NET _127_/Z 1 sel_lo_n_4n\nKLT_DRIVER_NET _129_/Z 1 sel_lo_n_256n\nKLT_DRIVER_NET _130_/ZN 1 sel_lo_n_256p\nKLT_DRIVER_NET _131_/ZN 1 sel_hi_n_256n\nKLT_DRIVER_NET _132_/ZN 1 rel_n_256p\nKLT_DRIVER_NET _133_/ZN 1 rel_n_256n\nKLT_DRIVER_NET _134_/ZN 1 rel_n_2p\nKLT_DRIVER_NET _138_/ZN 1 sel_lo_n_2p\nKLT_DRIVER_NET _143_/ZN 1 rel_n_2n\nKLT_DRIVER_NET _147_/ZN 1 sel_hi_n_2n\nKLT_DRIVER_NET _150_/Z 1 sel_lo_n_2n\nKLT_DRIVER_NET _153_/ZN 1 rel_n_1p\nKLT_DRIVER_NET _158_/ZN 1 sel_lo_n_1p\nKLT_DRIVER_NET _160_/Z 1 sel_lo_n_1n\nKLT_DRIVER_NET _163_/ZN 1 sel_hi_n_1n\nKLT_DRIVER_NET _167_/ZN 1 rel_n_1n\n[WARNING STA-0101] object 'NULL' not found.\n[ERROR STA-2204] get_property NULL is not an object.\n[WARNING STA-0101] object 'NULL' not found.\n[ERROR STA-2204] get_property NULL is not an object.\n===KLT_STA_DRIVER_NETS_END===\n===KLT_STA_SETUP_VIOLATIONS_BEGIN===\nNo paths found.\n\n===KLT_STA_SETUP_VIOLATIONS_END===\n===KLT_STA_HOLD_VIOLATIONS_BEGIN===\nNo paths found.\n\n===KLT_STA_HOLD_VIOLATIONS_END===\n===KLT_STA_WORST_PATHS_BEGIN===\nPATH\tmax\tsetup\t5.911142864079011e-8\t_244_/Q\t_220_/D\nPATH\tmin\thold\t1.266456606252575e-9\t_233_/Q\t_234_/D\n===KLT_STA_WORST_PATHS_END===\n===KLT_STA_MAX_SLEW_BEGIN===\n\nKLT_ELECTRICAL_OK\n===KLT_STA_MAX_SLEW_END===\n===KLT_STA_MAX_CAP_BEGIN===\n\nKLT_ELECTRICAL_OK\n===KLT_STA_MAX_CAP_END===\n===KLT_STA_MIN_PULSE_BEGIN===\n\nKLT_ELECTRICAL_OK\n===KLT_STA_MIN_PULSE_END===\n===KLT_STA_MIN_PERIOD_BEGIN===\n\nKLT_ELECTRICAL_OK\n===KLT_STA_MIN_PERIOD_END===\n===KLT_STA_CONSTRAINT_COMPLETENESS_BEGIN===\nCHECK\tunconstrained_endpoints\t67\nITEM\tunconstrained_endpoints\tc0\nITEM\tunconstrained_endpoints\tc1\nITEM\tunconstrained_endpoints\tc2\nITEM\tunconstrained_endpoints\tc3\nITEM\tunconstrained_endpoints\tc4\nITEM\tunconstrained_endpoints\tc5\nITEM\tunconstrained_endpoints\tc6\nITEM\tunconstrained_endpoints\tc7\nITEM\tunconstrained_endpoints\tc8\nITEM\tunconstrained_endpoints\tc9\nITEM\tunconstrained_endpoints\tdrdy\nITEM\tunconstrained_endpoints\trel_n_128n\nITEM\tunconstrained_endpoints\trel_n_128p\nITEM\tunconstrained_endpoints\trel_n_16n\nITEM\tunconstrained_endpoints\trel_n_16p\nITEM\tunconstrained_endpoints\trel_n_1n\nITEM\tunconstrained_endpoints\trel_n_1p\nITEM\tunconstrained_endpoints\trel_n_256n\nITEM\tunconstrained_endpoints\trel_n_256p\nITEM\tunconstrained_endpoints\trel_n_2n\nCHECK\tunclocked_registers\t0\n===KLT_STA_CONSTRAINT_COMPLETENESS_END===\n"
+}
